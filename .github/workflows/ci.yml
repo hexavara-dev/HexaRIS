@@ -6,53 +6,62 @@ on:
   pull_request:
 
 jobs:
+  guard-main:
+    name: Block direct push to main
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check commit came from a PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          COUNT=$(gh api \
+            "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
+            --jq 'length')
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::Direct push to main. Revert dan buat PR."
+            exit 1
+          fi
+          echo "✓ From PR"
+
   quality:
     name: Quality gate
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
           extensions: mbstring, sqlite3, pdo_sqlite
           coverage: none
-
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
-
       - name: Prepare environment
         run: |
           cp .env.example .env
           php artisan key:generate
           touch database/database.sqlite
-
       - name: Run migrations
         run: php artisan migrate --force
-
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-
       - name: Install npm dependencies
         run: npm ci
-
       - name: Check formatting (Prettier)
         run: npm run format:check
-
       - name: Lint frontend (ESLint)
         run: npx eslint .
-
       - name: Type-check (tsc)
         run: npm run types
-
       - name: Build assets
         run: npm run build
-
       - name: Quality gate (Pint, PHPStan, Pest)
         run: composer check
 
