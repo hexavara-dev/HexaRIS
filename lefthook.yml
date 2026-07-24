@@ -1,0 +1,38 @@
+# Git hooks (managed by Lefthook). Auto-installed via `lefthook install`,
+# which runs on `npm install` through the package.json "prepare" script.
+# Manual install: npx lefthook install
+#
+# These are local, fast guards. The comprehensive gate (full Pest suite + asset
+# build) runs in CI. Local hooks are bypassable with `git ... --no-verify` — use
+# only in emergencies; CI is the backstop until server-side branch protection.
+
+pre-commit:
+  parallel: true
+  commands:
+    pint:
+      glob: '*.php'
+      run: vendor/bin/pint {staged_files}
+      stage_fixed: true
+    prettier:
+      glob: 'resources/**/*.{ts,tsx,js,jsx,css}'
+      run: npx prettier --write {staged_files}
+      stage_fixed: true
+    eslint:
+      glob: '*.{ts,tsx,js,jsx}'
+      run: npx eslint {staged_files}
+
+pre-push:
+  # Fast, deterministic checks only (no DB/asset build needed). The full Pest
+  # suite + build run in CI.
+  commands:
+    no-direct-push-to-main:
+      run: |
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$branch" = "main" ]; then
+          echo "✗ Direct pushes to 'main' are blocked. Use a feature branch + PR (squash-merge)."
+          exit 1
+        fi
+    pint:
+      run: vendor/bin/pint --test
+    phpstan:
+      run: composer stan

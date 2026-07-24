@@ -1,0 +1,7 @@
+{
+    "name": "Iam",
+    "alias": "iam",
+    "version": "1.0.0",
+    "description": "Identity & Access Management (auth, users, roles, permissions)",
+    "dependencies": []
+}
