@@ -87,7 +87,8 @@ export function WeeklyShiftSchedule({
     });
     const [selectedBranch, setSelectedBranch] = useState(branches[0]);
     const [selectedDepartment, setSelectedDepartment] = useState(departments[0]);
-    const employees = employeeVariants[activeDayIndex] ?? employeeVariants[0];
+    const isFiltered = selectedBranch !== branches[0] || selectedDepartment !== departments[0];
+    const employees = isFiltered ? [] : (employeeVariants[activeDayIndex] ?? employeeVariants[0]);
 
     return (
         <div className="flex w-full flex-col items-start overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-[0px_1px_3px_0px_rgba(15,23,42,0.02)]">
@@ -171,26 +172,30 @@ export function WeeklyShiftSchedule({
             </div>
 
             {/* Employee rows */}
-            {employees.map((employee) => (
-                <div
-                    key={employee.name}
-                    className="grid h-20 w-full grid-cols-[220px_repeat(7,minmax(0,1fr))] items-stretch gap-2 border-b border-[#E2E8F0] px-2 py-2"
-                >
-                    <div className="flex min-w-0 items-center gap-3">
-                        <Avatar className="size-8 shrink-0">
-                            <AvatarImage src={employee.avatarUrl} alt={employee.name} />
-                            <AvatarFallback className="text-xs">{initials(employee.name)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex min-w-0 flex-col items-start gap-0.5">
-                            <p className="w-full truncate text-sm font-semibold text-[#111827]">{employee.name}</p>
-                            <p className="w-full truncate text-xs leading-[1.4em] text-[#6B7280]">{employee.role}</p>
+            {isFiltered ? (
+                <p className="w-full py-6 text-center text-sm text-[#94A3B8]">Tidak ada data untuk pilihan ini.</p>
+            ) : (
+                employees.map((employee) => (
+                    <div
+                        key={employee.name}
+                        className="grid h-20 w-full grid-cols-[220px_repeat(7,minmax(0,1fr))] items-stretch gap-2 border-b border-[#E2E8F0] px-2 py-2"
+                    >
+                        <div className="flex min-w-0 items-center gap-3">
+                            <Avatar className="size-8 shrink-0">
+                                <AvatarImage src={employee.avatarUrl} alt={employee.name} />
+                                <AvatarFallback className="text-xs">{initials(employee.name)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex min-w-0 flex-col items-start gap-0.5">
+                                <p className="w-full truncate text-sm font-semibold text-[#111827]">{employee.name}</p>
+                                <p className="w-full truncate text-xs leading-[1.4em] text-[#6B7280]">{employee.role}</p>
+                            </div>
                         </div>
+                        {employee.shifts.map((shift, index) => (
+                            <ShiftCell key={index} shift={shift} />
+                        ))}
                     </div>
-                    {employee.shifts.map((shift, index) => (
-                        <ShiftCell key={index} shift={shift} />
-                    ))}
-                </div>
-            ))}
+                ))
+            )}
 
             {/* Legend */}
             <div className="flex w-full items-center gap-6 p-4">

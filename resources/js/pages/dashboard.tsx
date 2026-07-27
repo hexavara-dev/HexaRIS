@@ -13,12 +13,14 @@ import { FloatingAssistantButton } from '@/components/floating-assistant-button'
 import { NotificationBell } from '@/components/notification-bell';
 import { PeriodDropdown } from '@/components/period-dropdown';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, type SharedData } from '@/types';
-
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
+import { type SharedData } from '@/types';
 
 const PERIODS = ['Mei 2026', 'Juni 2026', 'Juli 2026', 'Agustus 2026'];
 const DEFAULT_PERIOD = 'Juli 2026';
+
+// "Lihat Semua (N)" should honestly reflect the total size of APPROVAL_REQUESTS below,
+// which backs every period regardless of which category tab is active in the modal.
+const APPROVAL_REQUESTS_COUNT = 10;
 
 interface PeriodDataset {
     employee: { aktif: number; nonAktif: number; baru: number };
@@ -36,7 +38,7 @@ const PERIOD_DATA: Record<string, PeriodDataset> = {
         absensiOnTime: { onTime: 198, terlambat: 15, cuti: 40 },
         absensiLainnya: { alpha: 5, izin: 70, lembur: 60 },
         approvalCounts: { cuti: 12, izin: 18, lembur: 3 },
-        viewAllCount: 6,
+        viewAllCount: APPROVAL_REQUESTS_COUNT,
     },
     'Juni 2026': {
         employee: { aktif: 239, nonAktif: 20, baru: 9 },
@@ -44,7 +46,7 @@ const PERIOD_DATA: Record<string, PeriodDataset> = {
         absensiOnTime: { onTime: 205, terlambat: 18, cuti: 47 },
         absensiLainnya: { alpha: 7, izin: 80, lembur: 75 },
         approvalCounts: { cuti: 15, izin: 22, lembur: 4 },
-        viewAllCount: 7,
+        viewAllCount: APPROVAL_REQUESTS_COUNT,
     },
     'Juli 2026': {
         employee: { aktif: 248, nonAktif: 248, baru: 248 },
@@ -52,7 +54,7 @@ const PERIOD_DATA: Record<string, PeriodDataset> = {
         absensiOnTime: { onTime: 213, terlambat: 21, cuti: 53 },
         absensiLainnya: { alpha: 89, izin: 89, lembur: 89 },
         approvalCounts: { cuti: 20, izin: 30, lembur: 5 },
-        viewAllCount: 8,
+        viewAllCount: APPROVAL_REQUESTS_COUNT,
     },
     'Agustus 2026': {
         employee: { aktif: 255, nonAktif: 26, baru: 14 },
@@ -60,7 +62,7 @@ const PERIOD_DATA: Record<string, PeriodDataset> = {
         absensiOnTime: { onTime: 220, terlambat: 12, cuti: 58 },
         absensiLainnya: { alpha: 10, izin: 95, lembur: 82 },
         approvalCounts: { cuti: 24, izin: 19, lembur: 6 },
-        viewAllCount: 9,
+        viewAllCount: APPROVAL_REQUESTS_COUNT,
     },
 };
 
@@ -137,7 +139,7 @@ export default function Dashboard() {
     const data = PERIOD_DATA[selectedPeriod];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs} headerTitle="Dashboard" headerActions={<NotificationBell count={5} />}>
+        <AppLayout headerTitle="Dashboard" headerActions={<NotificationBell count={5} />}>
             <Head title="Dashboard" />
 
             <div className="flex h-full flex-1 flex-col gap-6 px-6 pt-4 pb-6">
