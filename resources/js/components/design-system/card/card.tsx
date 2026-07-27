@@ -121,3 +121,57 @@ export function OverviewCardDemo() {
         />
     );
 }
+
+export function EmployeeOverviewCardDemo() {
+    return (
+        <OverviewCard
+            title="DATA KARYAWAN"
+            stats={[
+                { icon: <IconActiveEmployees />, label: 'Karyawan Aktif', value: 248 },
+                { icon: <IconInactiveEmployees />, label: 'Karyawan Non Aktif', value: 248 },
+                { icon: <IconNewEmployees />, label: 'Karyawan Baru', value: 248 },
+            ]}
+        />
+    );
+}
+
+function IconTotalAssets() {
+    return (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="size-4 shrink-0">
+            <path
+                d="M2 5.33333L8 2L14 5.33333M2 5.33333L8 8.66667M2 5.33333V10.6667L8 14M14 5.33333L8 8.66667M14 5.33333V10.6667L8 14M8 8.66667V14"
+                stroke="#1980C0"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}
+
+function IconAssetsBorrowed() {
+    return (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="size-4 shrink-0">
+            <path d="M2 8H10M10 8L7 5M10 8L7 11M14 3.33333V12.6667" stroke="#1980C0" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+}
+
+function IconAssetsAvailable() {
+    return (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="size-4 shrink-0">
+            <path d="M13.5 4L6 11.5L2.5 8" stroke="#1980C0" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+}
+
+export function AssetOverviewCardDemo() {
+    return (
+        <OverviewCard
+            title="DATA ASET"
+            stats={[
+                { icon: <IconTotalAssets />, label: 'Total Semua Aset', value: 980 },
+                { icon: <IconAssetsBorrowed />, label: 'Aset Dipinjam Karyawan', value: 600 },
+                { icon: <IconAssetsAvailable />, label: 'Aset Yang Tersedia', value: 6 },
+            ]}
+        />
+    );
+}
