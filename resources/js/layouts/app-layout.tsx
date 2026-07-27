@@ -9,13 +9,14 @@ interface AppLayoutProps {
     children: ReactNode;
     breadcrumbs?: BreadcrumbItem[];
     headerActions?: ReactNode;
+    headerTitle?: string;
 }
 
-export default function AppLayout({ children, breadcrumbs, headerActions, ...props }: AppLayoutProps) {
+export default function AppLayout({ children, breadcrumbs, headerActions, headerTitle, ...props }: AppLayoutProps) {
     useFlash();
     return (
         <>
-            <AppLayoutTemplate breadcrumbs={breadcrumbs} headerActions={headerActions} {...props}>
+            <AppLayoutTemplate breadcrumbs={breadcrumbs} headerActions={headerActions} headerTitle={headerTitle} {...props}>
                 {children}
             </AppLayoutTemplate>
             <Toaster />

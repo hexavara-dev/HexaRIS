@@ -8,7 +8,7 @@ export function NotificationBell({ count = 0 }: NotificationBellProps) {
     return (
         <button
             type="button"
-            className="relative flex size-9 shrink-0 items-center justify-center rounded-full border border-[#E2E8F0] text-[#0F172A]"
+            className="relative flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#0F172A]"
             aria-label={count > 0 ? `${count} notifikasi belum dibaca` : 'Notifikasi'}
         >
             <Bell className="size-[18px]" />

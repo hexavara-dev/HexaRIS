@@ -115,7 +115,7 @@
     --chart-4: hsl(43, 74%, 66%);
     --chart-5: hsl(27, 87%, 67%);
     --radius: 0.5rem;
-    --sidebar-background: hsl(0, 0%, 98%);
+    --sidebar-background: hsl(0, 0%, 100%);
     --sidebar-foreground: hsl(240, 5.3%, 30%);
     --sidebar-primary: hsl(203, 77%, 43%);
     --sidebar-primary-foreground: hsl(0, 0%, 100%);
