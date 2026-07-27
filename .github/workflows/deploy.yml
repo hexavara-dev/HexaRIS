@@ -1,0 +1,151 @@
+name: Deploy to VPS
+
+run-name: "Deploy ${{ inputs.ref }} -> ${{ inputs.environment }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        type: choice
+        options: [production, staging]
+        # CHANGED dari senior (`production`): staging jauh lebih sering jadi
+        # target, dan klik Run tanpa mikir jangan sampai mendarat di prod.
+        default: staging
+      ref:
+        # CHANGED: arahkan ke tag. Prod harus selalu deploy tag yang immutable
+        # (v1.2.0), bukan branch yang bergerak — kalau branch, kamu tidak bisa
+        # tahu persis byte apa yang jalan, dan tidak bisa redeploy hal yang sama
+        # untuk rollback.
+        description: "Tag to deploy (e.g. v1.2.0). Wajib tag untuk production."
+        # CHANGED dari senior (`false` + default `main`): required tanpa default
+        # memaksa pilihan sadar — tidak bisa klik Run lalu tanpa sadar mengirim
+        # apa pun yang kebetulan ada di main saat itu.
+        required: true
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Per-env GitHub Environment menyediakan vars.APP_DIR + vars.APP_HEALTH_URL
+    # dan secret VPS_*. Buat Environment bernama persis 'production'/'staging'.
+    # Aktifkan Required reviewers di environment 'production' untuk gerbang
+    # approval manual sebelum prod — tanpa perlu ubah YAML.
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout ${{ inputs.ref }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          # ADDED: tag tidak ikut ter-fetch di fetch-depth 1; step guard di bawah
+          # butuh tag untuk memverifikasi ref benar-benar sebuah tag.
+          fetch-depth: 0
+
+      # ADDED: gerbang otomatis — prod menolak ref yang bergerak. Branch/SHA
+      # boleh untuk staging, tapi prod wajib tag supaya rilis reproducible dan
+      # rollback cukup "redeploy tag sebelumnya". Ini yang bikin aturan "prod
+      # pakai tag" jadi ditegakkan mesin, bukan diandalkan ingatan jam 11 malam.
+      - name: Require a tag for production
+        if: inputs.environment == 'production'
+        run: |
+          if ! git rev-parse -q --verify "refs/tags/${{ inputs.ref }}" >/dev/null; then
+            echo "::error::'${{ inputs.ref }}' bukan tag. Deploy production wajib tag (mis. v1.2.0)."
+            echo "Buat dengan: git tag -a v1.2.0 -m 'Release' && git push origin v1.2.0"
+            exit 1
+          fi
+
+      # ADDED: catat commit persis di balik ref, untuk summary di bawah.
+      - name: Resolve ref
+        id: resolve
+        run: echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build assets
+        run: npm run build
+        env:
+          # Turnstile site key ditanam ke bundle JS saat build (Vite membaca
+          # VITE_* saat `npm run build`, yang jalan di CI — bukan di VPS). Isi
+          # per-environment via GitHub Environment variable VITE_TURNSTILE_SITE_KEY.
+          # Kosong = widget disembunyikan + backend bypass.
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+
+      - name: Compute release timestamp
+        id: rel
+        run: echo "ts=$(date -u +%Y%m%dT%H%M%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          install -m 600 /dev/stdin ~/.ssh/deploy_key <<< "${{ secrets.VPS_SSH_KEY }}"
+          ssh-keyscan -p "${{ secrets.VPS_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Rsync release to VPS
+        env:
+          TS: ${{ steps.rel.outputs.ts }}
+        run: |
+          # rsync sengaja TIDAK menghormati .gitignore. public/build git-ignored
+          # tapi WAJIB terkirim (output Vite hasil build CI yang diserve server).
+          # Jangan tambah --filter=':- .gitignore' — assets akan diam-diam
+          # berhenti terkirim. vendor dikecualikan karena deploy.sh menjalankan
+          # composer install di server.
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='vendor' \
+            --exclude='.env' \
+            ./ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ vars.APP_DIR }}/releases/${TS}/"
+
+      - name: Finalize release on VPS
+        env:
+          TS: ${{ steps.rel.outputs.ts }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${{ secrets.VPS_PORT }}" \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "bash ${{ vars.APP_DIR }}/releases/${TS}/deploy.sh ${TS}"
+
+      - name: Health check
+        run: curl -fsS --retry 5 --retry-delay 3 "${{ vars.APP_HEALTH_URL }}"
+
+      - name: Deployment summary
+        if: always()
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          REF: ${{ inputs.ref }}
+          SHA: ${{ steps.resolve.outputs.sha }}   # ADDED
+          HEALTH_URL: ${{ vars.APP_HEALTH_URL }}
+          APP_DIR: ${{ vars.APP_DIR }}
+          RELEASE: ${{ steps.rel.outputs.ts }}
+        run: |
+          APP_URL="${HEALTH_URL%/up}"
+          {
+            echo "## Deploy -> ${ENVIRONMENT}"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Environment | \`${ENVIRONMENT}\` |"
+            echo "| Domain | ${APP_URL} |"
+            echo "| Ref deployed | \`${REF}\` |"
+            echo "| Commit | \`${SHA:-n/a}\` |"
+            echo "| Health check | ${HEALTH_URL} |"
+            echo "| App dir | \`${APP_DIR}\` |"
+            echo "| Release | \`${RELEASE:-n/a}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
