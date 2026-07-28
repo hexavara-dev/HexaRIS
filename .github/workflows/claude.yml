@@ -63,31 +63,6 @@ jobs:
               });
             }
 
-      - name: 📝 Post acknowledge comment
-        id: ack
-        continue-on-error: true
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-            const issue_number = ${{ env.ISSUE_NUMBER }};
-            if (!issue_number) return;
-            const trigger = context.eventName === 'issues'
-              ? `label \`${context.payload.label.name}\``
-              : `@${context.payload.sender.login} via comment`;
-            const { data } = await github.rest.issues.createComment({
-              owner, repo, issue_number,
-              body: [
-                '🤖 **Claude Code dipanggil**',
-                '',
-                `Trigger: ${trigger}`,
-                `Workflow run: [#${context.runNumber}](${process.env.RUN_URL})`,
-                '',
-                'Sedang setup environment (PHP 8.4 + Node 22) lalu menjalankan Claude. Akan update di sini saat ada progress / hasil.',
-              ].join('\n')
-            });
-            core.setOutput('comment_id', data.id);
-
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
