@@ -33,9 +33,28 @@ interface Props<T> {
     sort?: string | null;
     filters?: ColumnFilters;
     search?: string;
+    variant?: 'default' | 'design-system';
 }
 
-export function DataTable<T extends { id: number | string }>({ columns, rows, sort, filters = {}, search }: Props<T>) {
+const variantStyles = {
+    default: {
+        container: 'bg-card overflow-hidden rounded-lg border',
+        headerRow: 'bg-muted/40 hover:bg-muted/40',
+        headerLabel: 'text-muted-foreground text-xs font-semibold tracking-wide uppercase',
+        row: '',
+        cell: '',
+    },
+    'design-system': {
+        container: 'overflow-hidden rounded-md border border-[#E7E7E7] bg-white',
+        headerRow: 'border-[#E7E7E7] bg-[#FAFBFD] hover:bg-transparent',
+        headerLabel: 'font-poppins text-xs font-normal text-[#0A0A0A]',
+        row: 'border-[#E7E7E7] hover:bg-transparent',
+        cell: 'font-poppins text-xs text-[#424242]',
+    },
+} as const;
+
+export function DataTable<T extends { id: number | string }>({ columns, rows, sort, filters = {}, search, variant = 'default' }: Props<T>) {
+    const styles = variantStyles[variant];
     const navigate = (next: { sort?: string | null; filters?: ColumnFilters }) => {
         const params = {
             sort: next.sort !== undefined ? next.sort : sort,
@@ -67,14 +86,14 @@ export function DataTable<T extends { id: number | string }>({ columns, rows, so
 
     return (
         <div className="space-y-3">
-            <div className="bg-card overflow-hidden rounded-lg border">
+            <div className={styles.container}>
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-muted/40 hover:bg-muted/40">
+                        <TableRow className={styles.headerRow}>
                             {columns.map((c) => (
                                 <TableHead key={c.key} className={cn('h-11', c.align === 'right' && 'text-right')}>
                                     <div className={cn('flex items-center gap-1', c.align === 'right' && 'justify-end')}>
-                                        <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{c.label}</span>
+                                        <span className={styles.headerLabel}>{c.label}</span>
                                         {c.sortable && (
                                             <button
                                                 type="button"
@@ -108,9 +127,9 @@ export function DataTable<T extends { id: number | string }>({ columns, rows, so
                             </TableRow>
                         ) : (
                             rows.data.map((row) => (
-                                <TableRow key={row.id}>
+                                <TableRow key={row.id} className={styles.row}>
                                     {columns.map((c) => (
-                                        <TableCell key={c.key} className={cn(c.align === 'right' && 'text-right')}>
+                                        <TableCell key={c.key} className={cn(c.align === 'right' && 'text-right', styles.cell)}>
                                             {c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key] ?? '')}
                                         </TableCell>
                                     ))}
