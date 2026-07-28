@@ -26,12 +26,7 @@ pre-push:
   # suite + build run in CI.
   commands:
     no-direct-push-to-main:
-      run: |
-        branch=$(git rev-parse --abbrev-ref HEAD)
-        if [ "$branch" = "main" ]; then
-          echo "✗ Direct pushes to 'main' are blocked. Use a feature branch + PR (squash-merge)."
-          exit 1
-        fi
+      run: sh .lefthook/no-direct-push-to-main.sh
     pint:
       run: vendor/bin/pint --test
     phpstan:
