@@ -1,18 +1,22 @@
+import type { ReactNode } from 'react';
+
 import { Toaster } from '@/components/toaster';
 import { useFlash } from '@/hooks/use-flash';
 import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
 import { type BreadcrumbItem } from '@/types';
 
 interface AppLayoutProps {
-    children: React.ReactNode;
+    children: ReactNode;
     breadcrumbs?: BreadcrumbItem[];
+    headerActions?: ReactNode;
+    headerTitle?: string;
 }
 
-export default function AppLayout({ children, breadcrumbs, ...props }: AppLayoutProps) {
+export default function AppLayout({ children, breadcrumbs, headerActions, headerTitle, ...props }: AppLayoutProps) {
     useFlash();
     return (
         <>
-            <AppLayoutTemplate breadcrumbs={breadcrumbs} {...props}>
+            <AppLayoutTemplate breadcrumbs={breadcrumbs} headerActions={headerActions} headerTitle={headerTitle} {...props}>
                 {children}
             </AppLayoutTemplate>
             <Toaster />

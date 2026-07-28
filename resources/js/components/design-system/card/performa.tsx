@@ -67,6 +67,12 @@ export function TopPerformanceCardDemo() {
                 { name: 'Andini', score: 12 },
                 { name: 'Ami', score: 9 },
                 { name: 'Ratu', score: 7 },
+                { name: 'Doni', score: 6 },
+                { name: 'Lina', score: 5 },
+                { name: 'Fajar', score: 4 },
+                { name: 'Nadia', score: 3 },
+                { name: 'Yoga', score: 2 },
+                { name: 'Citra', score: 1 },
             ]}
         />
     );

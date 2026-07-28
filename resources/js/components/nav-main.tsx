@@ -1,7 +1,6 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
     SidebarGroup,
-    SidebarGroupLabel,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
@@ -77,8 +76,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
     const page = usePage();
 
     return (
-        <SidebarGroup className="px-2 py-0">
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
+        <SidebarGroup className="px-4 pt-4 pb-0">
             <SidebarMenu>
                 {items.map((item) =>
                     item.items?.length ? (
