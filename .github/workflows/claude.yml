@@ -107,7 +107,7 @@ jobs:
           label_trigger: "claude-implement"
           claude_args: |
             --max-turns 40
-            --allowed-tools "Bash(./vendor/bin/pest:*),Bash(./vendor/bin/pint:*),Bash(npm run lint),Bash(npm run test:run),Bash(npx tsc --noEmit),Bash(php artisan:*),Bash(git:*),Edit,Write,Read,Glob,Grep"
+            --allowed-tools "Bash(./vendor/bin/pest:*),Bash(./vendor/bin/pint:*),Bash(./vendor/bin/phpstan:*),Bash(npm ci:*),Bash(npm run build:*),Bash(npm run lint),Bash(npx tsc --noEmit),Bash(php artisan:*),Bash(git:*),Edit,Write,Read,Glob,Grep"
 
       - name: ❌ Report failure
         if: failure()

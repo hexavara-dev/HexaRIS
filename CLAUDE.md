@@ -63,9 +63,9 @@ meng-hardcode perintah apa pun, semuanya dibaca dari sini.
 |---|---|
 | Test backend | `./vendor/bin/pest` |
 | Formatter/linter backend | `./vendor/bin/pint --test` |
+| Static analysis backend | `./vendor/bin/phpstan analyse --memory-limit=512M` |
 | Linter frontend | `npm run lint` |
 | Type check frontend | `npx tsc --noEmit` |
-| Test frontend | `npm run test:run` |
 
 ### Isolasi tenant
 
