@@ -5,6 +5,7 @@ import { RowActionMenu } from '@/components/row-action-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { type ColumnFilters } from '@/lib/data-table-filters';
 import { type BreadcrumbItem, type Paginated } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
@@ -20,7 +21,7 @@ interface Role {
 interface Props {
     roles: Paginated<Role>;
     sort: string | null;
-    filters: Record<string, string>;
+    filters: ColumnFilters;
 }
 
 export default function Index({ roles, sort, filters }: Props) {
