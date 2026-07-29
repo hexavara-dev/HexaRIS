@@ -6,6 +6,18 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Fills once from 0% to 100% and holds — paired with animation-fill-mode: forwards
+   so the bar stays full instead of resetting, since we don't know when the
+   underlying request will actually finish. */
+@keyframes progress-fill-once {
+    0% {
+        width: 0%;
+    }
+    100% {
+        width: 100%;
+    }
+}
+
 @font-face {
     font-family: 'Poppins';
     font-style: normal;
@@ -115,7 +127,7 @@
     --chart-4: hsl(43, 74%, 66%);
     --chart-5: hsl(27, 87%, 67%);
     --radius: 0.5rem;
-    --sidebar-background: hsl(0, 0%, 98%);
+    --sidebar-background: hsl(0, 0%, 100%);
     --sidebar-foreground: hsl(240, 5.3%, 30%);
     --sidebar-primary: hsl(203, 77%, 43%);
     --sidebar-primary-foreground: hsl(0, 0%, 100%);

@@ -80,7 +80,7 @@ export function AppSidebar() {
 
     return (
         <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
+            <SidebarHeader className="border-sidebar-border/50 h-16 justify-center border-b px-4 py-0">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <div className="flex items-center justify-between gap-1">

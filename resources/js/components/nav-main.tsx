@@ -1,7 +1,6 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
     SidebarGroup,
-    SidebarGroupLabel,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
@@ -50,8 +49,8 @@ function NavGroup({ item, currentUrl }: { item: NavItem; currentUrl: string }) {
                 <CollapsibleTrigger asChild>
                     <SidebarMenuButton isActive={isChildActive} className={ACTIVE_CLASSES}>
                         <NavIcon item={item} />
-                        <span>{item.title}</span>
-                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        <span className="min-w-0 truncate">{item.title}</span>
+                        <ChevronRight className="ml-auto shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -77,8 +76,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
     const page = usePage();
 
     return (
-        <SidebarGroup className="px-2 py-0">
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
+        <SidebarGroup className="px-4 pt-4 pb-0">
             <SidebarMenu>
                 {items.map((item) =>
                     item.items?.length ? (
