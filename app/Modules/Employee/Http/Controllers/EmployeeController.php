@@ -14,28 +14,28 @@ class EmployeeController
         return Inertia::render('Employee::pages/Index');
     }
 
-    public function create(): Response
-    {
-        return Inertia::render('Employee::pages/Form');
-    }
+    // public function create(): Response
+    // {
+    //     return Inertia::render('Employee::pages/Form');
+    // }
 
-    public function store(Request $request): RedirectResponse
-    {
-        return redirect()->route('employee.index');
-    }
+    // public function store(Request $request): RedirectResponse
+    // {
+    //     return redirect()->route('employees.index');
+    // }
 
-    public function edit(string $employee): Response
-    {
-        return Inertia::render('Employee::pages/Form');
-    }
+    // public function edit(string $employee): Response
+    // {
+    //     return Inertia::render('Employee::pages/Form');
+    // }
 
-    public function update(Request $request, string $employee): RedirectResponse
-    {
-        return redirect()->route('employee.index');
-    }
+    // public function update(Request $request, string $employee): RedirectResponse
+    // {
+    //     return redirect()->route('employees.index');
+    // }
 
-    public function destroy(string $employee): RedirectResponse
-    {
-        return redirect()->route('employee.index');
-    }
+    // public function destroy(string $employee): RedirectResponse
+    // {
+    //     return redirect()->route('employees.index');
+    // }
 }

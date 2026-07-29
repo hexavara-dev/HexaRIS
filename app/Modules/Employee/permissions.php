@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'employee.viewAny',
-    'employee.create',
-    'employee.update',
-    'employee.delete',
+    'employees.viewAny',
+    'employees.create',
+    'employees.update',
+    'employees.delete',
 ];
