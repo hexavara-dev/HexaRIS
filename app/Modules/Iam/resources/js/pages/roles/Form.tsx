@@ -4,8 +4,7 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
 interface Role {
@@ -19,13 +18,7 @@ interface Props {
     permissions: Record<string, string[]>;
 }
 
-const getBreadcrumbs = (role: Props['role']): BreadcrumbItem[] => [
-    { title: 'Roles', href: '/iam/roles' },
-    { title: role ? 'Edit' : 'New', href: '#' },
-];
-
 export default function Form({ role, permissions }: Props) {
-    const breadcrumbs = getBreadcrumbs(role);
     const { data, setData, post, put, processing, errors } = useForm<{ name: string; permissions: string[] }>({
         name: role?.name ?? '',
         permissions: role?.permissions ?? [],
@@ -45,9 +38,8 @@ export default function Form({ role, permissions }: Props) {
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout>
             <div className="p-6">
-                <Head title={role ? 'Edit role' : 'New role'} />
                 <PageHeader title={role ? 'Edit role' : 'New role'} />
 
                 <div className="mt-6">

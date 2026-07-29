@@ -1,8 +1,10 @@
+import { type LucideIcon } from 'lucide-react';
 import { Fragment } from 'react';
 
 export interface OverviewStat {
     label: string;
     value: string | number;
+    icon?: LucideIcon;
 }
 
 interface OverviewCardProps {
@@ -17,9 +19,16 @@ export function OverviewCard({ title, stats }: OverviewCardProps) {
             <div className="flex w-full items-center justify-between">
                 {stats.map((stat, index) => (
                     <Fragment key={stat.label}>
-                        <div className="flex w-fit flex-col items-start gap-1">
-                            <p className="w-fit text-xs tracking-[0.01em] text-black">{stat.label}</p>
-                            <p className="w-fit text-sm font-semibold tracking-[0.01em] text-black">{stat.value}</p>
+                        <div className="flex w-fit items-center gap-2">
+                            {stat.icon && (
+                                <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[#EEF8FF] text-[#1980C0]">
+                                    <stat.icon className="size-5" />
+                                </span>
+                            )}
+                            <div className="flex w-fit flex-col items-start gap-1">
+                                <p className="w-fit text-xs tracking-[0.01em] text-black">{stat.label}</p>
+                                <p className="w-fit text-sm font-semibold tracking-[0.01em] text-black">{stat.value}</p>
+                            </div>
                         </div>
                         {index < stats.length - 1 && (
                             <svg
