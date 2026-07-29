@@ -50,3 +50,49 @@ export const defaultOperator: Record<FilterType, FilterOperator> = {
 
 /** Active filters: { field: { operator: value } } — matches filter[field][operator]=value. */
 export type ColumnFilters = Record<string, Partial<Record<FilterOperator, string>>>;
+
+/** Client-side counterpart to the server-side WHERE clause built from the same operator+value. */
+export function matchesFilter(cellValue: unknown, type: FilterType, operator: FilterOperator, filterValue: string): boolean {
+    if (type === 'number' || type === 'date') {
+        const cellNum = type === 'date' ? Date.parse(String(cellValue ?? '')) : Number(cellValue);
+        const filterNum = type === 'date' ? Date.parse(filterValue) : Number(filterValue);
+        if (Number.isNaN(cellNum) || Number.isNaN(filterNum)) return false;
+        switch (operator) {
+            case 'eq':
+                return cellNum === filterNum;
+            case 'neq':
+                return cellNum !== filterNum;
+            case 'gt':
+                return cellNum > filterNum;
+            case 'gte':
+                return cellNum >= filterNum;
+            case 'lt':
+                return cellNum < filterNum;
+            case 'lte':
+                return cellNum <= filterNum;
+            default:
+                return false;
+        }
+    }
+
+    if (type === 'select' && operator === 'in') {
+        const wanted = filterValue.split(',').filter(Boolean);
+        if (wanted.length === 0) return true;
+        return wanted.includes(String(cellValue ?? ''));
+    }
+
+    const cellStr = String(cellValue ?? '').toLowerCase();
+    const filterStr = filterValue.toLowerCase();
+    switch (operator) {
+        case 'contains':
+            return cellStr.includes(filterStr);
+        case 'ncontains':
+            return !cellStr.includes(filterStr);
+        case 'eq':
+            return cellStr === filterStr;
+        case 'neq':
+            return cellStr !== filterStr;
+        default:
+            return false;
+    }
+}
