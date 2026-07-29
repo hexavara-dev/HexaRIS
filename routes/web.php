@@ -13,5 +13,9 @@ Route::middleware(['auth'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
+    Route::get('company/structure', function () {
+        return Inertia::render('company/structure');
+    })->name('company.structure');
+
     Route::get('/docs/routes', RouteDocsController::class)->name('docs.routes');
 });

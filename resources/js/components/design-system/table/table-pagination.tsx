@@ -35,7 +35,7 @@ export function TablePagination({ currentPage, totalPages, onPageChange }: Table
                     page === 'ellipsis' ? (
                         <span
                             key={`ellipsis-${index}`}
-                            className="font-poppins flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E2E2] bg-white text-sm text-[#9C9C9C]"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E2E2] bg-white text-sm text-[#9C9C9C]"
                         >
                             ...
                         </span>
