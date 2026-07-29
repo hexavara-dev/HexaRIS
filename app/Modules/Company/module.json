@@ -1,0 +1,7 @@
+{
+    "name": "Company",
+    "alias": "company",
+    "version": "1.0.0",
+    "description": "Company profile and org structure",
+    "dependencies": []
+}

@@ -6,7 +6,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+import { cn, filterAvailable } from '@/lib/utils';
 
 export const DEPARTMENT_CATALOG = [
     'Human Resource',
@@ -147,7 +147,7 @@ export function AddDepartmentDialog({ open, onOpenChange, existingDepartmentName
                 <div className="flex-1 overflow-y-auto px-6 py-5">
                     <div className="flex w-full flex-col gap-5">
                         {blocks.map((block, index) => {
-                            const options = DEPARTMENT_CATALOG.filter((name) => name === block.departmentName || !takenNames.has(name));
+                            const options = filterAvailable(DEPARTMENT_CATALOG, block.departmentName ?? '', takenNames);
                             return (
                                 <div key={block.id} className="flex w-full flex-col gap-4 rounded-xl border border-[#E2E8F0] p-4">
                                     {index > 0 && (
@@ -228,9 +228,7 @@ export function AddDepartmentDialog({ open, onOpenChange, existingDepartmentName
                                             {(() => {
                                                 const divisionTaken = new Set(block.divisions.map((division) => division.name).filter(Boolean));
                                                 return block.divisions.map((division, divisionIndex) => {
-                                                    const divisionOptions = DIVISION_CATALOG.filter(
-                                                        (name) => name === division.name || !divisionTaken.has(name),
-                                                    );
+                                                    const divisionOptions = filterAvailable(DIVISION_CATALOG, division.name, divisionTaken);
                                                     const isLast = divisionIndex === block.divisions.length - 1;
                                                     return (
                                                         <div key={division.id} className="flex w-full items-center gap-2">

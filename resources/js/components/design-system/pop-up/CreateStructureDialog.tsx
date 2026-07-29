@@ -3,46 +3,24 @@ import { useEffect, useRef, useState } from 'react';
 
 import iconStruktur from '@/assets/icons/icon_struktur.png';
 import logoPt from '@/assets/icons/logo_pt.png';
-import { type OrgDepartment, type OrgMember, type OrgTree } from '@/components/design-system/org-chart/org-chart';
+import { type OrgDepartment, type OrgMember, type OrgTree } from '@/components/design-system/org-chart/OrgChart';
 import {
     AddDepartmentDialog,
     DEPARTMENT_CATALOG,
     DIVISION_CATALOG,
     type NewDepartmentDraft,
-} from '@/components/design-system/pop-up/add-department-dialog';
+} from '@/components/design-system/pop-up/AddDepartmentDialog';
 import { type PersonOption } from '@/components/design-system/pop-up/people-picker';
-import { Stepper } from '@/components/design-system/stepper/stepper';
+import { avatarFor, PersonSelect, STAFF_POOL } from '@/components/design-system/pop-up/PersonSelect';
+import { ORG_STRUCTURE_STEPS, Stepper } from '@/components/design-system/stepper/stepper';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-const STEPS = [{ label: 'Struktur' }, { label: 'Staff' }, { label: 'Preview' }];
+import { filterAvailable } from '@/lib/utils';
 
 const COMPANY_NAME = 'PT. Abadi Jaya';
 const COMPANY_CEO_NAME = 'Nicholas Raharja';
-
-const STAFF_POOL: PersonOption[] = [
-    { id: 'p-1', name: 'Ayu Anindita', role: 'Staff' },
-    { id: 'p-2', name: 'Bagas Randy', role: 'Staff' },
-    { id: 'p-3', name: 'Andro Dandy', role: 'Staff' },
-    { id: 'p-4', name: 'Sarah Amelia', role: 'Staff' },
-    { id: 'p-5', name: 'Aini Rahma', role: 'Staff' },
-    { id: 'p-6', name: 'Rizky Pratama', role: 'Staff' },
-    { id: 'p-7', name: 'Maya Safitri', role: 'Staff' },
-    { id: 'p-8', name: 'Andi Kurniawan', role: 'Staff' },
-    { id: 'p-9', name: 'Ajeng Nafisa', role: 'Staff' },
-    { id: 'p-10', name: 'Dimas Prasetyo', role: 'Staff' },
-    { id: 'p-11', name: 'Rhayu Dwi', role: 'Staff' },
-    { id: 'p-12', name: 'Bastian Ari', role: 'Staff' },
-    { id: 'p-13', name: 'Anggoro Putra', role: 'Staff' },
-    { id: 'p-14', name: 'Nadia Kusuma', role: 'Staff' },
-    { id: 'p-15', name: 'Fajar Nugroho', role: 'Staff' },
-];
-
-function avatarFor(seed: string) {
-    return `https://i.pravatar.cc/150?u=${encodeURIComponent(seed)}`;
-}
 
 function newId(prefix: string) {
     return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
@@ -194,40 +172,6 @@ function toOrgTree(departments: DraftDepartment[]): OrgTree {
             return { name: department.name, members };
         }),
     };
-}
-
-interface PersonSelectProps {
-    value: string | null;
-    onChange: (value: string) => void;
-    placeholder: string;
-    taken: Set<string>;
-}
-
-function PersonSelect({ value, onChange, placeholder, taken }: PersonSelectProps) {
-    const options = STAFF_POOL.filter((person) => person.id === value || !taken.has(person.id));
-    const selected = findPerson(value);
-    return (
-        <div className="flex w-full items-center gap-2">
-            {selected && (
-                <Avatar className="size-8 shrink-0">
-                    <AvatarImage src={avatarFor(selected.name)} alt={selected.name} />
-                    <AvatarFallback className="text-xs">{selected.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-            )}
-            <Select value={value ?? undefined} onValueChange={onChange}>
-                <SelectTrigger className="h-11 flex-1 rounded-xl focus:ring-0 focus:ring-offset-0">
-                    <SelectValue placeholder={placeholder} />
-                </SelectTrigger>
-                <SelectContent>
-                    {options.map((person) => (
-                        <SelectItem key={person.id} value={person.id}>
-                            {person.name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-        </div>
-    );
 }
 
 function CompanyCard() {
@@ -432,7 +376,7 @@ export function CreateStructureDialog({ open, onOpenChange, onSave, existingTree
                         <p className="font-poppins text-xl font-bold text-[#0F172A]">
                             {isReconfiguring ? 'Atur Ulang Struktur Organisasi Perusahaan' : 'Struktur Organisasi Perusahaan'}
                         </p>
-                        <Stepper steps={STEPS} currentStep={step} />
+                        <Stepper steps={ORG_STRUCTURE_STEPS} currentStep={step} />
                     </div>
 
                     <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-4">
@@ -479,8 +423,10 @@ export function CreateStructureDialog({ open, onOpenChange, onSave, existingTree
                                                             .filter((sibling) => sibling.id !== department.id)
                                                             .map((sibling) => shortName(sibling.name)),
                                                     );
-                                                    const departmentOptions = DEPARTMENT_CATALOG.filter(
-                                                        (name) => name === shortName(department.name) || !departmentTaken.has(name),
+                                                    const departmentOptions = filterAvailable(
+                                                        DEPARTMENT_CATALOG,
+                                                        shortName(department.name),
+                                                        departmentTaken,
                                                     );
                                                     return (
                                                         <div
@@ -518,8 +464,10 @@ export function CreateStructureDialog({ open, onOpenChange, onSave, existingTree
                                                                         const divisionTaken = new Set(
                                                                             department.divisions.map((sibling) => sibling.name).filter(Boolean),
                                                                         );
-                                                                        const divisionOptions = DIVISION_CATALOG.filter(
-                                                                            (name) => name === division.name || !divisionTaken.has(name),
+                                                                        const divisionOptions = filterAvailable(
+                                                                            DIVISION_CATALOG,
+                                                                            division.name,
+                                                                            divisionTaken,
                                                                         );
                                                                         return (
                                                                             <div
@@ -638,7 +586,7 @@ export function CreateStructureDialog({ open, onOpenChange, onSave, existingTree
                                             <div className="flex w-full flex-1 flex-col gap-4 overflow-y-auto pr-1">
                                                 <PersonSelect
                                                     value={department.headPersonId}
-                                                    onChange={(value) => setDepartmentHead(department.id, value)}
+                                                    onChange={(person) => setDepartmentHead(department.id, person.id)}
                                                     placeholder="Pilih Kepala Departemen"
                                                     taken={taken}
                                                 />
@@ -649,7 +597,7 @@ export function CreateStructureDialog({ open, onOpenChange, onSave, existingTree
                                                             <div className="flex-1">
                                                                 <PersonSelect
                                                                     value={slot.personId}
-                                                                    onChange={(value) => setStaffPerson(department.id, slot.id, value)}
+                                                                    onChange={(person) => setStaffPerson(department.id, slot.id, person.id)}
                                                                     placeholder="Pilih Staff"
                                                                     taken={taken}
                                                                 />
@@ -684,7 +632,7 @@ export function CreateStructureDialog({ open, onOpenChange, onSave, existingTree
 
                                                             <PersonSelect
                                                                 value={division.headPersonId}
-                                                                onChange={(value) => setDivisionHead(department.id, division.id, value)}
+                                                                onChange={(person) => setDivisionHead(department.id, division.id, person.id)}
                                                                 placeholder="Pilih Kepala Divisi (Opsional)"
                                                                 taken={taken}
                                                             />
@@ -694,8 +642,8 @@ export function CreateStructureDialog({ open, onOpenChange, onSave, existingTree
                                                                     <div className="flex-1">
                                                                         <PersonSelect
                                                                             value={slot.personId}
-                                                                            onChange={(value) =>
-                                                                                setDivisionStaffPerson(department.id, division.id, slot.id, value)
+                                                                            onChange={(person) =>
+                                                                                setDivisionStaffPerson(department.id, division.id, slot.id, person.id)
                                                                             }
                                                                             placeholder="Pilih Staff"
                                                                             taken={taken}

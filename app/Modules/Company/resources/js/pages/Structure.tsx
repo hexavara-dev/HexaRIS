@@ -3,12 +3,12 @@ import { Minus, MoreVertical, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { OrgStructureEmptyState } from '@/components/design-system/empty-state/org-structure-empty-state';
-import { OrgChart, type OrgDepartment, type OrgDivision, type OrgMember } from '@/components/design-system/org-chart/org-chart';
-import { CreateStructureDialog } from '@/components/design-system/pop-up/create-structure-dialog';
-import { DepartmentDetailPanel, type DepartmentStaff } from '@/components/design-system/pop-up/department-detail-panel';
+import { OrgStructureEmptyState } from '@/components/design-system/empty-state/OrgStructureEmptyState';
+import { OrgChart, type OrgDepartment, type OrgDivision, type OrgMember } from '@/components/design-system/org-chart/OrgChart';
+import { CreateStructureDialog } from '@/components/design-system/pop-up/CreateStructureDialog';
+import { DepartmentDetailPanel, type DepartmentStaff } from '@/components/design-system/pop-up/DepartmentDetailPanel';
 import { DivisionDetailPanel, type DivisionStaff } from '@/components/design-system/pop-up/division-detail-panel';
-import { EditDepartmentDialog } from '@/components/design-system/pop-up/edit-department-dialog';
+import { EditDepartmentDialog, shortName } from '@/components/design-system/pop-up/EditDepartmentDialog';
 import { TablePagination } from '@/components/design-system/table/table-pagination';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -365,6 +365,9 @@ export default function CompanyStructure() {
                 open={editingDepartment !== null}
                 onOpenChange={(open) => !open && setEditingDepartment(null)}
                 department={editingDepartment}
+                siblingDepartmentNames={departments
+                    .filter((sibling) => sibling.name !== editingDepartment?.name)
+                    .map((sibling) => shortName(sibling.name))}
                 onSave={handleDepartmentSaved}
             />
 

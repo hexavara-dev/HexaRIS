@@ -2,38 +2,16 @@ import { Building2, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { type OrgDepartment, type OrgMember } from '@/components/design-system/org-chart/org-chart';
-import { DEPARTMENT_CATALOG, DIVISION_CATALOG } from '@/components/design-system/pop-up/add-department-dialog';
+import { type OrgDepartment, type OrgMember } from '@/components/design-system/org-chart/OrgChart';
+import { DEPARTMENT_CATALOG, DIVISION_CATALOG } from '@/components/design-system/pop-up/AddDepartmentDialog';
 import { type PersonOption } from '@/components/design-system/pop-up/people-picker';
-import { Stepper } from '@/components/design-system/stepper/stepper';
+import { avatarFor, PersonSelect } from '@/components/design-system/pop-up/PersonSelect';
+import { ORG_STRUCTURE_STEPS, Stepper } from '@/components/design-system/stepper/stepper';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-const STEPS = [{ label: 'Struktur' }, { label: 'Staff' }, { label: 'Preview' }];
-
-const MOCK_EMPLOYEE_POOL: PersonOption[] = [
-    { id: 'emp-1', name: 'Dimas Prasetyo', role: 'Backend Developer' },
-    { id: 'emp-2', name: 'Nadia Kusuma', role: 'Frontend Developer' },
-    { id: 'emp-3', name: 'Fajar Nugroho', role: 'QA Engineer' },
-    { id: 'emp-4', name: 'Putri Wulandari', role: 'UI/UX Designer' },
-    { id: 'emp-5', name: 'Bagas Saputra', role: 'DevOps Engineer' },
-    { id: 'emp-6', name: 'Ayu Anindita', role: 'HR Generalist' },
-    { id: 'emp-7', name: 'Bagas Randy', role: 'HR Administrasi' },
-    { id: 'emp-8', name: 'Andro Dandy', role: 'Mobile Developer' },
-    { id: 'emp-9', name: 'Sarah Amelia', role: 'Business Analyst' },
-    { id: 'emp-10', name: 'Aini Rahma', role: 'Data Analyst' },
-    { id: 'emp-11', name: 'Rizky Pratama', role: 'Marketing' },
-    { id: 'emp-12', name: 'Maya Safitri', role: 'Sales' },
-    { id: 'emp-13', name: 'Andi Kurniawan', role: 'Finance' },
-    { id: 'emp-14', name: 'Ajeng Nafisa', role: 'Customer Service' },
-    { id: 'emp-15', name: 'Rhayu Dwi', role: 'Content Writer' },
-];
-
-function avatarFor(seed: string) {
-    return `https://i.pravatar.cc/150?u=${encodeURIComponent(seed)}`;
-}
+import { filterAvailable } from '@/lib/utils';
 
 function initials(name: string) {
     return name
@@ -42,10 +20,6 @@ function initials(name: string) {
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase())
         .join('');
-}
-
-function personIdByName(name: string) {
-    return MOCK_EMPLOYEE_POOL.find((person) => person.name === name)?.id ?? null;
 }
 
 interface EditableMember extends OrgMember {
@@ -98,7 +72,7 @@ function newId(prefix: string) {
     return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function shortName(name: string) {
+export function shortName(name: string) {
     return name.replace(/^Dept\.\s*/, '');
 }
 
@@ -110,54 +84,15 @@ function collectTakenNames(editable: EditableDepartment): Set<string> {
     return names;
 }
 
-interface MemberSelectProps {
-    value: string;
-    onChange: (person: PersonOption) => void;
-    placeholder: string;
-    taken: Set<string>;
-}
-
-function MemberSelect({ value, onChange, placeholder, taken }: MemberSelectProps) {
-    const options = MOCK_EMPLOYEE_POOL.filter((person) => person.name === value || !taken.has(person.name));
-    const selectedId = personIdByName(value);
-    return (
-        <div className="flex w-full items-center gap-2">
-            {selectedId && (
-                <Avatar className="size-8 shrink-0">
-                    <AvatarImage src={avatarFor(value)} alt={value} />
-                    <AvatarFallback className="text-xs">{initials(value)}</AvatarFallback>
-                </Avatar>
-            )}
-            <Select
-                value={selectedId ?? undefined}
-                onValueChange={(id) => {
-                    const person = MOCK_EMPLOYEE_POOL.find((candidate) => candidate.id === id);
-                    if (person) onChange(person);
-                }}
-            >
-                <SelectTrigger className="h-11 flex-1 rounded-xl focus:ring-0 focus:ring-offset-0">
-                    <SelectValue placeholder={placeholder} />
-                </SelectTrigger>
-                <SelectContent>
-                    {options.map((person) => (
-                        <SelectItem key={person.id} value={person.id}>
-                            {person.name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-        </div>
-    );
-}
-
 interface EditDepartmentDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     department: OrgDepartment | null;
+    siblingDepartmentNames: string[];
     onSave: (updated: OrgDepartment) => void;
 }
 
-export function EditDepartmentDialog({ open, onOpenChange, department, onSave }: EditDepartmentDialogProps) {
+export function EditDepartmentDialog({ open, onOpenChange, department, siblingDepartmentNames, onSave }: EditDepartmentDialogProps) {
     const [step, setStep] = useState(1);
     const [editable, setEditable] = useState<EditableDepartment | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -330,7 +265,7 @@ export function EditDepartmentDialog({ open, onOpenChange, department, onSave }:
             <DialogContent className="flex max-h-[85vh] max-w-5xl flex-col gap-0 overflow-hidden rounded-2xl border-0 p-0 shadow-[0_1px_6px_0_rgba(0,0,0,0.09),2px_10px_16px_-2px_rgba(0,0,0,0.10)]">
                 <div className="flex w-full items-center justify-between border-b border-[#E2E8F0] px-8 py-6">
                     <p className="font-poppins text-2xl font-bold text-[#0F172A]">Edit Departemen</p>
-                    <Stepper steps={STEPS} currentStep={step} />
+                    <Stepper steps={ORG_STRUCTURE_STEPS} currentStep={step} />
                 </div>
 
                 <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-6">
@@ -354,23 +289,29 @@ export function EditDepartmentDialog({ open, onOpenChange, department, onSave }:
 
                                 <div className="mt-2 flex w-full flex-col gap-4 rounded-xl border border-[#E2E8F0] p-4">
                                     <div className="flex w-full items-center gap-2">
-                                        <Select
-                                            value={shortName(editable.name) || undefined}
-                                            onValueChange={(value) =>
-                                                setEditable((current) => (current ? { ...current, name: `Dept. ${value}` } : current))
-                                            }
-                                        >
-                                            <SelectTrigger className="font-poppins h-auto flex-1 gap-1 border-0 bg-transparent p-0 text-base font-semibold text-black shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:size-4 [&>svg]:text-[#94A3B8] [&>svg]:opacity-100">
-                                                <SelectValue placeholder="Pilih Departemen" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {DEPARTMENT_CATALOG.map((name) => (
-                                                    <SelectItem key={name} value={name}>
-                                                        {name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        {(() => {
+                                            const departmentTaken = new Set(siblingDepartmentNames);
+                                            const departmentOptions = filterAvailable(DEPARTMENT_CATALOG, shortName(editable.name), departmentTaken);
+                                            return (
+                                                <Select
+                                                    value={shortName(editable.name) || undefined}
+                                                    onValueChange={(value) =>
+                                                        setEditable((current) => (current ? { ...current, name: `Dept. ${value}` } : current))
+                                                    }
+                                                >
+                                                    <SelectTrigger className="font-poppins h-auto flex-1 gap-1 border-0 bg-transparent p-0 text-base font-semibold text-black shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:size-4 [&>svg]:text-[#94A3B8] [&>svg]:opacity-100">
+                                                        <SelectValue placeholder="Pilih Departemen" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {departmentOptions.map((name) => (
+                                                            <SelectItem key={name} value={name}>
+                                                                {name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            );
+                                        })()}
                                         <button
                                             type="button"
                                             onClick={() => toast.info('Hapus departemen belum tersedia')}
@@ -383,9 +324,7 @@ export function EditDepartmentDialog({ open, onOpenChange, department, onSave }:
                                     <div className="flex w-full flex-col gap-3">
                                         {editable.divisions.map((division) => {
                                             const divisionTaken = new Set(editable.divisions.map((sibling) => sibling.name).filter(Boolean));
-                                            const divisionOptions = DIVISION_CATALOG.filter(
-                                                (name) => name === division.name || !divisionTaken.has(name),
-                                            );
+                                            const divisionOptions = filterAvailable(DIVISION_CATALOG, division.name, divisionTaken);
                                             return (
                                                 <div
                                                     key={division.id}
@@ -472,22 +411,26 @@ export function EditDepartmentDialog({ open, onOpenChange, department, onSave }:
                                     )}
                                 </div>
 
-                                <MemberSelect
+                                <PersonSelect
                                     value={hasDivisions ? (editable.head?.name ?? '') : (editable.members[0]?.name ?? '')}
                                     onChange={setDepartmentHead}
                                     placeholder="Pilih Kepala Departemen"
                                     taken={takenNames}
+                                    getKey={(person) => person.name}
+                                    initials={initials}
                                 />
 
                                 {!hasDivisions &&
                                     editable.members.slice(1).map((member) => (
                                         <div key={member.id} className="flex w-full items-center gap-3">
                                             <div className="flex-1">
-                                                <MemberSelect
+                                                <PersonSelect
                                                     value={member.name}
                                                     onChange={(person) => setStaffMember(member.id, person)}
                                                     placeholder="Pilih Staff"
                                                     taken={takenNames}
+                                                    getKey={(person) => person.name}
+                                                    initials={initials}
                                                 />
                                             </div>
                                             <button type="button" onClick={() => removeStaffMember(member.id)} aria-label="Hapus staff">
@@ -514,21 +457,25 @@ export function EditDepartmentDialog({ open, onOpenChange, department, onSave }:
                                                 </Button>
                                             </div>
 
-                                            <MemberSelect
+                                            <PersonSelect
                                                 value={division.members[0]?.name ?? ''}
                                                 onChange={(person) => setDivisionHead(division.id, person)}
                                                 placeholder="Pilih Kepala Divisi (Opsional)"
                                                 taken={takenNames}
+                                                getKey={(person) => person.name}
+                                                initials={initials}
                                             />
 
                                             {division.members.slice(1).map((member) => (
                                                 <div key={member.id} className="flex w-full items-center gap-3">
                                                     <div className="flex-1">
-                                                        <MemberSelect
+                                                        <PersonSelect
                                                             value={member.name}
                                                             onChange={(person) => setDivisionStaffMember(division.id, member.id, person)}
                                                             placeholder="Pilih Staff"
                                                             taken={takenNames}
+                                                            getKey={(person) => person.name}
+                                                            initials={initials}
                                                         />
                                                     </div>
                                                     <button
