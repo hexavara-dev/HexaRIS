@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
     Route::get('employees', [EmployeeController::class, 'index'])
-        ->name('employees.index');
+        ->name('employees.index')->middleware('can:employees.viewAny');
     // Route::get('employees/create', [EmployeeController::class, 'create'])
     //     ->name('employees.create')->middleware('can:employees.create');
     // Route::post('employees', [EmployeeController::class, 'store'])
