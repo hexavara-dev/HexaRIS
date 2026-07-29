@@ -6,10 +6,9 @@ import { SearchInput } from '@/components/search-input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { type ColumnFilters } from '@/lib/data-table-filters';
-import { type BreadcrumbItem, type Paginated } from '@/types';
+import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface UserRow {
     id: number;
@@ -19,17 +18,21 @@ interface UserRow {
 }
 
 interface Props {
-    users: Paginated<UserRow>;
-    sort: string | null;
-    filters: ColumnFilters;
-    search: string;
+    users: UserRow[];
     roleOptions: { value: string; label: string }[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Users', href: '/iam/users' }];
 
-export default function Index({ users, sort, filters, search, roleOptions }: Props) {
+export default function Index({ users, roleOptions }: Props) {
     const [toDelete, setToDelete] = useState<UserRow | null>(null);
+    const [search, setSearch] = useState('');
+
+    const visibleUsers = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        if (!term) return users;
+        return users.filter((u) => u.name.toLowerCase().includes(term) || u.email.toLowerCase().includes(term));
+    }, [users, search]);
 
     const columns: Column<UserRow>[] = [
         { key: 'name', label: 'Name', sortable: true, filter: { type: 'text' } },
@@ -77,24 +80,14 @@ export default function Index({ users, sort, filters, search, roleOptions }: Pro
                     subtitle="Manage accounts & roles"
                     actions={
                         <div className="flex items-center gap-2">
-                            <SearchInput
-                                defaultValue={search}
-                                placeholder="Search users…"
-                                onSearch={(value) =>
-                                    router.get(
-                                        '/iam/users',
-                                        { search: value || undefined, sort, filter: filters },
-                                        { preserveState: true, preserveScroll: true, replace: true },
-                                    )
-                                }
-                            />
+                            <SearchInput placeholder="Search users…" onSearch={setSearch} />
                             <Button asChild>
                                 <Link href="/iam/users/create">New user</Link>
                             </Button>
                         </div>
                     }
                 />
-                <DataTable columns={columns} rows={users} sort={sort} filters={filters} search={search} />
+                <DataTable columns={columns} rows={visibleUsers} />
             </div>
             <ConfirmDialog
                 open={toDelete !== null}

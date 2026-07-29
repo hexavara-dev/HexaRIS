@@ -26,7 +26,7 @@ it('lists users with their roles', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Iam::pages/users/Index')
-            ->has('users.data')
-            ->where('users.data', fn ($rows) => collect($rows)->contains(fn ($r) => $r['name'] === 'Jane' && $r['roles'] === ['editor']))
+            ->has('users')
+            ->where('users', fn ($rows) => collect($rows)->contains(fn ($r) => $r['name'] === 'Jane' && $r['roles'] === ['editor']))
         );
 });
