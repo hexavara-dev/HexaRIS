@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { type ColumnFilters, type FilterOperator, type FilterType, defaultOperator, typeOperators } from '@/lib/data-table-filters';
+import { type ColumnFilters, type FilterOperator, type FilterType, defaultOperator, matchesFilter, typeOperators } from '@/lib/data-table-filters';
 import { cn } from '@/lib/utils';
 import { type Paginated } from '@/types';
 import { type RequestPayload } from '@inertiajs/core';
 import { router } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, ChevronsUpDown, Inbox, ListFilter, X } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 
 export interface ColumnFilterConfig {
     type: FilterType;
@@ -27,14 +27,7 @@ export interface Column<T> {
     render?: (row: T) => ReactNode;
 }
 
-interface Props<T> {
-    columns: Column<T>[];
-    rows: Paginated<T>;
-    sort?: string | null;
-    filters?: ColumnFilters;
-    search?: string;
-    variant?: 'default' | 'design-system';
-}
+type Variant = 'default' | 'design-system';
 
 const variantStyles = {
     default: {
@@ -53,27 +46,38 @@ const variantStyles = {
     },
 } as const;
 
-export function DataTable<T extends { id: number | string }>({ columns, rows, sort, filters = {}, search, variant = 'default' }: Props<T>) {
+function cellValueOf<T>(row: T, key: string): unknown {
+    return (row as Record<string, unknown>)[key];
+}
+
+function compareValues(a: unknown, b: unknown): number {
+    if (typeof a === 'number' && typeof b === 'number') return a - b;
+    if (typeof a === 'boolean' && typeof b === 'boolean') return Number(a) - Number(b);
+    return String(a ?? '').localeCompare(String(b ?? ''));
+}
+
+interface DataTableViewProps<T extends { id: number | string }> {
+    columns: Column<T>[];
+    variant: Variant;
+    pageMeta: Paginated<T>;
+    sort: string | null;
+    onToggleSort: (key: string) => void;
+    filters: ColumnFilters;
+    onApplyFilter: (key: string, operator: FilterOperator | null, value: string) => void;
+    onPageChange: (page: number) => void;
+}
+
+function DataTableView<T extends { id: number | string }>({
+    columns,
+    variant,
+    pageMeta,
+    sort,
+    onToggleSort,
+    filters,
+    onApplyFilter,
+    onPageChange,
+}: DataTableViewProps<T>) {
     const styles = variantStyles[variant];
-    const navigate = (next: { sort?: string | null; filters?: ColumnFilters }) => {
-        const params = {
-            sort: next.sort !== undefined ? next.sort : sort,
-            filter: next.filters !== undefined ? next.filters : filters,
-            search: search || undefined,
-        } as unknown as RequestPayload;
-        router.get(window.location.pathname, params, { preserveState: true, preserveScroll: true, replace: true });
-    };
-
-    const toggleSort = (key: string) => {
-        navigate({ sort: sort === key ? `-${key}` : sort === `-${key}` ? null : key });
-    };
-
-    const setColumnFilter = (key: string, operator: FilterOperator | null, value: string) => {
-        const nextFilters = { ...filters };
-        if (operator && value) nextFilters[key] = { [operator]: value };
-        else delete nextFilters[key];
-        navigate({ filters: nextFilters });
-    };
 
     const sortIcon = (key: string) =>
         sort === key ? (
@@ -97,8 +101,8 @@ export function DataTable<T extends { id: number | string }>({ columns, rows, so
                                         {c.sortable && (
                                             <button
                                                 type="button"
-                                                onClick={() => toggleSort(c.key)}
-                                                className="text-muted-foreground hover:text-foreground rounded p-0.5"
+                                                onClick={() => onToggleSort(c.key)}
+                                                className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-0.5"
                                                 aria-label={`Sort by ${c.label}`}
                                             >
                                                 {sortIcon(c.key)}
@@ -109,8 +113,8 @@ export function DataTable<T extends { id: number | string }>({ columns, rows, so
                                                 config={c.filter}
                                                 label={c.label}
                                                 current={filters[c.key]}
-                                                onApply={(op, value) => setColumnFilter(c.key, op, value)}
-                                                onClear={() => setColumnFilter(c.key, null, '')}
+                                                onApply={(op, value) => onApplyFilter(c.key, op, value)}
+                                                onClear={() => onApplyFilter(c.key, null, '')}
                                             />
                                         )}
                                     </div>
@@ -119,18 +123,18 @@ export function DataTable<T extends { id: number | string }>({ columns, rows, so
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {rows.data.length === 0 ? (
+                        {pageMeta.data.length === 0 ? (
                             <TableRow className="hover:bg-transparent">
                                 <TableCell colSpan={columns.length} className="p-0">
                                     <EmptyState icon={Inbox} title="No results" description="Nothing matches the current filters." />
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            rows.data.map((row) => (
+                            pageMeta.data.map((row) => (
                                 <TableRow key={row.id} className={styles.row}>
                                     {columns.map((c) => (
                                         <TableCell key={c.key} className={cn(c.align === 'right' && 'text-right', styles.cell)}>
-                                            {c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key] ?? '')}
+                                            {c.render ? c.render(row) : String(cellValueOf(row, c.key) ?? '')}
                                         </TableCell>
                                     ))}
                                 </TableRow>
@@ -139,8 +143,137 @@ export function DataTable<T extends { id: number | string }>({ columns, rows, so
                     </TableBody>
                 </Table>
             </div>
-            <Pagination page={rows} />
+            <Pagination page={pageMeta} variant={variant} onPageChange={onPageChange} />
         </div>
+    );
+}
+
+// DataTable defaults to client-side: the full dataset is passed in as a plain
+// array, and sort/filter/pagination are computed in the browser (useMemo),
+// with zero network requests on interaction. This is right for small/bounded
+// lists (roles, users, employees).
+//
+// mode="server" is the exception, for datasets that grow without bound
+// (e.g. the audit log) where shipping every row to the browser up front
+// would not scale — pagination stays server-driven, one page at a time.
+
+interface ClientProps<T extends { id: number | string }> {
+    mode?: 'client';
+    columns: Column<T>[];
+    rows: T[];
+    variant?: Variant;
+    perPage?: number;
+}
+
+interface ServerProps<T extends { id: number | string }> {
+    mode: 'server';
+    columns: Column<T>[];
+    rows: Paginated<T>;
+    variant?: Variant;
+}
+
+export type DataTableProps<T extends { id: number | string }> = ClientProps<T> | ServerProps<T>;
+
+export function DataTable<T extends { id: number | string }>(props: DataTableProps<T>) {
+    if (props.mode === 'server') {
+        return <ServerDataTable {...props} />;
+    }
+    return <ClientDataTable {...props} />;
+}
+
+function ServerDataTable<T extends { id: number | string }>({ columns, rows, variant = 'design-system' }: ServerProps<T>) {
+    const onPageChange = (page: number) => {
+        const params = Object.fromEntries(new URLSearchParams(window.location.search)) as unknown as RequestPayload;
+        router.get(window.location.pathname, { ...params, page }, { preserveState: true, preserveScroll: true, replace: true });
+    };
+
+    // The audit log doesn't declare sortable/filterable columns today, so
+    // these are no-ops in practice — kept so a future sortable column just
+    // works, round-tripping through the server like pagination already does.
+    const onToggleSort = () => {};
+    const onApplyFilter = () => {};
+
+    return (
+        <DataTableView
+            columns={columns}
+            variant={variant}
+            pageMeta={rows}
+            sort={null}
+            onToggleSort={onToggleSort}
+            filters={{}}
+            onApplyFilter={onApplyFilter}
+            onPageChange={onPageChange}
+        />
+    );
+}
+
+function ClientDataTable<T extends { id: number | string }>({ columns, rows, variant = 'design-system', perPage = 10 }: ClientProps<T>) {
+    const [sort, setSort] = useState<string | null>(null);
+    const [filters, setFilters] = useState<ColumnFilters>({});
+    const [page, setPage] = useState(1);
+
+    const filtered = useMemo(() => {
+        return rows.filter((row) =>
+            Object.entries(filters).every(([key, ops]) => {
+                const column = columns.find((c) => c.key === key);
+                if (!column?.filter) return true;
+                const entry = Object.entries(ops)[0];
+                if (!entry) return true;
+                const [operator, value] = entry;
+                if (!value) return true;
+                return matchesFilter(cellValueOf(row, key), column.filter.type, operator as FilterOperator, value);
+            }),
+        );
+    }, [rows, filters, columns]);
+
+    const sorted = useMemo(() => {
+        if (!sort) return filtered;
+        const key = sort.startsWith('-') ? sort.slice(1) : sort;
+        const direction = sort.startsWith('-') ? -1 : 1;
+        return [...filtered].sort((a, b) => direction * compareValues(cellValueOf(a, key), cellValueOf(b, key)));
+    }, [filtered, sort]);
+
+    const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+    const currentPage = Math.min(page, totalPages);
+    const visibleRows = sorted.slice((currentPage - 1) * perPage, currentPage * perPage);
+
+    const pageMeta: Paginated<T> = {
+        data: visibleRows,
+        from: visibleRows.length ? (currentPage - 1) * perPage + 1 : null,
+        to: (currentPage - 1) * perPage + visibleRows.length,
+        total: sorted.length,
+        current_page: currentPage,
+        last_page: totalPages,
+        prev_page_url: null,
+        next_page_url: null,
+    };
+
+    const onToggleSort = (key: string) => {
+        setSort((current) => (current === key ? `-${key}` : current === `-${key}` ? null : key));
+        setPage(1);
+    };
+
+    const onApplyFilter = (key: string, operator: FilterOperator | null, value: string) => {
+        setFilters((current) => {
+            const next = { ...current };
+            if (operator && value) next[key] = { [operator]: value };
+            else delete next[key];
+            return next;
+        });
+        setPage(1);
+    };
+
+    return (
+        <DataTableView
+            columns={columns}
+            variant={variant}
+            pageMeta={pageMeta}
+            sort={sort}
+            onToggleSort={onToggleSort}
+            filters={filters}
+            onApplyFilter={onApplyFilter}
+            onPageChange={setPage}
+        />
     );
 }
 
@@ -193,7 +326,7 @@ function ColumnFilter({
                 <button
                     type="button"
                     aria-label={`Filter ${label}`}
-                    className={cn('rounded p-0.5', active ? 'text-primary' : 'text-muted-foreground hover:text-foreground')}
+                    className={cn('cursor-pointer rounded p-0.5', active ? 'text-primary' : 'text-muted-foreground hover:text-foreground')}
                 >
                     <ListFilter className="size-3.5" />
                 </button>

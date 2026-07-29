@@ -26,8 +26,8 @@ it('lists roles for permitted users', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Iam::pages/roles/Index')
-            ->has('roles.data', 1)
-            ->where('roles.data.0.name', 'editor')
-            ->where('roles.data.0.permissions.0', 'audit.view')
+            ->has('roles', 1)
+            ->where('roles.0.name', 'editor')
+            ->where('roles.0.permissions.0', 'audit.view')
         );
 });
