@@ -4,11 +4,7 @@ import { PageHeader } from '@/components/page-header';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import type { ApiResponseResult } from '@/lib/api-explorer-request';
-import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'API Explorer', href: '/docs/routes' }];
 
 export default function ApiExplorer({ routes }: { routes: RouteEntry[] }) {
     const [q, setQ] = useState('');
@@ -26,12 +22,11 @@ export default function ApiExplorer({ routes }: { routes: RouteEntry[] }) {
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="API Explorer" />
+        <AppLayout>
             <div className="space-y-4 p-6">
                 <PageHeader
                     title="API Explorer"
-                    subtitle="Send requests to your app's routes — dev only"
+                    description="Send requests to your app's routes — dev only"
                     actions={<Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter routes…" className="w-64" />}
                 />
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
