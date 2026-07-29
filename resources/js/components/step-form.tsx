@@ -1,0 +1,84 @@
+import { Stepper } from '@/components/design-system/stepper/stepper';
+import { Button } from '@/components/ui/button';
+import { DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import { type FormEvent, type ReactNode, useState } from 'react';
+
+/**
+ * One step of the wizard. `content` is arbitrary JSX written by the caller —
+ * field layout varies too much between steps to be worth driving from data,
+ * and nested grids or cascading selects are ordinary JSX but would need a
+ * recursive field type and cross-field reactivity in a schema.
+ */
+export interface Step {
+    label: string;
+    content: ReactNode;
+}
+
+interface StepFormProps {
+    steps: Step[];
+    title: string;
+    /** Called from the "Batal" button on the first step. */
+    onCancel: () => void;
+    /** Called when the final step is submitted. */
+    onFinish: () => void;
+    processing?: boolean;
+}
+
+/**
+ * Presentational wizard shell. It owns exactly one piece of state — which step
+ * is active — and knows nothing about fields, validation, or data shape. Form
+ * state belongs to the caller (Inertia `useForm`), reached from `content` by
+ * ordinary closure.
+ */
+export function StepForm({ steps, title, onCancel, onFinish, processing = false }: StepFormProps) {
+    // 0-indexed here; Stepper counts from 1.
+    const [current, setCurrent] = useState(0);
+
+    const isFirst = current === 0;
+    const isLast = current === steps.length - 1;
+
+    // Advancing and finishing share the submit handler so Enter behaves the
+    // same as clicking, and so the browser still runs native field validation.
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        if (isLast) {
+            onFinish();
+            return;
+        }
+        setCurrent((step) => step + 1);
+    };
+
+    return (
+        <form onSubmit={submit} className="flex max-h-[85vh] flex-col">
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-3 pb-5">
+                <DialogTitle className="font-poppins text-lg font-semibold text-[#121212]">{title}</DialogTitle>
+                <Stepper steps={steps} currentStep={current + 1} />
+            </div>
+
+            {/* Only the step body scrolls, so header and footer stay put. */}
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">{steps[current].content}</div>
+
+            <div className="flex items-center gap-4 border-t border-[#E7E7E7] pt-5">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={isFirst ? onCancel : () => setCurrent((step) => step - 1)}
+                    className="font-poppins h-12 flex-1 cursor-pointer rounded-lg border-[#1980C0] text-base font-semibold text-[#1980C0] hover:bg-[#1980C0]/5 hover:text-[#1980C0]"
+                >
+                    {isFirst ? 'Batal' : 'Sebelumnya'}
+                </Button>
+                <Button
+                    type="submit"
+                    disabled={processing}
+                    className={cn(
+                        'font-poppins h-12 flex-1 cursor-pointer rounded-lg bg-[#1980C0] text-base font-semibold text-white',
+                        'hover:bg-[#1668a0]',
+                    )}
+                >
+                    {isLast ? 'Simpan' : 'Selanjutnya'}
+                </Button>
+            </div>
+        </form>
+    );
+}
