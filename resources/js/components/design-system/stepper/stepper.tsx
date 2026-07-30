@@ -4,6 +4,9 @@ export interface StepperStep {
     label: string;
 }
 
+/** Shared 3-step "Struktur -> Staff -> Preview" flow used by both the create wizard and the edit dialog. */
+export const ORG_STRUCTURE_STEPS: StepperStep[] = [{ label: 'Struktur' }, { label: 'Staff' }, { label: 'Preview' }];
+
 interface StepperProps {
     steps: StepperStep[];
     currentStep: number;
