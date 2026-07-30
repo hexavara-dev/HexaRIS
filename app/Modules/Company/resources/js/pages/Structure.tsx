@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { OrgStructureEmptyState } from '@/components/design-system/empty-state/org-structure-empty-state';
-import { OrgChart, type OrgDepartment, type OrgDivision, type OrgMember } from '@/components/design-system/org-chart/org-chart';
+import { ORG_CHART_DEMO, OrgChart, type OrgDepartment, type OrgDivision, type OrgMember } from '@/components/design-system/org-chart/org-chart';
 import { CreateStructureDialog } from '@/components/design-system/pop-up/create-structure-dialog';
 import { DepartmentDetailPanel, type DepartmentStaff } from '@/components/design-system/pop-up/department-detail-panel';
 import { DivisionDetailPanel, type DivisionStaff } from '@/components/design-system/pop-up/division-detail-panel';
@@ -31,21 +31,32 @@ const ZOOM_STEP = 0.1;
 const GROUPS_PER_PAGE = 3;
 
 const STORAGE_KEY = 'hexaris.company-structure';
+const STORAGE_TTL_MS = 24 * 60 * 60 * 1000;
 
 interface StoredStructure {
     ceo: OrgMember | null;
     departments: OrgDepartment[];
+    savedAt: number;
+}
+
+function defaultStructure(): StoredStructure {
+    return { ceo: ORG_CHART_DEMO.ceo, departments: ORG_CHART_DEMO.departments, savedAt: Date.now() };
 }
 
 function loadStoredStructure(): StoredStructure {
-    if (typeof window === 'undefined') return { ceo: null, departments: [] };
+    if (typeof window === 'undefined') return defaultStructure();
     try {
         const raw = window.localStorage.getItem(STORAGE_KEY);
-        if (!raw) return { ceo: null, departments: [] };
-        const parsed = JSON.parse(raw) as StoredStructure;
-        return { ceo: parsed.ceo ?? null, departments: parsed.departments ?? [] };
+        if (!raw) return defaultStructure();
+
+        const parsed = JSON.parse(raw) as Partial<StoredStructure>;
+        if (typeof parsed.savedAt !== 'number' || Date.now() - parsed.savedAt > STORAGE_TTL_MS) {
+            return defaultStructure();
+        }
+
+        return { ceo: parsed.ceo ?? null, departments: parsed.departments ?? [], savedAt: parsed.savedAt };
     } catch {
-        return { ceo: null, departments: [] };
+        return defaultStructure();
     }
 }
 
@@ -112,8 +123,9 @@ function departmentPositionStats(department: OrgDepartment) {
 }
 
 export default function CompanyStructure() {
-    const [ceo, setCeo] = useState<OrgMember | null>(() => loadStoredStructure().ceo);
-    const [departments, setDepartments] = useState<OrgDepartment[]>(() => loadStoredStructure().departments);
+    const [initialStructure] = useState(loadStoredStructure);
+    const [ceo, setCeo] = useState<OrgMember | null>(initialStructure.ceo);
+    const [departments, setDepartments] = useState<OrgDepartment[]>(initialStructure.departments);
     const [activeTab, setActiveTab] = useState<(typeof TABS)[number]['value']>('bagan');
     const [zoom, setZoom] = useState(1);
     const [search, setSearch] = useState('');
@@ -126,7 +138,8 @@ export default function CompanyStructure() {
     const hasStructure = ceo !== null && departments.length > 0;
 
     useEffect(() => {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ceo, departments }));
+        const stored: StoredStructure = { ceo, departments, savedAt: Date.now() };
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
     }, [ceo, departments]);
 
     const structureGroups = useMemo(() => toStructureGroups(departments), [departments]);
