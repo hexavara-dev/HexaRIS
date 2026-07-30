@@ -50,14 +50,14 @@ export function StepForm({ steps, title, onCancel, onFinish, processing = false 
     };
 
     return (
-        <form onSubmit={submit} className="flex max-h-[85vh] flex-col">
+        <form onSubmit={submit} className="flex max-h-[85vh] flex-col px-4">
             <div className="flex flex-wrap items-center gap-x-8 gap-y-3 pb-5">
                 <DialogTitle className="font-poppins text-lg font-semibold text-[#121212]">{title}</DialogTitle>
                 <Stepper steps={steps} currentStep={current + 1} />
             </div>
 
             {/* Only the step body scrolls, so header and footer stay put. */}
-            <div className="min-h-0 flex-1 overflow-y-auto pr-1">{steps[current].content}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto py-5 pr-4 pl-1">{steps[current].content}</div>
 
             <div className="flex items-center gap-4 border-t border-[#E7E7E7] pt-5">
                 <Button

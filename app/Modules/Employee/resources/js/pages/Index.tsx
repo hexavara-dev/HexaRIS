@@ -9,17 +9,14 @@ import { useForm } from '@inertiajs/react';
 import { UserCheck, UserPlus, UserX } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { EducationStep } from '../components/steps/education-step';
+import { ExperienceStep } from '../components/steps/experience-step';
+import { FinancialStep } from '../components/steps/financial-step';
 import { PersonalStep } from '../components/steps/personal-step';
+import { PreviewStep } from '../components/steps/preview-step';
+import { ProvisionStep } from '../components/steps/provision-step';
 import { initialEmployeeFormData, type EmployeeFormData } from '../types/employee-form';
 import { employeeColumns } from './columns';
-
-function ComingSoon({ label }: { label: string }) {
-    return (
-        <div className="flex min-h-[220px] items-center justify-center rounded-lg border border-dashed border-[#ACACAC]">
-            <p className="font-poppins text-sm text-[#808080]">Field untuk step "{label}" belum didefinisikan.</p>
-        </div>
-    );
-}
 
 const latestJoinYear = Math.max(...employee.map((e) => new Date(e.join_date).getFullYear()));
 
@@ -61,11 +58,11 @@ export default function Index() {
 
     const steps: Step[] = [
         { label: 'Personal', content: <PersonalStep data={data} setData={setData} errors={errors} /> },
-        { label: 'Pendidikan', content: <ComingSoon label="Pendidikan" /> },
-        { label: 'Pengalaman', content: <ComingSoon label="Pengalaman" /> },
-        { label: 'Ketentuan', content: <ComingSoon label="Ketentuan" /> },
-        { label: 'Gaji & Bank', content: <ComingSoon label="Gaji & Bank" /> },
-        { label: 'Pratinjau', content: <ComingSoon label="Pratinjau" /> },
+        { label: 'Pendidikan', content: <EducationStep data={data} setData={setData} errors={errors} /> },
+        { label: 'Pengalaman', content: <ExperienceStep data={data} setData={setData} errors={errors} /> },
+        { label: 'Ketentuan', content: <ProvisionStep data={data} setData={setData} errors={errors} /> },
+        { label: 'Gaji & Bank', content: <FinancialStep data={data} setData={setData} errors={errors} /> },
+        { label: 'Pratinjau', content: <PreviewStep data={data} /> },
     ];
 
     const finish = () => {

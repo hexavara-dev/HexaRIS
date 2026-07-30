@@ -12,22 +12,24 @@ export function FormField({
     htmlFor,
     error,
     hint,
+    required,
     children,
 }: {
     label: string;
     htmlFor?: string;
     error?: string;
     hint?: string;
+    required?: boolean;
     children: ReactNode;
 }) {
     return (
-        <div className="space-y-1.5">
+        <div className="space-y-2.5">
             <Label htmlFor={htmlFor} className="font-poppins text-base font-semibold text-[#121212]">
-                {label}
+                {label} <RequiredMark required={required} />
             </Label>
             {children}
             {hint && <p className="font-poppins text-xs text-[#8F8F8F]">{hint}</p>}
-            <InputError message={error} className="font-poppins text-xs text-[#EE242D]" />
+            <InputError message={error} className={cn('font-poppins text-xs', errorTextClassName)} />
         </div>
     );
 }
@@ -35,11 +37,21 @@ export function FormField({
 const fieldInputClassName =
     'h-auto w-full rounded-2xl border-[#ACACAC] px-4 py-4 font-poppins text-sm placeholder:text-[#ACACAC] disabled:bg-[#E7E7E7] disabled:text-[#8F8F8F] disabled:opacity-100';
 
+// Canonical error/required-marker red, shared by input borders, the required
+// asterisk, and error messages so all three read as the same "error" signal.
+const errorTextClassName = 'text-[#EE242D]';
+const errorBorderClassName = 'border-[#EE242D]';
+
+function RequiredMark({ required }: { required?: boolean }) {
+    return required ? <span className={errorTextClassName}>*</span> : null;
+}
+
 interface TextFieldProps {
     label: string;
     htmlFor?: string;
     error?: string;
     hint?: string;
+    required?: boolean;
     type?: string;
     value: string;
     onChange: (value: string) => void;
@@ -47,9 +59,9 @@ interface TextFieldProps {
     disabled?: boolean;
 }
 
-export function TextField({ label, htmlFor, error, hint, type = 'text', value, onChange, placeholder, disabled }: TextFieldProps) {
+export function TextField({ label, htmlFor, error, hint, required, type = 'text', value, onChange, placeholder, disabled }: TextFieldProps) {
     return (
-        <FormField label={label} htmlFor={htmlFor} error={error} hint={hint}>
+        <FormField label={label} htmlFor={htmlFor} error={error} hint={hint} required={required}>
             <Input
                 id={htmlFor}
                 type={type}
@@ -57,7 +69,7 @@ export function TextField({ label, htmlFor, error, hint, type = 'text', value, o
                 onChange={(event) => onChange(event.target.value)}
                 placeholder={placeholder}
                 disabled={disabled}
-                className={cn(fieldInputClassName, error && 'border-[#E84A39]')}
+                className={cn(fieldInputClassName, error && errorBorderClassName)}
             />
         </FormField>
     );
@@ -76,7 +88,7 @@ export function PasswordField({ label, htmlFor, error, hint, value, onChange, pl
                     onChange={(event) => onChange(event.target.value)}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className={cn(fieldInputClassName, 'pr-11', error && 'border-[#E84A39]')}
+                    className={cn(fieldInputClassName, 'pr-11', error && errorBorderClassName)}
                 />
                 <button
                     type="button"
@@ -101,6 +113,7 @@ interface SelectFieldProps {
     htmlFor?: string;
     error?: string;
     hint?: string;
+    required?: boolean;
     value?: string;
     onValueChange: (value: string) => void;
     placeholder?: string;
@@ -108,11 +121,11 @@ interface SelectFieldProps {
     disabled?: boolean;
 }
 
-export function SelectField({ label, htmlFor, error, hint, value, onValueChange, placeholder, options, disabled }: SelectFieldProps) {
+export function SelectField({ label, htmlFor, error, hint, required, value, onValueChange, placeholder, options, disabled }: SelectFieldProps) {
     return (
-        <FormField label={label} htmlFor={htmlFor} error={error} hint={hint}>
+        <FormField label={label} htmlFor={htmlFor} error={error} hint={hint} required={required}>
             <Select value={value} onValueChange={onValueChange} disabled={disabled}>
-                <SelectTrigger id={htmlFor} className={cn(fieldInputClassName, 'justify-between', error && 'border-[#E84A39]')}>
+                <SelectTrigger id={htmlFor} className={cn(fieldInputClassName, 'justify-between', error && errorBorderClassName)}>
                     <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
                 <SelectContent>
@@ -130,6 +143,12 @@ export function SelectField({ label, htmlFor, error, hint, value, onValueChange,
 export interface UploadedFile {
     name: string;
     size: string;
+}
+
+/** FileUploadField shows name + size; the form itself holds the raw File. */
+export function toUploadedFile(file: File | null): UploadedFile | null {
+    if (!file) return null;
+    return { name: file.name, size: `${(file.size / 1024 / 1024).toFixed(1)} Mb` };
 }
 
 interface FileUploadFieldProps {
@@ -156,9 +175,9 @@ export function FileUploadField({
     const inputId = `file-${label.replace(/\s+/g, '-').toLowerCase()}`;
 
     return (
-        <div className="flex w-full flex-col items-start gap-2">
-            <p className={cn('font-poppins text-sm font-semibold tracking-[0.01em]', error ? 'text-[#E84A39]' : 'text-[#1B1B1B]')}>
-                {label} {required && '*'}
+        <div className="flex w-full flex-col items-start gap-2.5">
+            <p className="font-poppins text-base font-semibold text-[#121212]">
+                {label} <RequiredMark required={required} />
             </p>
 
             {file ? (
@@ -177,7 +196,10 @@ export function FileUploadField({
             ) : (
                 <label
                     htmlFor={inputId}
-                    className="flex w-full cursor-pointer flex-col items-center gap-2 rounded border border-dashed border-[#808080] px-8 py-3.5"
+                    className={cn(
+                        'flex w-full cursor-pointer flex-col items-center gap-2 rounded border border-dashed border-[#808080] px-8 py-3.5',
+                        error && errorBorderClassName,
+                    )}
                 >
                     <Upload className="h-8 w-8 text-[#E7E7E7]" />
                     <span className="font-poppins text-center text-xs font-semibold text-[#41B4F2]">{helperText}</span>
@@ -191,7 +213,7 @@ export function FileUploadField({
                 </label>
             )}
 
-            {error && <p className="font-poppins text-xs text-[#EE242D]">{error}</p>}
+            <InputError message={error} className={cn('font-poppins text-xs', errorTextClassName)} />
         </div>
     );
 }

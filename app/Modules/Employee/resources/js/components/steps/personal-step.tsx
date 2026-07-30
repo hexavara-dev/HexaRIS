@@ -1,16 +1,17 @@
-import { FileUploadField, SelectField, TextField, type SelectFieldOption, type UploadedFile } from '@/components/form/form-field';
+import { SelectField, TextField, type SelectFieldOption } from '@/components/form/form-field';
 import { province } from '@/data/Region/province';
 import { regency } from '@/data/Region/regency';
 import { useMemo } from 'react';
 import { type EmployeeFormData } from '../../types/employee-form';
+import { DocumentUploads } from './document-uploads';
 
-const genderOptions: SelectFieldOption[] = [
+export const genderOptions: SelectFieldOption[] = [
     { value: 'L', label: 'Laki-laki' },
     { value: 'P', label: 'Perempuan' },
 ];
 
 // Mirrors the Religion union in @/data/Employee/employee.
-const religionOptions: SelectFieldOption[] = [
+export const religionOptions: SelectFieldOption[] = [
     { value: 'islam', label: 'Islam' },
     { value: 'christian', label: 'Kristen' },
     { value: 'catholic', label: 'Katolik' },
@@ -20,20 +21,17 @@ const religionOptions: SelectFieldOption[] = [
     { value: 'other', label: 'Lainnya' },
 ];
 
-// Employee stores this as the boolean `is_married`; the form keeps it a string
-// because that is what a Select yields, and converts on submit.
-const maritalOptions: SelectFieldOption[] = [
-    { value: 'menikah', label: 'Menikah' },
-    { value: 'lajang', label: 'Lajang' },
+// Mirrors Employee.is_married directly — the select just presents it as Menikah/Belum Menikah.
+const maritalStatusOptions: SelectFieldOption[] = [
+    { value: 'true', label: 'Menikah' },
+    { value: 'false', label: 'Belum Menikah' },
 ];
 
-const provinceOptions: SelectFieldOption[] = province.map((p) => ({ value: p.id, label: p.name }));
-
-/** FileUploadField shows name + size; the form itself holds the raw File. */
-function toUploadedFile(file: File | null): UploadedFile | null {
-    if (!file) return null;
-    return { name: file.name, size: `${(file.size / 1024 / 1024).toFixed(1)} Mb` };
+export function maritalStatusLabel(isMarried: boolean) {
+    return isMarried ? 'Menikah' : 'Belum Menikah';
 }
+
+const provinceOptions: SelectFieldOption[] = province.map((p) => ({ value: p.id, label: p.name }));
 
 interface PersonalStepProps {
     data: EmployeeFormData;
@@ -47,8 +45,6 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
         [data.province_id],
     );
 
-    // A regency belongs to exactly one province, so a stale selection would be
-    // invalid — clear it whenever the province changes.
     const selectProvince = (value: string) => {
         setData('province_id', value);
         setData('regency_id', '');
@@ -59,6 +55,7 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
             <TextField
                 label="Full Nama"
                 htmlFor="full_name"
+                required
                 value={data.full_name}
                 onChange={(v) => setData('full_name', v)}
                 error={errors.full_name}
@@ -67,6 +64,7 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
             <TextField
                 label="Nomor WA"
                 htmlFor="phone_number"
+                required
                 type="tel"
                 value={data.phone_number}
                 onChange={(v) => setData('phone_number', v)}
@@ -74,9 +72,30 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
                 placeholder="08xxxxxxxxxx"
             />
 
+            <TextField
+                label="Email Pribadi"
+                htmlFor="email_self"
+                required
+                type="email"
+                value={data.email_self}
+                onChange={(v) => setData('email_self', v)}
+                error={errors.email_self}
+                placeholder="nama@email.com"
+            />
+            <TextField
+                label="Email Perusahaan (Opsional)"
+                htmlFor="email_company"
+                type="email"
+                value={data.email_company}
+                onChange={(v) => setData('email_company', v)}
+                error={errors.email_company}
+                placeholder="nama@perusahaan.com"
+            />
+
             <SelectField
                 label="Jenis Kelamin"
                 htmlFor="gender"
+                required
                 options={genderOptions}
                 value={data.gender}
                 onValueChange={(v) => setData('gender', v)}
@@ -86,6 +105,7 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
             <SelectField
                 label="Agama"
                 htmlFor="religion"
+                required
                 options={religionOptions}
                 value={data.religion}
                 onValueChange={(v) => setData('religion', v)}
@@ -96,17 +116,37 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
             <TextField
                 label="Tgl Lahir"
                 htmlFor="birth_date"
+                required
                 type="date"
                 value={data.birth_date}
                 onChange={(v) => setData('birth_date', v)}
                 error={errors.birth_date}
             />
+            <TextField
+                label="Nomor KTP (NIK)"
+                htmlFor="identity_number"
+                required
+                value={data.identity_number}
+                onChange={(v) => setData('identity_number', v.replace(/\D/g, ''))}
+                error={errors.identity_number}
+                placeholder="16 digit sesuai KTP"
+            />
+
+            <TextField
+                label="Nomor NPWP (Opsional)"
+                htmlFor="npwp_number"
+                value={data.npwp_number}
+                onChange={(v) => setData('npwp_number', v)}
+                error={errors.npwp_number}
+                placeholder="00.000.000.0-000.000"
+            />
             {/* Two selects sharing one grid cell — the nesting case, and it is
                 just a nested grid. No wizard feature required. */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
                 <SelectField
                     label="Provinsi"
                     htmlFor="province_id"
+                    required
                     options={provinceOptions}
                     value={data.province_id}
                     onValueChange={selectProvince}
@@ -116,6 +156,7 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
                 <SelectField
                     label="Kab/kota"
                     htmlFor="regency_id"
+                    required
                     options={regencyOptions}
                     value={data.regency_id}
                     onValueChange={(v) => setData('regency_id', v)}
@@ -127,50 +168,25 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
 
             <SelectField
                 label="Status"
-                htmlFor="marital_status"
-                options={maritalOptions}
-                value={data.marital_status}
-                onValueChange={(v) => setData('marital_status', v)}
-                error={errors.marital_status}
+                htmlFor="is_married"
+                required
+                options={maritalStatusOptions}
+                value={String(data.is_married)}
+                onValueChange={(v) => setData('is_married', v === 'true')}
+                error={errors.is_married}
                 placeholder="Pilih status"
             />
             <TextField
                 label="Alamat Lengkap"
                 htmlFor="address"
+                required
                 value={data.address}
                 onChange={(v) => setData('address', v)}
                 error={errors.address}
                 placeholder="Jl. ..."
             />
 
-            <div className="col-span-2 space-y-5">
-                <FileUploadField
-                    label="Upload KTP"
-                    required
-                    accept="image/*,.pdf"
-                    file={toUploadedFile(data.ktp)}
-                    onSelect={(f) => setData('ktp', f)}
-                    onRemove={() => setData('ktp', null)}
-                    error={errors.ktp}
-                />
-                <FileUploadField
-                    label="Upload NPWP (Opsional)"
-                    accept="image/*,.pdf"
-                    file={toUploadedFile(data.npwp)}
-                    onSelect={(f) => setData('npwp', f)}
-                    onRemove={() => setData('npwp', null)}
-                    error={errors.npwp}
-                />
-                <FileUploadField
-                    label="Upload Kontrak"
-                    required
-                    accept="image/*,.pdf"
-                    file={toUploadedFile(data.contract)}
-                    onSelect={(f) => setData('contract', f)}
-                    onRemove={() => setData('contract', null)}
-                    error={errors.contract}
-                />
-            </div>
+            <DocumentUploads data={data} setData={setData} errors={errors} />
         </div>
     );
 }
