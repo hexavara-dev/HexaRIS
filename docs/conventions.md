@@ -238,9 +238,9 @@ retrieving/persisting the model. Seven conventional methods only
 // app/Modules/Iam/Http/Controllers/UserController.php
 public function index(): Response
 {
-    $users = User::query()->with('roles')->latest()
-        ->paginate(25)->withQueryString()
-        ->through(fn (User $u) => UserData::fromModel($u));
+    $users = User::query()->with('roles')->orderBy('name')
+        ->get()
+        ->map(fn (User $u) => UserData::fromModel($u));
 
     return Inertia::render('Iam::pages/users/Index', ['users' => $users]);
 }
@@ -273,44 +273,33 @@ class UserData extends Data {
 }
 ```
 
-### List pages use `DataTable` + `FiltersTableColumns`
+### List pages use `DataTable` (client-side by default)
 
-Every index endpoint uses the `App\Support\Tables\FiltersTableColumns` trait on a plain Eloquent query and returns `items` (paginated) + `sort` + `filters`:
+`DataTable` (`@/components/data-table`) defaults to **client-side** mode: the controller returns
+the full list as a plain array (no pagination, no `sort`/`filter` query params), and
+search/sort/filter/pagination are computed in the browser with zero network calls on interaction.
+This is right for small/bounded lists (users, roles, employees). `mode="server"` is the deliberate
+exception for datasets that grow without bound — see the Audit log
+(`app/Modules/Audit/resources/js/pages/Index.tsx`), which keeps pagination server-driven and passes
+a `Paginated<T>` instead of a plain array.
 
 ```php
-use App\Support\Tables\FiltersTableColumns;
-
 class PostController
 {
-    use FiltersTableColumns;
-
-    public function index(Request $request): Response
+    public function index(): Response
     {
-        $query = Post::query()->with('category');
-        $this->applySorting($query, $request, ['name', 'created_at']);
-        $this->applyColumnSearch($query, $request, ['name']);
-        $this->applyColumnFilters($query, $request, [
-            'name'     => ['type' => 'text'],
-            'category' => ['type' => 'select', 'relation' => 'category', 'relationColumn' => 'name'],
-        ]);
+        $posts = Post::query()->with('category')->orderBy('name')
+            ->get()
+            ->map(fn (Post $p) => PostData::fromModel($p));
 
-        $items = $query->paginate(25)->withQueryString()
-            ->through(fn ($m) => PostData::fromModel($m));
-
-        return Inertia::render('Blog::pages/Index', [
-            'items'   => $items,
-            'sort'    => $request->string('sort')->toString() ?: null,
-            'filters' => (object) $request->input('filter', []),
-        ]);
+        return Inertia::render('Blog::pages/Index', ['posts' => $posts]);
     }
 }
 ```
 
-URL contract: `?sort=name` / `?sort=-name` (descending), `?search=`, `filter[field][operator]=value` (e.g. `filter[name][contains]=jane`). The React column declares `filter: { type: 'text'|'select'|'date'|'number', options? }` in the `DataTable` column config.
+The React `Index.tsx` uses `AppLayout` + `PageHeader` + `<DataTable columns={columns} data={items} search={...} filters={...} rowActions={(row) => [...]} />` from `@/components/data-table`. `search` is a single free-text `SearchConfig` (keys + placeholder); `filters` is a list of `FilterConfig` toolbar controls; `rowActions` returns the per-row `RowAction[]` (Edit/Delete) and replaces the old manual `RowActionMenu` column. Deletes are confirmed via `ConfirmDialog` (from `@/components/confirm-dialog`) driven by local state — never `window.confirm()`. The canonical example is `app/Modules/Iam/resources/js/pages/users/Index.tsx`.
 
-The React `Index.tsx` uses `AppLayout` + `PageHeader` + `<DataTable columns rows sort filters>` from `@/components/data-table`. The actions column uses `RowActionMenu` (from `@/components/row-action-menu`) for Edit/Delete; deletes are confirmed via `ConfirmDialog` (from `@/components/confirm-dialog`) driven by local state — never `window.confirm()`. The canonical example is `app/Modules/Iam/resources/js/pages/users/Index.tsx`.
-
-Each sortable/filterable resource has a `<Resource>SortFilterTest.php` Pest test. See `tests/Feature/Users/UserSortFilterTest.php` for the pattern.
+Breadcrumbs, the browser tab title, and the sidebar are derived automatically from the current URL via `resources/js/lib/navigation.ts` — `AppLayout` does not take a manual `breadcrumbs` prop for the common case; only pass one to override the derived trail.
 
 Mutations (store/update/destroy) flash success state via Inertia flash / toasts (Plan C). No native alert/confirm dialogs.
 
@@ -318,7 +307,7 @@ Mutations (store/update/destroy) flash success state via Inertia flash / toasts 
 
 Two files per resource: `Index.tsx` (list + delete) and `Form.tsx` (create/edit).
 
-- `Index.tsx` receives `{ items: Paginated<XRow>, sort: string | null, filters: Record<string, string> }`; renders `AppLayout` + `PageHeader` + `DataTable` with a `RowActionMenu` actions column + `ConfirmDialog` for deletes.
+- `Index.tsx` receives `{ items: XRow[] }` (or `{ items: Paginated<XRow> }` + `mode="server"` for the unbounded exception); renders `AppLayout` + `PageHeader` + `DataTable` with `search`/`filters`/`rowActions` props + `ConfirmDialog` for deletes.
 - `Form.tsx` receives a nullable DTO (`user: UserRow | null`) and a list of available options
   (`roles: string[]`); uses Inertia `useForm` and calls `post` or `put` based on whether the
   record exists. Wraps the form in `FormLayout` and each field in `FormField`.

@@ -17,7 +17,7 @@ Run `php artisan permission:sync` after changing `permissions.php`.
 
 | Method | URI | Name | Permission |
 |---|---|---|---|
-| `GET` | `employees` | `employees.index` | _(not gated yet)_ |
+| `GET` | `employees` | `employees.index` | `employees.viewAny` |
 
 The remaining CRUD routes (`create`/`store`/`edit`/`update`/`destroy`) are
 scaffolded but commented out in `routes/web.php` and in the controller until the
