@@ -3,15 +3,15 @@ import { useEffect, useRef, useState } from 'react';
 
 import iconStruktur from '@/assets/icons/icon_struktur.png';
 import logoPt from '@/assets/icons/logo_pt.png';
-import { type OrgDepartment, type OrgMember, type OrgTree } from '@/components/design-system/org-chart/OrgChart';
+import { type OrgDepartment, type OrgMember, type OrgTree } from '@/components/design-system/org-chart/org-chart';
 import {
     AddDepartmentDialog,
     DEPARTMENT_CATALOG,
     DIVISION_CATALOG,
     type NewDepartmentDraft,
-} from '@/components/design-system/pop-up/AddDepartmentDialog';
+} from '@/components/design-system/pop-up/add-department-dialog';
 import { type PersonOption } from '@/components/design-system/pop-up/people-picker';
-import { avatarFor, PersonSelect, STAFF_POOL } from '@/components/design-system/pop-up/PersonSelect';
+import { avatarFor, PersonSelect, STAFF_POOL } from '@/components/design-system/pop-up/person-select';
 import { ORG_STRUCTURE_STEPS, Stepper } from '@/components/design-system/stepper/stepper';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';

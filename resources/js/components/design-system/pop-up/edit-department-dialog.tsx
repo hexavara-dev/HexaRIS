@@ -2,10 +2,10 @@ import { Building2, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { type OrgDepartment, type OrgMember } from '@/components/design-system/org-chart/OrgChart';
-import { DEPARTMENT_CATALOG, DIVISION_CATALOG } from '@/components/design-system/pop-up/AddDepartmentDialog';
+import { type OrgDepartment, type OrgMember } from '@/components/design-system/org-chart/org-chart';
+import { DEPARTMENT_CATALOG, DIVISION_CATALOG } from '@/components/design-system/pop-up/add-department-dialog';
 import { type PersonOption } from '@/components/design-system/pop-up/people-picker';
-import { avatarFor, PersonSelect } from '@/components/design-system/pop-up/PersonSelect';
+import { avatarFor, PersonSelect } from '@/components/design-system/pop-up/person-select';
 import { ORG_STRUCTURE_STEPS, Stepper } from '@/components/design-system/stepper/stepper';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';

@@ -57,7 +57,7 @@ No permission gate on the route — matches `dashboard`'s own precedent (an auth
 not a permission-scoped admin CRUD resource). Add a `company.structure.view`-style permission when
 real data/writes exist and gating actually matters.
 
-### Data model (`resources/js/components/design-system/org-chart/OrgChart.tsx`)
+### Data model (`resources/js/components/design-system/org-chart/org-chart.tsx`)
 
 ```ts
 type OrgMember = { name: string; role: string };
@@ -74,9 +74,9 @@ type OrgTree = { ceo: OrgMember | null; departments: OrgDepartment[] };
 
 **Dual head-storage quirk (by design, not a bug):** a department *with* divisions stores its head in
 the separate `head` field; a department *without* divisions stores its head as `members[0]` by
-convention. Every component that reads or writes an `OrgDepartment` (`EditDepartmentDialog.tsx`,
-`CreateStructureDialog.tsx`) has to respect this split explicitly. `ORG_CHART_DEMO` in
-`OrgChart.tsx` is exported demo data, kept for reference/dev use but no longer the page's default
+convention. Every component that reads or writes an `OrgDepartment` (`edit-department-dialog.tsx`,
+`create-structure-dialog.tsx`) has to respect this split explicitly. `ORG_CHART_DEMO` in
+`org-chart.tsx` is exported demo data, kept for reference/dev use but no longer the page's default
 state.
 
 ### Page (`app/Modules/Company/resources/js/pages/Structure.tsx`)
@@ -99,12 +99,12 @@ root) rather than moving inside `app/Modules/Company/`. Only the *page* lives in
 
 | Component | Purpose |
 |---|---|
-| `org-chart/OrgChart.tsx` | Tree rendering + shared `OrgTree`/`OrgDepartment`/`OrgMember` types + `ORG_CHART_DEMO`. |
-| `empty-state/OrgStructureEmptyState.tsx` | First-run empty state, `nothing.png` illustration. |
-| `pop-up/CreateStructureDialog.tsx` | 3-step "Atur Struktur"/"Atur Ulang Struktur" wizard (Departments → Staff → Preview). Seeds from `existingTree` via `draftDepartmentsFromTree()` when re-opened on a saved structure. CEO is hardcoded to "Nicholas Raharja" (matches the static company card) — no CEO input field. |
-| `pop-up/AddDepartmentDialog.tsx` | Nested "Tambah Departemen" sub-dialog used from the wizard. Exports the shared `DEPARTMENT_CATALOG` / `DIVISION_CATALOG` lookup lists and `NewDepartmentDraft` type. Add-only (no edit mode). |
-| `pop-up/EditDepartmentDialog.tsx` | Single-department edit dialog opened from the detail panel/table row action. Same interaction pattern as the wizard (functional `Select` dropdowns for department/division name — filtered against sibling department/division names so two departments can't collide — and per-slot `PersonSelect` dropdowns for staff, not the older popover-checkbox picker). Exports `shortName()`, reused by the page for the sibling-name filter. |
-| `pop-up/PersonSelect.tsx` | Shared person-picker dropdown used by both `CreateStructureDialog` and `EditDepartmentDialog` (see "Shared building blocks" below), plus the single canonical `STAFF_POOL`. |
+| `org-chart/org-chart.tsx` | Tree rendering + shared `OrgTree`/`OrgDepartment`/`OrgMember` types + `ORG_CHART_DEMO`. |
+| `empty-state/org-structure-empty-state.tsx` | First-run empty state, `nothing.png` illustration. |
+| `pop-up/create-structure-dialog.tsx` | 3-step "Atur Struktur"/"Atur Ulang Struktur" wizard (Departments → Staff → Preview). Seeds from `existingTree` via `draftDepartmentsFromTree()` when re-opened on a saved structure. CEO is hardcoded to "Nicholas Raharja" (matches the static company card) — no CEO input field. |
+| `pop-up/add-department-dialog.tsx` | Nested "Tambah Departemen" sub-dialog used from the wizard. Exports the shared `DEPARTMENT_CATALOG` / `DIVISION_CATALOG` lookup lists and `NewDepartmentDraft` type. Add-only (no edit mode). |
+| `pop-up/edit-department-dialog.tsx` | Single-department edit dialog opened from the detail panel/table row action. Same interaction pattern as the wizard (functional `Select` dropdowns for department/division name — filtered against sibling department/division names so two departments can't collide — and per-slot `PersonSelect` dropdowns for staff, not the older popover-checkbox picker). Exports `shortName()`, reused by the page for the sibling-name filter. |
+| `pop-up/person-select.tsx` | Shared person-picker dropdown used by both `CreateStructureDialog` and `EditDepartmentDialog` (see "Shared building blocks" below), plus the single canonical `STAFF_POOL`. |
 | `pop-up/department-detail-panel.tsx`, `pop-up/division-detail-panel.tsx` | Sheet-based read panels (pre-existing files, untouched naming). |
 
 ### Shared building blocks (extracted after PR #9 review)
@@ -112,7 +112,7 @@ root) rather than moving inside `app/Modules/Company/`. Only the *page* lives in
 The `@claude /review` pass on PR #9 flagged four pieces duplicated near-identically between
 `CreateStructureDialog` and `EditDepartmentDialog`. All four have since been extracted:
 
-- **`PersonSelect`** (`pop-up/PersonSelect.tsx`) — one generic dropdown replacing the wizard's old
+- **`PersonSelect`** (`pop-up/person-select.tsx`) — one generic dropdown replacing the wizard's old
   `PersonSelect` (id-keyed) and the edit dialog's old `MemberSelect` (name-keyed). Takes a
   `getKey(person) => string` prop (defaults to `person.id`; the edit dialog passes `(p) => p.name`)
   and an `initials(name) => string` prop so each call site's original avatar-fallback text is
@@ -121,7 +121,7 @@ The `@claude /review` pass on PR #9 flagged four pieces duplicated near-identica
 - **`filterAvailable(catalog, current, taken)`** (`lib/utils.ts`) — replaces the
   `catalog.filter(name => name === current || !taken.has(name))` pattern that was hand-written at
   6 call sites across the three dialog files.
-- **`STAFF_POOL`** (`pop-up/PersonSelect.tsx`) — one canonical list replacing the two previously
+- **`STAFF_POOL`** (`pop-up/person-select.tsx`) — one canonical list replacing the two previously
   separate mock pools (`STAFF_POOL` in the wizard, `MOCK_EMPLOYEE_POOL` in the edit dialog). It's the
   **union** of both former lists (17 people, not 15) so no name pickable in either dialog before this
   change disappeared — a small, deliberate, additive side effect: 2 names that were previously
@@ -138,9 +138,12 @@ generic dialog. Their draft state shapes (`DraftDepartment`, id-referenced vs `E
 `OrgMember`-embedded) still differ, and forcing one shape now would mean guessing at a backend
 contract that doesn't exist yet — deferred to when the real `Company` backend module is built.
 
-File naming: the six component files above (new to this feature) use `PascalCase.tsx` per team
-convention; pre-existing shared files this PR only modified (`division-detail-panel.tsx`,
-`table-pagination.tsx`) were left as-is rather than renamed, to keep the diff scoped.
+File naming: the seven component files above (new to this feature) briefly used `PascalCase.tsx`
+per an earlier request in the PR #9 review thread, but were reverted back to `kebab-case.tsx` to
+match the idiom used by every other file under `resources/js/components/**` (including sibling
+files in the same `pop-up/` folder, e.g. `division-detail-panel.tsx`). PascalCase is reserved for
+*page* components (`Structure.tsx`, `Index.tsx`) resolved via the `Module::pages/...` Inertia
+convention, not for presentational components.
 
 ### Interaction patterns (kept consistent across both dialogs)
 
@@ -173,7 +176,7 @@ migration — acceptable for a mock-only feature with a single shape.
   to `Structure.tsx` and threaded into both dialogs), not just a shared pool — left as an explicit
   follow-up (flagged as Warning #3 in the `@claude /review` pass on PR #9).
 - **Fixed catalogs.** Department/division names come from hardcoded `DEPARTMENT_CATALOG` /
-  `DIVISION_CATALOG` lists in `AddDepartmentDialog.tsx`, not a configurable taxonomy.
+  `DIVISION_CATALOG` lists in `add-department-dialog.tsx`, not a configurable taxonomy.
 - **Single branch/company.** The table view's "Cabang" column is decorative; there's no multi-branch
   data model yet.
 
