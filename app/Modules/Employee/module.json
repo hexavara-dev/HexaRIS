@@ -1,0 +1,7 @@
+{
+    "name": "Employee",
+    "alias": "employee",
+    "version": "1.0.0",
+    "description": "Employee module",
+    "dependencies": []
+}

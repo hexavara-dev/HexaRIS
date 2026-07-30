@@ -4,8 +4,7 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
 interface UserRow {
@@ -20,13 +19,7 @@ interface Props {
     roles: string[];
 }
 
-const getBreadcrumbs = (user: Props['user']): BreadcrumbItem[] => [
-    { title: 'Users', href: '/iam/users' },
-    { title: user ? 'Edit' : 'New', href: '#' },
-];
-
 export default function Form({ user, roles }: Props) {
-    const breadcrumbs = getBreadcrumbs(user);
     const { data, setData, post, put, processing, errors } = useForm<{
         name: string;
         email: string;
@@ -53,9 +46,8 @@ export default function Form({ user, roles }: Props) {
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout>
             <div className="p-6">
-                <Head title={user ? 'Edit user' : 'New user'} />
                 <PageHeader title={user ? 'Edit user' : 'New user'} />
 
                 <div className="mt-6">

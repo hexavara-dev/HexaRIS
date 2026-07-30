@@ -1,14 +1,11 @@
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Column, DataTable } from '@/components/data-table';
+import { Column, DataTable, type FilterConfig, type SearchConfig } from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
-import { RowActionMenu } from '@/components/row-action-menu';
-import { SearchInput } from '@/components/search-input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 
 interface UserRow {
     id: number;
@@ -22,25 +19,22 @@ interface Props {
     roleOptions: { value: string; label: string }[];
 }
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Users', href: '/iam/users' }];
+const userSearch: SearchConfig = {
+    keys: ['name', 'email'],
+    placeholder: 'Search users…',
+};
 
 export default function Index({ users, roleOptions }: Props) {
     const [toDelete, setToDelete] = useState<UserRow | null>(null);
-    const [search, setSearch] = useState('');
 
-    const visibleUsers = useMemo(() => {
-        const term = search.trim().toLowerCase();
-        if (!term) return users;
-        return users.filter((u) => u.name.toLowerCase().includes(term) || u.email.toLowerCase().includes(term));
-    }, [users, search]);
+    const userFilters: FilterConfig[] = [{ key: 'roles', type: 'select', label: 'Roles', options: roleOptions }];
 
     const columns: Column<UserRow>[] = [
-        { key: 'name', label: 'Name', sortable: true, filter: { type: 'text' } },
-        { key: 'email', label: 'Email', sortable: true, filter: { type: 'text' } },
+        { key: 'name', label: 'Name', sortable: true },
+        { key: 'email', label: 'Email', sortable: true },
         {
             key: 'roles',
             label: 'Roles',
-            filter: { type: 'select', options: roleOptions },
             render: (u) =>
                 u.roles.length === 0 ? (
                     '—'
@@ -54,40 +48,30 @@ export default function Index({ users, roleOptions }: Props) {
                     </div>
                 ),
         },
-        {
-            key: 'actions',
-            label: '',
-            align: 'right',
-            render: (u) => (
-                <div className="flex justify-end">
-                    <RowActionMenu
-                        actions={[
-                            { label: 'Edit', href: `/iam/users/${u.id}/edit` },
-                            { label: 'Delete', destructive: true, onClick: () => setToDelete(u) },
-                        ]}
-                    />
-                </div>
-            ),
-        },
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Users" />
+        <AppLayout>
             <div className="space-y-4 p-6">
                 <PageHeader
                     title="Users"
-                    subtitle="Manage accounts & roles"
+                    description="Manage accounts & roles"
                     actions={
-                        <div className="flex items-center gap-2">
-                            <SearchInput placeholder="Search users…" onSearch={setSearch} />
-                            <Button asChild>
-                                <Link href="/iam/users/create">New user</Link>
-                            </Button>
-                        </div>
+                        <Button asChild>
+                            <Link href="/iam/users/create">New user</Link>
+                        </Button>
                     }
                 />
-                <DataTable columns={columns} rows={visibleUsers} />
+                <DataTable
+                    columns={columns}
+                    data={users}
+                    search={userSearch}
+                    filters={userFilters}
+                    rowActions={(u) => [
+                        { label: 'Edit', href: `/iam/users/${u.id}/edit` },
+                        { label: 'Delete', destructive: true, onClick: () => setToDelete(u) },
+                    ]}
+                />
             </div>
             <ConfirmDialog
                 open={toDelete !== null}

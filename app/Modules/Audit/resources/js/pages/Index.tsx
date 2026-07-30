@@ -2,11 +2,9 @@ import { Column, DataTable } from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, type Paginated } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { type Paginated } from '@/types';
+import { router } from '@inertiajs/react';
 import { useState } from 'react';
-
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Audit log', href: '/audit' }];
 
 interface AuditEntry {
     id: number;
@@ -62,9 +60,8 @@ export default function Index({ activities, filters, events }: Props) {
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout>
             <div className="p-6">
-                <Head title="Audit log" />
                 <PageHeader title="Audit log" />
 
                 <div className="mt-4 mb-4 flex flex-wrap gap-2">
@@ -84,7 +81,7 @@ export default function Index({ activities, filters, events }: Props) {
                     </button>
                 </div>
 
-                <DataTable mode="server" columns={columns} rows={activities} />
+                <DataTable mode="server" columns={columns} data={activities} />
             </div>
         </AppLayout>
     );

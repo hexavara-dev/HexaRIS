@@ -1,8 +1,8 @@
-import { Head, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 import { ApprovalRequestList, type ApprovalRequest } from '@/components/design-system/card/approval-list';
-import { OverviewCard } from '@/components/design-system/card/card';
+import { OverviewCard } from '@/components/design-system/card/overview-card';
 import { TrainingSummaryCardDemo } from '@/components/design-system/card/pelatihan';
 import { PayrollSummaryCardDemo } from '@/components/design-system/card/penggajian';
 import { TopPerformanceCardDemo } from '@/components/design-system/card/performa';
@@ -18,8 +18,6 @@ import { type SharedData } from '@/types';
 const PERIODS = ['Mei 2026', 'Juni 2026', 'Juli 2026', 'Agustus 2026'];
 const DEFAULT_PERIOD = 'Juli 2026';
 
-// "Lihat Semua (N)" should honestly reflect the total size of APPROVAL_REQUESTS below,
-// which backs every period regardless of which category tab is active in the modal.
 const APPROVAL_REQUESTS_COUNT = 10;
 
 interface PeriodDataset {
@@ -140,8 +138,6 @@ export default function Dashboard() {
 
     return (
         <AppLayout headerTitle="Dashboard" headerActions={<NotificationBell count={5} />}>
-            <Head title="Dashboard" />
-
             <div className="flex h-full flex-1 flex-col gap-6 px-6 pt-4 pb-6">
                 <div className="flex w-full items-center justify-between">
                     <div className="flex flex-col items-start gap-1">

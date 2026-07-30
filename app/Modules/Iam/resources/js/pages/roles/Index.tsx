@@ -1,15 +1,11 @@
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Column, DataTable } from '@/components/data-table';
+import { Column, DataTable, type SearchConfig } from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
-import { RowActionMenu } from '@/components/row-action-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Roles', href: '/iam/roles' }];
 
 interface Role {
     id: number;
@@ -21,6 +17,8 @@ interface Props {
     roles: Role[];
 }
 
+const roleSearch: SearchConfig = { keys: ['name'], placeholder: 'Search roles…' };
+
 export default function Index({ roles }: Props) {
     const [toDelete, setToDelete] = useState<Role | null>(null);
 
@@ -29,7 +27,6 @@ export default function Index({ roles }: Props) {
             key: 'name',
             label: 'Name',
             sortable: true,
-            filter: { type: 'text' },
             render: (r) => <Badge variant={r.name === 'super-admin' ? 'success' : 'secondary'}>{r.name}</Badge>,
         },
         {
@@ -37,41 +34,34 @@ export default function Index({ roles }: Props) {
             label: 'Permissions',
             render: (r) => <Badge variant="info">{r.permissions.length} permissions</Badge>,
         },
-        {
-            key: 'actions',
-            label: '',
-            render: (r) => {
-                if (r.name === 'super-admin') {
-                    return <div className="flex justify-end" />;
-                }
-                return (
-                    <div className="flex justify-end">
-                        <RowActionMenu
-                            actions={[
-                                { label: 'Edit', href: `/iam/roles/${r.id}/edit` },
-                                { label: 'Delete', destructive: true, onClick: () => setToDelete(r) },
-                            ]}
-                        />
-                    </div>
-                );
-            },
-        },
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Roles" />
+        <AppLayout>
             <div className="space-y-4 p-6">
                 <PageHeader
                     title="Roles"
-                    subtitle="Manage roles and their permissions"
+                    description="Manage roles and their permissions"
                     actions={
                         <Button asChild>
                             <Link href="/iam/roles/create">New role</Link>
                         </Button>
                     }
                 />
-                <DataTable columns={columns} rows={roles} />
+                <DataTable
+                    columns={columns}
+                    data={roles}
+                    search={roleSearch}
+                    // super-admin is the bypass role — it must not be editable or deletable.
+                    rowActions={(r) =>
+                        r.name === 'super-admin'
+                            ? []
+                            : [
+                                  { label: 'Edit', href: `/iam/roles/${r.id}/edit` },
+                                  { label: 'Delete', destructive: true, onClick: () => setToDelete(r) },
+                              ]
+                    }
+                />
             </div>
             <ConfirmDialog
                 open={toDelete !== null}

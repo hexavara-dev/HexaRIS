@@ -2,12 +2,9 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { RotateCw } from 'lucide-react';
 import { useState } from 'react';
-
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Permissions', href: '/iam/permissions' }];
 
 export default function Index({ groups }: { groups: Record<string, string[]> }) {
     const { can } = usePermissions();
@@ -26,12 +23,11 @@ export default function Index({ groups }: { groups: Record<string, string[]> }) 
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout>
             <div className="p-6">
-                <Head title="Permissions" />
                 <PageHeader
                     title="Permissions"
-                    subtitle="Declared per module. Sync reconciles those declarations into the database."
+                    description="Declared per module. Sync reconciles those declarations into the database."
                     actions={
                         can('permissions.sync') ? (
                             <Button onClick={sync} disabled={syncing}>
