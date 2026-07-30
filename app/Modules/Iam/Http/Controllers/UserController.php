@@ -6,7 +6,6 @@ use App\Models\User;
 use App\Modules\Iam\Data\UserData;
 use App\Modules\Iam\Http\Requests\StoreUserRequest;
 use App\Modules\Iam\Http\Requests\UpdateUserRequest;
-use App\Support\Tables\FiltersTableColumns;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,30 +14,16 @@ use Spatie\Permission\Models\Role;
 
 class UserController
 {
-    use FiltersTableColumns;
-
-    public function index(Request $request): Response
+    public function index(): Response
     {
-        $query = User::query()->with('roles');
-
-        $this->applySorting($query, $request, ['name', 'email', 'created_at']);
-        $this->applyColumnSearch($query, $request, ['name', 'email']);
-        $this->applyColumnFilters($query, $request, [
-            'name' => ['type' => 'text'],
-            'email' => ['type' => 'text'],
-            'roles' => ['type' => 'select', 'relation' => 'roles', 'relationColumn' => 'name'],
-        ]);
-
-        $users = $query
-            ->paginate($request->integer('per_page', 25))
-            ->withQueryString()
-            ->through(fn (User $user) => UserData::fromModel($user));
+        $users = User::query()
+            ->with('roles')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $user) => UserData::fromModel($user));
 
         return Inertia::render('Iam::pages/users/Index', [
             'users' => $users,
-            'sort' => $request->string('sort')->toString() ?: null,
-            'filters' => (object) $request->input('filter', []),
-            'search' => $request->string('search')->toString(),
             'roleOptions' => Role::query()->orderBy('name')->pluck('name')->map(fn (string $name) => ['value' => $name, 'label' => $name]),
         ]);
     }

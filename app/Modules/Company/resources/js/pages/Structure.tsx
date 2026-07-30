@@ -9,14 +9,14 @@ import { CreateStructureDialog } from '@/components/design-system/pop-up/CreateS
 import { DepartmentDetailPanel, type DepartmentStaff } from '@/components/design-system/pop-up/DepartmentDetailPanel';
 import { DivisionDetailPanel, type DivisionStaff } from '@/components/design-system/pop-up/division-detail-panel';
 import { EditDepartmentDialog, shortName } from '@/components/design-system/pop-up/EditDepartmentDialog';
-import { TablePagination } from '@/components/design-system/table/table-pagination';
+import { Pagination } from '@/components/pagination';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, type Paginated } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Struktur Organisasi', href: '/company/structure' }];
 
@@ -146,6 +146,16 @@ export default function CompanyStructure() {
     const totalPages = Math.max(1, Math.ceil(filteredGroups.length / GROUPS_PER_PAGE));
     const currentPage = Math.min(page, totalPages);
     const pageGroups = filteredGroups.slice((currentPage - 1) * GROUPS_PER_PAGE, currentPage * GROUPS_PER_PAGE);
+    const paginatedGroups: Paginated<StructureGroup> = {
+        data: pageGroups,
+        from: filteredGroups.length === 0 ? null : (currentPage - 1) * GROUPS_PER_PAGE + 1,
+        to: filteredGroups.length === 0 ? null : Math.min(currentPage * GROUPS_PER_PAGE, filteredGroups.length),
+        total: filteredGroups.length,
+        current_page: currentPage,
+        last_page: totalPages,
+        prev_page_url: currentPage > 1 ? '#' : null,
+        next_page_url: currentPage < totalPages ? '#' : null,
+    };
 
     function handleSearch(value: string) {
         setSearch(value);
@@ -328,7 +338,7 @@ export default function CompanyStructure() {
                             </Table>
                         </div>
 
-                        <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
+                        <Pagination page={paginatedGroups} onPageChange={setPage} />
                     </div>
                 )}
             </div>

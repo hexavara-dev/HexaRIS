@@ -84,7 +84,7 @@ export default function Index({ activities, filters, events }: Props) {
                     </button>
                 </div>
 
-                <DataTable columns={columns} rows={activities} />
+                <DataTable mode="server" columns={columns} rows={activities} />
             </div>
         </AppLayout>
     );
