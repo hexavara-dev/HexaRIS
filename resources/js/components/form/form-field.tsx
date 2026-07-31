@@ -151,6 +151,37 @@ export function toUploadedFile(file: File | null): UploadedFile | null {
     return { name: file.name, size: `${(file.size / 1024 / 1024).toFixed(1)} Mb` };
 }
 
+function fileExtension(name: string): string {
+    const match = /\.([a-zA-Z0-9]+)$/.exec(name);
+    return match ? match[1].toUpperCase() : '';
+}
+
+// PDF reads as red (matches its usual "danger/urgent" document association);
+// every other extension shares one green, so the badge/icon color is a type
+// signal (two states), not a per-extension rainbow.
+const PDF_COLOR = '#E84A39';
+const DEFAULT_COLOR = '#16A34A';
+
+/** One document glyph whose color follows the file type (red for PDF, green otherwise), tagged with its extension on the right edge — no image thumbnails. */
+export function FileTypeIcon({ name, className = 'h-9 w-9' }: { name: string; className?: string }) {
+    const ext = fileExtension(name);
+    const color = ext === 'PDF' ? PDF_COLOR : DEFAULT_COLOR;
+
+    return (
+        <span className="relative inline-flex shrink-0">
+            <FileText className={className} style={{ color }} />
+            {ext && (
+                <span
+                    className="absolute top-1/2 -right-1.5 -translate-y-1/2 rounded-[3px] px-1 py-px text-[8px] leading-none font-bold text-white"
+                    style={{ backgroundColor: color }}
+                >
+                    {ext}
+                </span>
+            )}
+        </span>
+    );
+}
+
 /**
  * Object URLs are the only way to preview a File that hasn't been uploaded
  * anywhere yet — there's no backend to fetch it back from. Recreated only
@@ -199,7 +230,6 @@ export function FileUploadField({
     const inputId = `file-${label.replace(/\s+/g, '-').toLowerCase()}`;
     const uploaded = toUploadedFile(file);
     const previewUrl = useFilePreviewUrl(file);
-    const isImage = file?.type.startsWith('image/') ?? false;
 
     return (
         <div className="flex w-full flex-col items-start gap-2.5">
@@ -217,17 +247,13 @@ export function FileUploadField({
                             aria-label={`Lihat ${uploaded.name}`}
                             className="flex min-w-0 flex-1 items-center gap-4"
                         >
-                            {isImage && previewUrl ? (
-                                <img src={previewUrl} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
-                            ) : (
-                                <FileText className="h-9 w-9 shrink-0 text-[#E84A39]" />
-                            )}
+                            <FileTypeIcon name={uploaded.name} />
                             <div className="flex min-w-0 flex-1 flex-col items-start">
                                 <p className="font-poppins w-full truncate text-sm text-[#353535]">{uploaded.name}</p>
                                 <p className="font-poppins text-sm text-[#808080]">{uploaded.size}</p>
                             </div>
                         </a>
-                        <button type="button" onClick={onRemove} aria-label="Hapus file">
+                        <button type="button" onClick={onRemove} aria-label="Hapus file" className="cursor-pointer">
                             <Trash2 className="h-6 w-6 text-[#E84A39]" />
                         </button>
                     </div>
@@ -236,12 +262,12 @@ export function FileUploadField({
                 <label
                     htmlFor={inputId}
                     className={cn(
-                        'flex w-full cursor-pointer flex-col items-center gap-2 rounded border border-dashed border-[#808080] px-8 py-3.5',
+                        'flex w-full cursor-pointer flex-col items-center gap-2 rounded border border-dashed border-[#808080] bg-[#F5F5F5] px-8 py-3.5',
                         error && errorBorderClassName,
                     )}
                 >
-                    <Upload className="h-8 w-8 text-[#E7E7E7]" />
-                    <span className="font-poppins text-center text-xs font-semibold text-[#41B4F2]">{helperText}</span>
+                    <Upload className="h-8 w-8 text-[#8F8F8F]" />
+                    <span className="font-poppins text-center text-xs font-semibold text-[#121212]">{helperText}</span>
                     <input
                         id={inputId}
                         type="file"

@@ -1,8 +1,7 @@
-import { toUploadedFile, useFilePreviewUrl, type SelectFieldOption } from '@/components/form/form-field';
+import { FileTypeIcon, toUploadedFile, useFilePreviewUrl, type SelectFieldOption } from '@/components/form/form-field';
 import { employee } from '@/data/Employee/employee';
 import { organization } from '@/data/Organization/organization';
 import { jobPosition } from '@/data/Position/jobPosition';
-import { FileText } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { type EmployeeFormData } from '../../types/employee-form';
 import { educationLevelOptions } from './education-entry';
@@ -53,7 +52,6 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 function DocumentRow({ label, file }: { label: string; file: File | null }) {
     const uploaded = toUploadedFile(file);
     const previewUrl = useFilePreviewUrl(file);
-    const isImage = file?.type.startsWith('image/') ?? false;
     if (!uploaded) return null;
 
     return (
@@ -64,11 +62,7 @@ function DocumentRow({ label, file }: { label: string; file: File | null }) {
             aria-label={`Lihat ${uploaded.name}`}
             className="flex w-full items-center gap-4 rounded-lg border border-[#E7E7E7] bg-white px-4 py-2 hover:border-[#1980C0]"
         >
-            {isImage && previewUrl ? (
-                <img src={previewUrl} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />
-            ) : (
-                <FileText className="h-8 w-8 shrink-0 text-[#E84A39]" />
-            )}
+            <FileTypeIcon name={uploaded.name} className="h-8 w-8" />
             <div className="flex min-w-0 flex-1 flex-col items-start">
                 <p className="font-poppins text-sm text-[#353535]">{label}</p>
                 <p className="font-poppins w-full truncate text-xs text-[#808080]">
