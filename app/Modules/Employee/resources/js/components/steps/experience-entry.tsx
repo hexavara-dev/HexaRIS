@@ -1,4 +1,4 @@
-import { FileUploadField, SelectField, TextField, toUploadedFile, type SelectFieldOption } from '@/components/form/form-field';
+import { FileUploadField, SelectField, TextField, type SelectFieldOption } from '@/components/form/form-field';
 import { Trash2 } from 'lucide-react';
 import { type WorkExperience } from '../../types/employee-form';
 
@@ -142,7 +142,7 @@ export function ExperienceEntry({ index, experience, onChange, onRemove, removab
                 <FileUploadField
                     label="Surat Referensi/Pengalaman Kerja (Opsional)"
                     accept="image/*,.pdf"
-                    file={toUploadedFile(experience.reference_letter)}
+                    file={experience.reference_letter}
                     onSelect={(f) => set('reference_letter', f)}
                     onRemove={() => set('reference_letter', null)}
                     error={errors.reference_letter}
