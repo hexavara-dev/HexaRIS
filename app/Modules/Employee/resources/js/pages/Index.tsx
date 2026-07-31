@@ -7,7 +7,7 @@ import { employee } from '@/data/Employee/employee';
 import AppLayout from '@/layouts/app-layout';
 import { useForm } from '@inertiajs/react';
 import { UserCheck, UserPlus, UserX } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { EducationStep } from '../components/steps/education-step';
 import { ExperienceStep } from '../components/steps/experience-step';
@@ -15,20 +15,9 @@ import { FinancialStep } from '../components/steps/financial-step';
 import { PersonalStep } from '../components/steps/personal-step';
 import { PreviewStep } from '../components/steps/preview-step';
 import { ProvisionStep } from '../components/steps/provision-step';
+import { loadLocalEmployees, saveLocalEmployee } from '../lib/employee-storage';
 import { initialEmployeeFormData, type EmployeeFormData } from '../types/employee-form';
 import { employeeColumns } from './columns';
-
-const latestJoinYear = Math.max(...employee.map((e) => new Date(e.join_date).getFullYear()));
-
-const overviewStats = [
-    { label: 'Total Karyawan Aktif', value: employee.filter((e) => e.is_active).length, icon: UserCheck },
-    { label: 'Karyawan Non Aktif', value: employee.filter((e) => !e.is_active).length, icon: UserX },
-    {
-        label: 'Karyawan Baru',
-        value: employee.filter((e) => new Date(e.join_date).getFullYear() === latestJoinYear).length,
-        icon: UserPlus,
-    },
-];
 
 const employeeSearch: SearchConfig = {
     keys: ['full_name', 'email_self'],
@@ -49,7 +38,25 @@ const employeeFilters: FilterConfig[] = [
 
 export default function Index() {
     const [open, setOpen] = useState(false);
+    const [localEmployees, setLocalEmployees] = useState(loadLocalEmployees);
     const { data, setData, errors, processing, reset } = useForm<EmployeeFormData>(initialEmployeeFormData);
+
+    const allEmployees = useMemo(() => [...employee, ...localEmployees], [localEmployees]);
+
+    const latestJoinYear = useMemo(() => Math.max(...allEmployees.map((e) => new Date(e.join_date).getFullYear())), [allEmployees]);
+
+    const overviewStats = useMemo(
+        () => [
+            { label: 'Total Karyawan Aktif', value: allEmployees.filter((e) => e.is_active).length, icon: UserCheck },
+            { label: 'Karyawan Non Aktif', value: allEmployees.filter((e) => !e.is_active).length, icon: UserX },
+            {
+                label: 'Karyawan Baru',
+                value: allEmployees.filter((e) => new Date(e.join_date).getFullYear() === latestJoinYear).length,
+                icon: UserPlus,
+            },
+        ],
+        [allEmployees, latestJoinYear],
+    );
 
     const close = () => {
         setOpen(false);
@@ -66,7 +73,8 @@ export default function Index() {
     ];
 
     const finish = () => {
-        toast.info('Form belum tersambung ke backend — data tidak disimpan.');
+        setLocalEmployees(saveLocalEmployee(data));
+        toast.success(`${data.full_name} berhasil ditambahkan.`);
         close();
     };
 
@@ -76,7 +84,7 @@ export default function Index() {
                 <OverviewCard title={`Overview of ${latestJoinYear}`} stats={overviewStats} />
                 <DataTable
                     columns={employeeColumns}
-                    data={employee}
+                    data={allEmployees}
                     search={employeeSearch}
                     filters={employeeFilters}
                     actions={
@@ -88,7 +96,9 @@ export default function Index() {
                             }}
                         >
                             <DialogTrigger asChild>
-                                <Button className="font-poppins h-9 bg-[#1980C0] hover:bg-[#1668a0]">Tambah Karyawan</Button>
+                                <Button size="sm" className="font-poppins bg-[#1980C0] hover:bg-[#1668a0]">
+                                    Tambah Karyawan
+                                </Button>
                             </DialogTrigger>
                             <DialogContent className="flex max-w-4xl flex-col gap-0" onInteractOutside={(e) => e.preventDefault()}>
                                 <StepForm
