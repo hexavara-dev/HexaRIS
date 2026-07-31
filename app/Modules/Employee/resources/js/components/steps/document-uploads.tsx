@@ -1,4 +1,4 @@
-import { FileUploadField, toUploadedFile } from '@/components/form/form-field';
+import { FileUploadField } from '@/components/form/form-field';
 import { type EmployeeFormData } from '../../types/employee-form';
 
 type DocumentKey = 'ktp' | 'npwp' | 'contract';
@@ -24,7 +24,7 @@ export function DocumentUploads({ data, setData, errors }: DocumentUploadsProps)
                     label={doc.label}
                     required={doc.required}
                     accept="image/*,.pdf"
-                    file={toUploadedFile(data[doc.key])}
+                    file={data[doc.key]}
                     onSelect={(f) => setData(doc.key, f)}
                     onRemove={() => setData(doc.key, null)}
                     error={errors[doc.key]}

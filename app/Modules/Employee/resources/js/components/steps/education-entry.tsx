@@ -1,4 +1,4 @@
-import { FileUploadField, SelectField, TextField, toUploadedFile, type SelectFieldOption } from '@/components/form/form-field';
+import { FileUploadField, SelectField, TextField, type SelectFieldOption } from '@/components/form/form-field';
 import { Trash2 } from 'lucide-react';
 import { type EducationEntry } from '../../types/employee-form';
 
@@ -95,7 +95,7 @@ export function EducationEntryFields({ index, education, onChange, onRemove, rem
                 <FileUploadField
                     label="Upload Ijazah/Transkrip"
                     accept="image/*,.pdf"
-                    file={toUploadedFile(education.certificate)}
+                    file={education.certificate}
                     onSelect={(f) => set('certificate', f)}
                     onRemove={() => set('certificate', null)}
                     error={errors.certificate}
