@@ -72,11 +72,15 @@ jobs:
       - name: Install JS dependencies
         run: npm ci
 
-      - name: Typecheck
-        run: npm run types
-
-      - name: Lint
-        run: npm run lint
+      # CHANGED: Typecheck + Lint dihapus dari sini. Keduanya sudah dijalankan
+      # ci.yml pada setiap PR, jadi kode yang sudah di main pasti lolos —
+      # mengulangnya di sini cuma menambah cara baru bagi deploy untuk gagal
+      # karena hal yang tidak berhubungan dengan deploy. `npm run lint` juga
+      # memakai `eslint . --fix` yang MENULIS ULANG file sumber; menjalankannya
+      # tepat sebelum build + rsync berarti yang mendarat di server bukan lagi
+      # byte yang sama dengan isi tag — persis yang tidak boleh terjadi pada
+      # rilis yang harus reproducible. Build tetap ada: outputnya (public/build)
+      # yang di-rsync, jadi wajib jalan di sini.
 
       - name: Build assets
         run: npm run build
