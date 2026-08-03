@@ -59,6 +59,21 @@ export function createEmptyEducationEntry(): EducationEntry {
  */
 export type FieldErrors = Partial<Record<string, string>>;
 
+/**
+ * Marks which *required* file fields already had something attached the last
+ * time a save succeeded. `npwp` and each work experience's `reference_letter`
+ * are optional already, so they need no flag — only required fields do.
+ */
+export type FileFieldFlags = {
+    ktp: boolean;
+    contract: boolean;
+    educationCertificate: boolean;
+};
+
+export function createEmptyFileFieldFlags(): FileFieldFlags {
+    return { ktp: false, contract: false, educationCertificate: false };
+}
+
 // A type alias, not an interface: Inertia's useForm constrains its generic to
 // FormDataType (an index-signature type), and interfaces have no implicit one.
 export type EmployeeFormData = {
