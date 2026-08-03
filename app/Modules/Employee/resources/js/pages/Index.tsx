@@ -7,7 +7,7 @@ import { employee, type Employee } from '@/data/Employee/employee';
 import AppLayout from '@/layouts/app-layout';
 import { useForm } from '@inertiajs/react';
 import { UserCheck, UserPlus, UserX } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { EducationStep } from '../components/steps/education-step';
 import { ExperienceStep } from '../components/steps/experience-step';
@@ -23,6 +23,7 @@ import {
     saveEmployeeOverride,
     saveLocalEmployee,
     updateLocalEmployee,
+    wizardEditableFields,
 } from '../lib/employee-storage';
 import { validateEmployeeForm } from '../lib/validate-employee-form';
 import { createEmptyFileFieldFlags, initialEmployeeFormData, type EmployeeFormData, type FieldErrors, type FileFieldFlags } from '../types/employee-form';
@@ -90,16 +91,19 @@ export default function Index() {
         setOpen(true);
     };
 
-    const openEdit = (row: Employee) => {
-        const hydrated = hydrateEmployeeFormData(row);
-        setEditingEmployee(row);
-        setData(hydrated.data);
-        setFileFlags(hydrated.fileFlags);
-        setValidationErrors({});
-        setOpen(true);
-    };
+    const openEdit = useCallback(
+        (row: Employee) => {
+            const hydrated = hydrateEmployeeFormData(row);
+            setEditingEmployee(row);
+            setData(hydrated.data);
+            setFileFlags(hydrated.fileFlags);
+            setValidationErrors({});
+            setOpen(true);
+        },
+        [setData],
+    );
 
-    const columns = buildEmployeeColumns(openEdit);
+    const columns = useMemo(() => buildEmployeeColumns(openEdit), [openEdit]);
 
     const steps: Step[] = [
         { label: 'Personal', content: <PersonalStep data={data} setData={setData} errors={validationErrors} /> },
@@ -121,18 +125,20 @@ export default function Index() {
         setValidationErrors({});
 
         if (editingEmployee) {
-            const updated = applyFormDataToEmployee(editingEmployee, data);
             if (localEmployees.some((e) => e.id === editingEmployee.id)) {
-                setLocalEmployees(updateLocalEmployee(editingEmployee.id, updated));
+                setLocalEmployees(updateLocalEmployee(editingEmployee.id, applyFormDataToEmployee(editingEmployee, data)));
             } else {
-                setOverrides(saveEmployeeOverride(editingEmployee.id, updated));
+                // Only the wizard-editable subset, never the full merged Employee — otherwise this
+                // override would freeze every other column (email, NIK, blood type, ...) at whatever
+                // they happened to be on this one edit, hiding any later change to the seed fixture.
+                setOverrides(saveEmployeeOverride(editingEmployee.id, wizardEditableFields(data)));
             }
-            saveFormOverlay(editingEmployee.id, data);
+            saveFormOverlay(editingEmployee.id, data, fileFlags);
             toast.success(`${data.full_name} berhasil diperbarui.`);
         } else {
             const { employees, created } = saveLocalEmployee(data);
             setLocalEmployees(employees);
-            saveFormOverlay(created.id, data);
+            saveFormOverlay(created.id, data, fileFlags);
             toast.success(`${data.full_name} berhasil ditambahkan.`);
         }
 

@@ -6,9 +6,16 @@ import { employeeCompensation } from '@/data/Employee/employeeCompensation';
 import { employeeDocument } from '@/data/Employee/employeeDocument';
 import { employeeInsurance } from '@/data/Employee/employeeInsurance';
 import { employmentContract } from '@/data/Employee/employmentContract';
-import { organization } from '@/data/Organization/organization';
 import { bankOptions } from '../components/steps/financial-step';
-import { createEmptyEducationEntry, createEmptyWorkExperience, type EmployeeFormData, type FileFieldFlags } from '../types/employee-form';
+import { resolveOrgUnit } from './employee-org';
+import {
+    createEmptyEducationEntry,
+    createEmptyFileFieldFlags,
+    createEmptyWorkExperience,
+    initialEmployeeFormData,
+    type EmployeeFormData,
+    type FileFieldFlags,
+} from '../types/employee-form';
 
 const OVERLAY_STORAGE_KEY = 'hexaris.employee.form-overlay';
 
@@ -31,6 +38,22 @@ function loadOverlayStore(): FormOverlayStore {
     }
 }
 
+/**
+ * An overlay entry saved by an older EmployeeFormData shape (a field renamed
+ * or added since) would otherwise hand back `undefined` nested values and
+ * crash the first thing that reads them (e.g. validation's `value.trim()`).
+ * Merging over `initialEmployeeFormData` guarantees every known field exists.
+ */
+function sanitizeOverlayEntry(entry: unknown): FormOverlayEntry | null {
+    if (!entry || typeof entry !== 'object') return null;
+    const candidate = entry as Partial<FormOverlayEntry>;
+    if (!candidate.data || typeof candidate.data !== 'object') return null;
+    return {
+        data: { ...initialEmployeeFormData, ...candidate.data },
+        fileFlags: { ...createEmptyFileFieldFlags(), ...candidate.fileFlags },
+    };
+}
+
 /** Strips File objects before persisting — a File can't survive JSON.stringify/parse. */
 function sanitizeForStorage(data: EmployeeFormData): EmployeeFormData {
     return {
@@ -43,29 +66,37 @@ function sanitizeForStorage(data: EmployeeFormData): EmployeeFormData {
     };
 }
 
-function computeFileFlags(data: EmployeeFormData): FileFieldFlags {
+/**
+ * A field newly picked this session (`data.ktp !== null`) satisfies its flag
+ * on its own; ORing with `previous` means a field that was already
+ * grandfathered in (or genuinely on file per the ERD) stays satisfied even
+ * though this save's `data` holds `null` for every file field again.
+ */
+function computeFileFlags(data: EmployeeFormData, previous: FileFieldFlags): FileFieldFlags {
     return {
-        ktp: data.ktp !== null,
-        contract: data.contract !== null,
-        educationCertificate: data.education.certificate !== null,
+        ktp: data.ktp !== null || previous.ktp,
+        contract: data.contract !== null || previous.contract,
+        educationCertificate: data.education.certificate !== null || previous.educationCertificate,
     };
 }
 
-/** Called whenever Simpan/Perbarui succeeds — the source of truth for the next time this employee is edited. */
-export function saveFormOverlay(employeeId: string, data: EmployeeFormData): void {
+/**
+ * Called whenever Simpan/Perbarui succeeds — the source of truth for the
+ * next time this employee is edited. `previousFlags` is whatever flags the
+ * form was hydrated with this session (empty flags for a brand-new
+ * employee) — passing it is what keeps a grandfathered-in file
+ * grandfathered on every subsequent save, instead of only surviving one.
+ */
+export function saveFormOverlay(employeeId: string, data: EmployeeFormData, previousFlags: FileFieldFlags): void {
     if (typeof window === 'undefined') return;
     const store = loadOverlayStore();
-    store[employeeId] = { data: sanitizeForStorage(data), fileFlags: computeFileFlags(data) };
+    store[employeeId] = { data: sanitizeForStorage(data), fileFlags: computeFileFlags(data, previousFlags) };
     window.localStorage.setItem(OVERLAY_STORAGE_KEY, JSON.stringify(store));
 }
 
-function resolveOrgUnit(organizationUnitId: string): { departmentId: string; divisionId: string } {
-    const unit = organization.find((u) => u.id === organizationUnitId);
-    if (!unit) return { departmentId: '', divisionId: '' };
-    if (unit.unit_type === 'DIVISION') {
-        return { departmentId: unit.parent_id ?? '', divisionId: unit.id };
-    }
-    return { departmentId: unit.id, divisionId: '' };
+/** Raw overlay peek, with no ERD fallback — used by the list page to show wizard-only fields (branch, department, division) for employees the ERD has no assignment/address for. */
+export function peekFormOverlay(employeeId: string): FormOverlayEntry | null {
+    return sanitizeOverlayEntry(loadOverlayStore()[employeeId]);
 }
 
 function bankValueFromName(bankName: string): string {
@@ -138,7 +169,7 @@ function hydrateFromErd(employee: Employee): { data: EmployeeFormData; fileFlags
  * back to best-effort ERD mapping for an employee never edited before.
  */
 export function hydrateEmployeeFormData(employee: Employee): { data: EmployeeFormData; fileFlags: FileFieldFlags } {
-    const overlay = loadOverlayStore()[employee.id];
+    const overlay = sanitizeOverlayEntry(loadOverlayStore()[employee.id]);
     if (overlay) return overlay;
     return hydrateFromErd(employee);
 }

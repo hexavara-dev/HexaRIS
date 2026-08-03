@@ -20,6 +20,20 @@ function nextEmployeeNumber(existingCount: number): string {
     return `EMP-${String(existingCount + 1).padStart(4, '0')}`;
 }
 
+/** The subset of Employee columns the wizard actually collects — shared by create and update so a new wizard field can't be wired into only one of them. Also what saveEmployeeOverride should be given, so an override patch never freezes untouched columns (email, NIK, blood type, ...) at their edit-time value. */
+export function wizardEditableFields(data: EmployeeFormData): Pick<Employee, 'full_name' | 'phone_number' | 'gender' | 'religion' | 'birth_date' | 'is_married' | 'join_date' | 'employment_type'> {
+    return {
+        full_name: data.full_name,
+        phone_number: data.phone_number,
+        gender: data.gender as Employee['gender'],
+        religion: data.religion as Employee['religion'],
+        birth_date: data.birth_date,
+        is_married: data.is_married,
+        join_date: data.join_date,
+        employment_type: data.contract_type === 'permanent' ? 'full-time' : 'part-time',
+    };
+}
+
 /**
  * The wizard doesn't collect every Employee column (no photo, birth place,
  * blood type, email, NIK, NPWP, work arrangement, ...) — those fall back to
@@ -34,24 +48,17 @@ function buildEmployeeFromForm(data: EmployeeFormData, existingCount: number): E
         profile_picture_path: null,
         identity_number: '-',
         npwp_number: null,
-        full_name: data.full_name,
         birth_place: '-',
-        birth_date: data.birth_date,
-        gender: data.gender as Employee['gender'],
-        religion: data.religion as Employee['religion'],
-        is_married: data.is_married,
         blood_type: 'O',
         email_company: null,
         email_self: '-',
-        phone_number: data.phone_number,
-        join_date: data.join_date,
-        employment_type: data.contract_type === 'permanent' ? 'full-time' : 'part-time',
         work_arrangement: 'onsite',
         work_location_type: 'center',
         time_off_amount: 12,
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        ...wizardEditableFields(data),
     };
 }
 
@@ -62,17 +69,7 @@ function buildEmployeeFromForm(data: EmployeeFormData, existingCount: number): E
  * to buildEmployeeFromForm's create-time placeholders.
  */
 export function applyFormDataToEmployee(existing: Employee, data: EmployeeFormData): Employee {
-    return {
-        ...existing,
-        full_name: data.full_name,
-        phone_number: data.phone_number,
-        gender: data.gender as Employee['gender'],
-        religion: data.religion as Employee['religion'],
-        birth_date: data.birth_date,
-        is_married: data.is_married,
-        join_date: data.join_date,
-        employment_type: data.contract_type === 'permanent' ? 'full-time' : 'part-time',
-    };
+    return { ...existing, ...wizardEditableFields(data) };
 }
 
 /**

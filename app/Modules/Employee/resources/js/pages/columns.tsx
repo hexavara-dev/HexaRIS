@@ -3,38 +3,38 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { type Employee } from '@/data/Employee/employee';
 import { employeeAddress } from '@/data/Employee/employeeAddress';
-import { employeeAssignment } from '@/data/Employee/employeeAssignment';
 import { organization } from '@/data/Organization/organization';
 import { regency } from '@/data/Region/regency';
 import { MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
+import { peekFormOverlay } from '../lib/employee-form-overlay';
+import { assignedOrgUnit, departmentName as departmentNameFromErd, divisionName as divisionNameFromErd } from '../lib/employee-org';
 
-/** No dedicated branch/location module yet — approximated from the employee's city. */
+/** No dedicated branch/location module yet — approximated from the employee's city; falls back to the wizard's free-text Cabang for employees the ERD has no address for. */
 function branchName(employeeId: string): string {
     const address = employeeAddress.find((a) => a.employee_id === employeeId && a.is_primary) ?? employeeAddress.find((a) => a.employee_id === employeeId);
-    if (!address) return '-';
-    const cityName = regency.find((r) => r.id === address.regency_id)?.name;
-    return cityName ? cityName.replace(/^Kota\s+/i, '').replace(/^Kabupaten\s+/i, '') : '-';
-}
-
-function assignedOrgUnit(employeeId: string) {
-    const assignment = employeeAssignment.find((a) => a.employee_id === employeeId);
-    if (!assignment) return null;
-    return organization.find((u) => u.id === assignment.organization_unit_id) ?? null;
-}
-
-function departmentName(employeeId: string): string {
-    const unit = assignedOrgUnit(employeeId);
-    if (!unit) return '-';
-    if (unit.unit_type === 'DIVISION') {
-        return organization.find((u) => u.id === unit.parent_id)?.name ?? '-';
+    if (address) {
+        const cityName = regency.find((r) => r.id === address.regency_id)?.name;
+        if (cityName) return cityName.replace(/^Kota\s+/i, '').replace(/^Kabupaten\s+/i, '');
     }
-    return unit.name;
+    const overlayBranch = peekFormOverlay(employeeId)?.data.branch;
+    return overlayBranch || '-';
 }
 
+/** Wizard-created employees (and any employee edited through the wizard) have no employeeAssignment row — fall back to the form overlay's department_id. */
+function departmentName(employeeId: string): string {
+    if (assignedOrgUnit(employeeId)) return departmentNameFromErd(employeeId);
+    const departmentId = peekFormOverlay(employeeId)?.data.department_id;
+    if (!departmentId) return '-';
+    return organization.find((u) => u.id === departmentId)?.name ?? '-';
+}
+
+/** Same fallback as departmentName, for division_id. */
 function divisionName(employeeId: string): string {
-    const unit = assignedOrgUnit(employeeId);
-    return unit?.unit_type === 'DIVISION' ? unit.name : '-';
+    if (assignedOrgUnit(employeeId)) return divisionNameFromErd(employeeId);
+    const divisionId = peekFormOverlay(employeeId)?.data.division_id;
+    if (!divisionId) return '-';
+    return organization.find((u) => u.id === divisionId)?.name ?? '-';
 }
 
 export function buildEmployeeColumns(onEdit: (employee: Employee) => void): Column<Employee>[] {

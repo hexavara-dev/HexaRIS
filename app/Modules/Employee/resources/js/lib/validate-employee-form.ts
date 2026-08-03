@@ -1,3 +1,4 @@
+import { organization } from '@/data/Organization/organization';
 import { createEmptyFileFieldFlags, type EmployeeFormData, type FieldErrors, type FileFieldFlags } from '../types/employee-form';
 
 const REQUIRED_MESSAGE = 'Wajib diisi.';
@@ -43,7 +44,11 @@ export function validateEmployeeForm(data: EmployeeFormData, fileFlags: FileFiel
     });
 
     requireText(errors, 'department_id', data.department_id);
-    requireText(errors, 'division_id', data.division_id);
+    // Some departments (e.g. Finance/Operasional) hold their positions
+    // directly and have no divisions at all — division_id can't be
+    // required there, or Perbarui/Simpan would be permanently unsatisfiable.
+    const departmentHasDivisions = organization.some((unit) => unit.unit_type === 'DIVISION' && unit.parent_id === data.department_id);
+    if (departmentHasDivisions) requireText(errors, 'division_id', data.division_id);
     requireText(errors, 'contract_type', data.contract_type);
     requireText(errors, 'join_date', data.join_date);
 
