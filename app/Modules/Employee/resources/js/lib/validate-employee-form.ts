@@ -1,4 +1,4 @@
-import { type EmployeeFormData, type FieldErrors } from '../types/employee-form';
+import { createEmptyFileFieldFlags, type EmployeeFormData, type FieldErrors, type FileFieldFlags } from '../types/employee-form';
 
 const REQUIRED_MESSAGE = 'Wajib diisi.';
 
@@ -6,12 +6,12 @@ function requireText(errors: FieldErrors, key: string, value: string) {
     if (!value.trim()) errors[key] = REQUIRED_MESSAGE;
 }
 
-function requireFile(errors: FieldErrors, key: string, value: File | null) {
-    if (!value) errors[key] = REQUIRED_MESSAGE;
+function requireFile(errors: FieldErrors, key: string, value: File | null, hadBefore: boolean) {
+    if (!value && !hadBefore) errors[key] = REQUIRED_MESSAGE;
 }
 
 /** Client-side stand-in for backend validation — there is no employees.store route yet. */
-export function validateEmployeeForm(data: EmployeeFormData): FieldErrors {
+export function validateEmployeeForm(data: EmployeeFormData, fileFlags: FileFieldFlags = createEmptyFileFieldFlags()): FieldErrors {
     const errors: FieldErrors = {};
 
     requireText(errors, 'full_name', data.full_name);
@@ -22,8 +22,8 @@ export function validateEmployeeForm(data: EmployeeFormData): FieldErrors {
     requireText(errors, 'province_id', data.province_id);
     requireText(errors, 'regency_id', data.regency_id);
     requireText(errors, 'address', data.address);
-    requireFile(errors, 'ktp', data.ktp);
-    requireFile(errors, 'contract', data.contract);
+    requireFile(errors, 'ktp', data.ktp, fileFlags.ktp);
+    requireFile(errors, 'contract', data.contract, fileFlags.contract);
 
     requireText(errors, 'education.level', data.education.level);
     requireText(errors, 'education.institution', data.education.institution);
@@ -31,7 +31,7 @@ export function validateEmployeeForm(data: EmployeeFormData): FieldErrors {
     requireText(errors, 'education.start_date', data.education.start_date);
     requireText(errors, 'education.end_date', data.education.end_date);
     requireText(errors, 'education.final_score', data.education.final_score);
-    requireFile(errors, 'education.certificate', data.education.certificate);
+    requireFile(errors, 'education.certificate', data.education.certificate, fileFlags.educationCertificate);
 
     data.work_experiences.forEach((experience, index) => {
         requireText(errors, `work_experiences.${index}.company_name`, experience.company_name);
