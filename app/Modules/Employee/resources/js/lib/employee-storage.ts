@@ -21,9 +21,9 @@ function nextEmployeeNumber(existingCount: number): string {
 
 /**
  * The wizard doesn't collect every Employee column (no photo, birth place,
- * blood type, work arrangement, ...) — those fall back to reasonable
- * defaults here rather than being left undefined, since Employee itself
- * has no optional/nullable slot for most of them.
+ * blood type, email, NIK, NPWP, work arrangement, ...) — those fall back to
+ * reasonable defaults here rather than being left undefined, since Employee
+ * itself has no optional/nullable slot for most of them.
  */
 function buildEmployeeFromForm(data: EmployeeFormData, existingCount: number): Employee {
     return {
@@ -31,8 +31,8 @@ function buildEmployeeFromForm(data: EmployeeFormData, existingCount: number): E
         user_id: crypto.randomUUID(),
         employee_number: nextEmployeeNumber(existingCount),
         profile_picture_path: null,
-        identity_number: data.identity_number,
-        npwp_number: data.npwp_number || null,
+        identity_number: '-',
+        npwp_number: null,
         full_name: data.full_name,
         birth_place: '-',
         birth_date: data.birth_date,
@@ -40,8 +40,8 @@ function buildEmployeeFromForm(data: EmployeeFormData, existingCount: number): E
         religion: data.religion as Employee['religion'],
         is_married: data.is_married,
         blood_type: 'O',
-        email_company: data.email_company || null,
-        email_self: data.email_self,
+        email_company: null,
+        email_self: '-',
         phone_number: data.phone_number,
         join_date: data.join_date,
         employment_type: data.contract_type === 'permanent' ? 'full-time' : 'part-time',
