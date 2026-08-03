@@ -3,7 +3,7 @@ import { OverviewCard } from '@/components/design-system/card/overview-card';
 import { StepForm, type Step } from '@/components/step-form';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { employee } from '@/data/Employee/employee';
+import { employee, type Employee } from '@/data/Employee/employee';
 import AppLayout from '@/layouts/app-layout';
 import { useForm } from '@inertiajs/react';
 import { UserCheck, UserPlus, UserX } from 'lucide-react';
@@ -15,10 +15,18 @@ import { FinancialStep } from '../components/steps/financial-step';
 import { PersonalStep } from '../components/steps/personal-step';
 import { PreviewStep } from '../components/steps/preview-step';
 import { ProvisionStep } from '../components/steps/provision-step';
-import { loadLocalEmployees, saveLocalEmployee } from '../lib/employee-storage';
+import { hydrateEmployeeFormData, saveFormOverlay } from '../lib/employee-form-overlay';
+import {
+    applyFormDataToEmployee,
+    loadEmployeeOverrides,
+    loadLocalEmployees,
+    saveEmployeeOverride,
+    saveLocalEmployee,
+    updateLocalEmployee,
+} from '../lib/employee-storage';
 import { validateEmployeeForm } from '../lib/validate-employee-form';
-import { initialEmployeeFormData, type EmployeeFormData, type FieldErrors } from '../types/employee-form';
-import { employeeColumns } from './columns';
+import { createEmptyFileFieldFlags, initialEmployeeFormData, type EmployeeFormData, type FieldErrors, type FileFieldFlags } from '../types/employee-form';
+import { buildEmployeeColumns } from './columns';
 
 const employeeSearch: SearchConfig = {
     keys: ['full_name', 'email_self'],
@@ -40,10 +48,16 @@ const employeeFilters: FilterConfig[] = [
 export default function Index() {
     const [open, setOpen] = useState(false);
     const [localEmployees, setLocalEmployees] = useState(loadLocalEmployees);
+    const [overrides, setOverrides] = useState(loadEmployeeOverrides);
     const [validationErrors, setValidationErrors] = useState<FieldErrors>({});
+    const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+    const [fileFlags, setFileFlags] = useState<FileFieldFlags>(createEmptyFileFieldFlags());
     const { data, setData, processing, reset } = useForm<EmployeeFormData>(initialEmployeeFormData);
 
-    const allEmployees = useMemo(() => [...employee, ...localEmployees], [localEmployees]);
+    const allEmployees = useMemo(
+        () => [...employee.map((e) => ({ ...e, ...overrides[e.id] })), ...localEmployees],
+        [overrides, localEmployees],
+    );
 
     const latestJoinYear = useMemo(() => Math.max(...allEmployees.map((e) => new Date(e.join_date).getFullYear())), [allEmployees]);
 
@@ -64,9 +78,30 @@ export default function Index() {
         setOpen(false);
         reset();
         setValidationErrors({});
+        setEditingEmployee(null);
+        setFileFlags(createEmptyFileFieldFlags());
     };
 
-    const steps: Step[] /*  */= [
+    const openCreate = () => {
+        setEditingEmployee(null);
+        reset();
+        setFileFlags(createEmptyFileFieldFlags());
+        setValidationErrors({});
+        setOpen(true);
+    };
+
+    const openEdit = (row: Employee) => {
+        const hydrated = hydrateEmployeeFormData(row);
+        setEditingEmployee(row);
+        setData(hydrated.data);
+        setFileFlags(hydrated.fileFlags);
+        setValidationErrors({});
+        setOpen(true);
+    };
+
+    const columns = buildEmployeeColumns(openEdit);
+
+    const steps: Step[] = [
         { label: 'Personal', content: <PersonalStep data={data} setData={setData} errors={validationErrors} /> },
         { label: 'Pendidikan', content: <EducationStep data={data} setData={setData} errors={validationErrors} /> },
         { label: 'Pengalaman', content: <ExperienceStep data={data} setData={setData} errors={validationErrors} /> },
@@ -76,7 +111,7 @@ export default function Index() {
     ];
 
     const finish = () => {
-        const nextErrors = validateEmployeeForm(data);
+        const nextErrors = validateEmployeeForm(data, fileFlags);
         if (Object.keys(nextErrors).length > 0) {
             setValidationErrors(nextErrors);
             toast.error('Lengkapi seluruh field yang wajib diisi sebelum menyimpan.');
@@ -84,8 +119,23 @@ export default function Index() {
         }
 
         setValidationErrors({});
-        setLocalEmployees(saveLocalEmployee(data));
-        toast.success(`${data.full_name} berhasil ditambahkan.`);
+
+        if (editingEmployee) {
+            const updated = applyFormDataToEmployee(editingEmployee, data);
+            if (localEmployees.some((e) => e.id === editingEmployee.id)) {
+                setLocalEmployees(updateLocalEmployee(editingEmployee.id, updated));
+            } else {
+                setOverrides(saveEmployeeOverride(editingEmployee.id, updated));
+            }
+            saveFormOverlay(editingEmployee.id, data);
+            toast.success(`${data.full_name} berhasil diperbarui.`);
+        } else {
+            const { employees, created } = saveLocalEmployee(data);
+            setLocalEmployees(employees);
+            saveFormOverlay(created.id, data);
+            toast.success(`${data.full_name} berhasil ditambahkan.`);
+        }
+
         close();
     };
 
@@ -94,7 +144,7 @@ export default function Index() {
             <div className="space-y-4 p-6">
                 <OverviewCard title={`Overview of ${latestJoinYear}`} stats={overviewStats} />
                 <DataTable
-                    columns={employeeColumns}
+                    columns={columns}
                     data={allEmployees}
                     search={employeeSearch}
                     filters={employeeFilters}
@@ -103,21 +153,19 @@ export default function Index() {
                             open={open}
                             onOpenChange={(open) => {
                                 setOpen(open);
-                                if (!open) {
-                                    reset();
-                                    setValidationErrors({});
-                                }
+                                if (!open) close();
                             }}
                         >
                             <DialogTrigger asChild>
-                                <Button size="sm" className="font-poppins bg-[#1980C0] hover:bg-[#1668a0]">
+                                <Button size="sm" className="font-poppins bg-[#1980C0] hover:bg-[#1668a0]" onClick={openCreate}>
                                     Tambah Karyawan
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="flex max-w-4xl flex-col gap-0" onInteractOutside={(e) => e.preventDefault()}>
                                 <StepForm
                                     steps={steps}
-                                    title="Tambah Karyawan"
+                                    title={editingEmployee ? 'Edit Karyawan' : 'Tambah Karyawan'}
+                                    finishLabel={editingEmployee ? 'Perbarui' : 'Simpan'}
                                     processing={processing}
                                     onCancel={close}
                                     onFinish={finish}
