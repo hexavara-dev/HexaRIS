@@ -1,12 +1,12 @@
 import { FileUploadField } from '@/components/form/form-field';
-import { type EmployeeFormData } from '../../types/employee-form';
+import { type EmployeeFormData, type FieldErrors } from '../../types/employee-form';
 
 type DocumentKey = 'ktp' | 'npwp' | 'contract';
 
 interface DocumentUploadsProps {
     data: EmployeeFormData;
     setData: <K extends keyof EmployeeFormData>(key: K, value: EmployeeFormData[K]) => void;
-    errors: Partial<Record<keyof EmployeeFormData, string>>;
+    errors: FieldErrors;
 }
 
 const DOCUMENTS: { key: DocumentKey; label: string; required?: boolean }[] = [

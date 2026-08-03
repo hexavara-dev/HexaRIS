@@ -16,7 +16,8 @@ import { PersonalStep } from '../components/steps/personal-step';
 import { PreviewStep } from '../components/steps/preview-step';
 import { ProvisionStep } from '../components/steps/provision-step';
 import { loadLocalEmployees, saveLocalEmployee } from '../lib/employee-storage';
-import { initialEmployeeFormData, type EmployeeFormData } from '../types/employee-form';
+import { validateEmployeeForm } from '../lib/validate-employee-form';
+import { initialEmployeeFormData, type EmployeeFormData, type FieldErrors } from '../types/employee-form';
 import { employeeColumns } from './columns';
 
 const employeeSearch: SearchConfig = {
@@ -39,7 +40,8 @@ const employeeFilters: FilterConfig[] = [
 export default function Index() {
     const [open, setOpen] = useState(false);
     const [localEmployees, setLocalEmployees] = useState(loadLocalEmployees);
-    const { data, setData, errors, processing, reset } = useForm<EmployeeFormData>(initialEmployeeFormData);
+    const [validationErrors, setValidationErrors] = useState<FieldErrors>({});
+    const { data, setData, processing, reset } = useForm<EmployeeFormData>(initialEmployeeFormData);
 
     const allEmployees = useMemo(() => [...employee, ...localEmployees], [localEmployees]);
 
@@ -61,18 +63,27 @@ export default function Index() {
     const close = () => {
         setOpen(false);
         reset();
+        setValidationErrors({});
     };
 
-    const steps: Step[] = [
-        { label: 'Personal', content: <PersonalStep data={data} setData={setData} errors={errors} /> },
-        { label: 'Pendidikan', content: <EducationStep data={data} setData={setData} errors={errors} /> },
-        { label: 'Pengalaman', content: <ExperienceStep data={data} setData={setData} errors={errors} /> },
-        { label: 'Ketentuan', content: <ProvisionStep data={data} setData={setData} errors={errors} /> },
-        { label: 'Gaji & Bank', content: <FinancialStep data={data} setData={setData} errors={errors} /> },
+    const steps: Step[] /*  */= [
+        { label: 'Personal', content: <PersonalStep data={data} setData={setData} errors={validationErrors} /> },
+        { label: 'Pendidikan', content: <EducationStep data={data} setData={setData} errors={validationErrors} /> },
+        { label: 'Pengalaman', content: <ExperienceStep data={data} setData={setData} errors={validationErrors} /> },
+        { label: 'Ketentuan', content: <ProvisionStep data={data} setData={setData} errors={validationErrors} /> },
+        { label: 'Gaji & Bank', content: <FinancialStep data={data} setData={setData} errors={validationErrors} /> },
         { label: 'Pratinjau', content: <PreviewStep data={data} /> },
     ];
 
     const finish = () => {
+        const nextErrors = validateEmployeeForm(data);
+        if (Object.keys(nextErrors).length > 0) {
+            setValidationErrors(nextErrors);
+            toast.error('Lengkapi seluruh field yang wajib diisi sebelum menyimpan.');
+            return;
+        }
+
+        setValidationErrors({});
         setLocalEmployees(saveLocalEmployee(data));
         toast.success(`${data.full_name} berhasil ditambahkan.`);
         close();
@@ -92,7 +103,10 @@ export default function Index() {
                             open={open}
                             onOpenChange={(open) => {
                                 setOpen(open);
-                                if (!open) reset();
+                                if (!open) {
+                                    reset();
+                                    setValidationErrors({});
+                                }
                             }}
                         >
                             <DialogTrigger asChild>

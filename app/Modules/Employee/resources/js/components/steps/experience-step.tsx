@@ -1,15 +1,15 @@
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { createEmptyWorkExperience, type EmployeeFormData, type WorkExperience } from '../../types/employee-form';
+import { createEmptyWorkExperience, type EmployeeFormData, type FieldErrors, type WorkExperience } from '../../types/employee-form';
 import { ExperienceEntry } from './experience-entry';
 
 interface ExperienceStepProps {
     data: EmployeeFormData;
     setData: <K extends keyof EmployeeFormData>(key: K, value: EmployeeFormData[K]) => void;
-    errors: Partial<Record<keyof EmployeeFormData, string>>;
+    errors: FieldErrors;
 }
 
-export function ExperienceStep({ data, setData }: ExperienceStepProps) {
+export function ExperienceStep({ data, setData, errors }: ExperienceStepProps) {
     function updateAt(index: number, updated: WorkExperience) {
         setData(
             'work_experiences',
@@ -38,6 +38,14 @@ export function ExperienceStep({ data, setData }: ExperienceStepProps) {
                     onChange={(updated) => updateAt(index, updated)}
                     onRemove={() => removeAt(index)}
                     removable={data.work_experiences.length > 1}
+                    errors={{
+                        company_name: errors[`work_experiences.${index}.company_name`],
+                        employment_type: errors[`work_experiences.${index}.employment_type`],
+                        position: errors[`work_experiences.${index}.position`],
+                        description: errors[`work_experiences.${index}.description`],
+                        start_date: errors[`work_experiences.${index}.start_date`],
+                        end_date: errors[`work_experiences.${index}.end_date`],
+                    }}
                 />
             ))}
 

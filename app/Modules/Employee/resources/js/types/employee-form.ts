@@ -29,21 +29,14 @@ export function createEmptyWorkExperience(): WorkExperience {
     };
 }
 
-/**
- * Mirrors EmployeeDocument in @/data/Employee/employeeDocument — that's the
- * entity ijazah actually live in (e.g. Nikolas Raharjo has two: "Ijazah S1
- * Manajemen" and "Ijazah S2 Magister Manajemen"). There is no separate
- * start_date/end_date/final_score column there; `level` + `institution` +
- * `major` only exist here to make the input structured, and get combined
- * into a single EmployeeDocument.name (e.g. "Ijazah S1 Teknik Industri") —
- * `number` maps straight to EmployeeDocument.number, `certificate` to
- * document_path.
- */
+/** Last completed education only — one entry per employee, no add/remove. */
 export type EducationEntry = {
     level: string;
     institution: string;
     major: string;
-    number: string;
+    start_date: string;
+    end_date: string;
+    final_score: string;
     certificate: File | null;
 };
 
@@ -52,27 +45,28 @@ export function createEmptyEducationEntry(): EducationEntry {
         level: '',
         institution: '',
         major: '',
-        number: '',
+        start_date: '',
+        end_date: '',
+        final_score: '',
         certificate: null,
     };
 }
+
+/**
+ * Keyed by field name for flat steps (e.g. 'full_name'), and by dotted path
+ * for nested/array ones (e.g. 'education.level', 'work_experiences.0.start_date')
+ * so a validation error on one entry never bleeds into another same-named field.
+ */
+export type FieldErrors = Partial<Record<string, string>>;
 
 // A type alias, not an interface: Inertia's useForm constrains its generic to
 // FormDataType (an index-signature type), and interfaces have no implicit one.
 export type EmployeeFormData = {
     full_name: string;
-    /** Mirrors Employee.email_self — required. */
-    email_self: string;
-    /** Mirrors Employee.email_company — optional. */
-    email_company: string;
     phone_number: string;
     gender: string;
     religion: string;
     birth_date: string;
-    /** Mirrors Employee.identity_number (NIK) — plain text, not the KTP scan itself. */
-    identity_number: string;
-    /** Optional — mirrors Employee.npwp_number as plain text, not the NPWP scan itself. */
-    npwp_number: string;
     province_id: string;
     regency_id: string;
     /** Mirrors Employee.is_married directly — boolean, not a 'menikah'/'lajang' string. */
@@ -81,7 +75,7 @@ export type EmployeeFormData = {
     ktp: File | null;
     npwp: File | null;
     contract: File | null;
-    educations: EducationEntry[];
+    education: EducationEntry;
     work_experiences: WorkExperience[];
     /** Optional — free-text branch name (no dedicated branch/location module yet). */
     branch: string;
@@ -89,14 +83,8 @@ export type EmployeeFormData = {
     department_id: string;
     /** References OrganizationUnit.id (unit_type 'DIVISION'), scoped to department_id via parent_id. */
     division_id: string;
-    /**
-     * References JobPosition.id in @/data/Position/jobPosition. There is no
-     * separate job_level_id here on purpose — EmployeeAssignment doesn't store
-     * one either; level is only ever read via job_position_id -> JobPosition.job_level_id.
-     */
-    job_position_id: string;
-    /** References Employee.id — mirrors EmployeeAssignment.direct_manager_id. */
-    direct_manager_id: string;
+    /** Fixed set (Manajer/Direksi/Senior/Junior) picked directly — not derived from a job position. */
+    job_level: string;
     /** Mirrors ContractType in @/data/Employee/employmentContract. */
     contract_type: string;
     join_date: string;
@@ -112,14 +100,10 @@ export type EmployeeFormData = {
 
 export const initialEmployeeFormData: EmployeeFormData = {
     full_name: '',
-    email_self: '',
-    email_company: '',
     phone_number: '',
     gender: '',
     religion: '',
     birth_date: '',
-    identity_number: '',
-    npwp_number: '',
     province_id: '',
     regency_id: '',
     is_married: false,
@@ -127,13 +111,12 @@ export const initialEmployeeFormData: EmployeeFormData = {
     ktp: null,
     npwp: null,
     contract: null,
-    educations: [createEmptyEducationEntry()],
+    education: createEmptyEducationEntry(),
     work_experiences: [createEmptyWorkExperience()],
     branch: '',
     department_id: '',
     division_id: '',
-    job_position_id: '',
-    direct_manager_id: '',
+    job_level: '',
     contract_type: '',
     join_date: '',
     bank_name: '',
