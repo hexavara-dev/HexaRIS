@@ -114,7 +114,7 @@ export default function Index() {
         { label: 'Pratinjau', content: <PreviewStep data={data} /> },
     ];
 
-    const finish = () => {
+    const finish = async () => {
         const nextErrors = validateEmployeeForm(data, fileFlags);
         if (Object.keys(nextErrors).length > 0) {
             setValidationErrors(nextErrors);
@@ -133,12 +133,12 @@ export default function Index() {
                 // they happened to be on this one edit, hiding any later change to the seed fixture.
                 setOverrides(saveEmployeeOverride(editingEmployee.id, wizardEditableFields(data)));
             }
-            saveFormOverlay(editingEmployee.id, data, fileFlags);
+            await saveFormOverlay(editingEmployee.id, data, fileFlags);
             toast.success(`${data.full_name} berhasil diperbarui.`);
         } else {
             const { employees, created } = saveLocalEmployee(data);
             setLocalEmployees(employees);
-            saveFormOverlay(created.id, data, fileFlags);
+            await saveFormOverlay(created.id, data, fileFlags);
             toast.success(`${data.full_name} berhasil ditambahkan.`);
         }
 
