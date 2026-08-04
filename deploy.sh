@@ -74,8 +74,8 @@ php artisan migrate --force
 
 # Idempotent: creates the MinIO bucket + staging-expiry lifecycle if missing.
 # Requires MINIO_* credentials in shared/.env (see docs/deployment-checklist.md).
-echo "==> Ensuring MinIO berkas bucket + lifecycle"
-php artisan berkas:ensure-bucket
+# echo "==> Ensuring MinIO berkas bucket + lifecycle"
+# php artisan berkas:ensure-bucket
 
 # Reference/master data is intentionally NOT seeded on deploy. Schema changes
 # apply via `migrate --force` above; DATA is provisioned ONCE on first install
