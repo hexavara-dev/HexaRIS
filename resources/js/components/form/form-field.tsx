@@ -148,6 +148,8 @@ export interface StoredFile {
     name: string;
     type: string;
     dataUrl: string;
+    /** Index signature (all fields are strings) so a StoredFile-typed form field can satisfy Inertia's FormDataConvertible without an explicit cast — File already qualifies via Blob. */
+    [key: string]: string;
 }
 
 /** localStorage has ~5-10MB of headroom total per origin and this app has no backend to offload to — reject anything bigger at selection time rather than silently failing the save later. */

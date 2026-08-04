@@ -1,3 +1,4 @@
+import { type StoredFile } from '@/components/form/form-field';
 import { organization } from '@/data/Organization/organization';
 import { createEmptyFileFieldFlags, type EmployeeFormData, type FieldErrors, type FileFieldFlags } from '../types/employee-form';
 
@@ -7,7 +8,7 @@ function requireText(errors: FieldErrors, key: string, value: string) {
     if (!value.trim()) errors[key] = REQUIRED_MESSAGE;
 }
 
-function requireFile(errors: FieldErrors, key: string, value: File | null, hadBefore: boolean) {
+function requireFile(errors: FieldErrors, key: string, value: File | StoredFile | null, hadBefore: boolean) {
     if (!value && !hadBefore) errors[key] = REQUIRED_MESSAGE;
 }
 
