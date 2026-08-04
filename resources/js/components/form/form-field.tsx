@@ -1,5 +1,9 @@
 import { Eye, EyeOff, FileText, FolderClosed, Trash2, XCircle } from 'lucide-react';
+import { toast } from 'sonner';
+
 import { type ChangeEvent, type ReactNode, useEffect, useState } from 'react';
+
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
@@ -140,14 +144,39 @@ export function SelectField({ label, htmlFor, error, hint, required, value, onVa
     );
 }
 
-export interface UploadedFile {
+export interface StoredFile {
     name: string;
-    size: string;
+    type: string;
+    dataUrl: string;
 }
 
-/** FileUploadField shows name + size; the form itself holds the raw File. */
-export function toUploadedFile(file: File | null): UploadedFile | null {
+/** localStorage has ~5-10MB of headroom total per origin and this app has no backend to offload to — reject anything bigger at selection time rather than silently failing the save later. */
+export const MAX_STORED_FILE_BYTES = 2 * 1024 * 1024;
+
+export function isStoredFile(value: unknown): value is StoredFile {
+    return typeof value === 'object' && value !== null && 'dataUrl' in value;
+}
+
+/** Converts a freshly picked File to something that survives JSON.stringify — called right before a save persists it. */
+export function fileToStoredFile(file: File): Promise<StoredFile> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ name: file.name, type: file.type, dataUrl: reader.result as string });
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+    });
+}
+
+export interface UploadedFile {
+    name: string;
+    /** Only known for a freshly picked File — a hydrated StoredFile doesn't carry its byte size. */
+    size: string | null;
+}
+
+/** FileUploadField shows name + size; the form itself holds the raw File or a previously stored one. */
+export function toUploadedFile(file: File | StoredFile | null): UploadedFile | null {
     if (!file) return null;
+    if (isStoredFile(file)) return { name: file.name, size: null };
     return { name: file.name, size: `${(file.size / 1024 / 1024).toFixed(1)} Mb` };
 }
 
@@ -183,17 +212,20 @@ export function FileTypeIcon({ name, className = 'h-9 w-9' }: { name: string; cl
 }
 
 /**
- * Object URLs are the only way to preview a File that hasn't been uploaded
- * anywhere yet — there's no backend to fetch it back from. Recreated only
- * when `file` itself changes, and always revoked on cleanup so selecting a
- * lot of files in one session doesn't leak blob URLs.
+ * A live File gets an object URL (revoked on cleanup); a StoredFile's
+ * dataUrl is already a usable src/href, no creation or revocation needed.
  */
-export function useFilePreviewUrl(file: File | null): string | null {
+export function useFilePreviewUrl(file: File | StoredFile | null): string | null {
     const [url, setUrl] = useState<string | null>(null);
 
     useEffect(() => {
         if (!file) {
             setUrl(null);
+            return;
+        }
+
+        if (isStoredFile(file)) {
+            setUrl(file.dataUrl);
             return;
         }
 
@@ -206,11 +238,45 @@ export function useFilePreviewUrl(file: File | null): string | null {
     return url;
 }
 
+interface FilePreviewDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    name: string;
+    /** MIME type — best-effort, both File and StoredFile carry one. */
+    type: string;
+    previewUrl: string | null;
+}
+
+/** Shared by FileUploadField's eye button and every read-only document row in the Employee Detail dialog. */
+export function FilePreviewDialog({ open, onOpenChange, name, type, previewUrl }: FilePreviewDialogProps) {
+    const isImage = type.startsWith('image/');
+    const isPdf = type === 'application/pdf';
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl">
+                <DialogTitle className="font-poppins truncate text-base font-semibold text-[#121212]">{name}</DialogTitle>
+                {!previewUrl ? (
+                    <p className="font-poppins text-sm text-[#8F8F8F]">File tidak tersedia untuk pratinjau.</p>
+                ) : isImage ? (
+                    <img src={previewUrl} alt={name} className="max-h-[70vh] w-full rounded object-contain" />
+                ) : isPdf ? (
+                    <iframe src={previewUrl} title={name} className="h-[70vh] w-full rounded border border-[#E7E7E7]" />
+                ) : (
+                    <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="font-poppins text-sm text-[#1980C0] underline">
+                        Buka file di tab baru
+                    </a>
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 interface FileUploadFieldProps {
     label: string;
     required?: boolean;
     error?: string;
-    file?: File | null;
+    file?: File | StoredFile | null;
     onSelect: (file: File | null) => void;
     onRemove: () => void;
     accept?: string;
@@ -230,6 +296,15 @@ export function FileUploadField({
     const inputId = `file-${label.replace(/\s+/g, '-').toLowerCase()}`;
     const uploaded = toUploadedFile(file);
     const previewUrl = useFilePreviewUrl(file);
+    const [previewOpen, setPreviewOpen] = useState(false);
+
+    const handleSelect = (selected: File | null) => {
+        if (selected && selected.size > MAX_STORED_FILE_BYTES) {
+            toast.error(`${selected.name} melebihi 2MB — pilih file yang lebih kecil.`);
+            return;
+        }
+        onSelect(selected);
+    };
 
     return (
         <div className="flex w-full flex-col items-start gap-2.5">
@@ -240,23 +315,30 @@ export function FileUploadField({
             {uploaded ? (
                 <div className="w-full rounded border border-dashed border-[#808080] p-4">
                     <div className="flex w-full items-center gap-4 rounded-lg bg-white px-4 py-2 shadow-[0_2px_4px_0_rgba(0,0,0,0.05),0_1px_8px_0_rgba(0,0,0,0.10)]">
-                        <a
-                            href={previewUrl ?? undefined}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        <FileTypeIcon name={uploaded.name} />
+                        <div className="flex min-w-0 flex-1 flex-col items-start">
+                            <p className="font-poppins w-full truncate text-sm text-[#353535]">{uploaded.name}</p>
+                            {uploaded.size && <p className="font-poppins text-sm text-[#808080]">{uploaded.size}</p>}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setPreviewOpen(true)}
                             aria-label={`Lihat ${uploaded.name}`}
-                            className="flex min-w-0 flex-1 items-center gap-4"
+                            className="cursor-pointer text-[#4F4F4F]"
                         >
-                            <FileTypeIcon name={uploaded.name} />
-                            <div className="flex min-w-0 flex-1 flex-col items-start">
-                                <p className="font-poppins w-full truncate text-sm text-[#353535]">{uploaded.name}</p>
-                                <p className="font-poppins text-sm text-[#808080]">{uploaded.size}</p>
-                            </div>
-                        </a>
+                            <Eye className="h-5 w-5" />
+                        </button>
                         <button type="button" onClick={onRemove} aria-label="Hapus file" className="cursor-pointer">
                             <Trash2 className="h-6 w-6 text-[#E84A39]" />
                         </button>
                     </div>
+                    <FilePreviewDialog
+                        open={previewOpen}
+                        onOpenChange={setPreviewOpen}
+                        name={uploaded.name}
+                        type={file?.type ?? ''}
+                        previewUrl={previewUrl}
+                    />
                 </div>
             ) : (
                 <label
@@ -273,7 +355,7 @@ export function FileUploadField({
                         type="file"
                         accept={accept}
                         className="hidden"
-                        onChange={(event: ChangeEvent<HTMLInputElement>) => onSelect(event.target.files?.[0] ?? null)}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => handleSelect(event.target.files?.[0] ?? null)}
                     />
                 </label>
             )}
