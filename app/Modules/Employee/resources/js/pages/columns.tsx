@@ -2,46 +2,76 @@ import { type Column } from '@/components/data-table';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { type Employee } from '@/data/Employee/employee';
+import { employeeAddress } from '@/data/Employee/employeeAddress';
+import { organization } from '@/data/Organization/organization';
+import { regency } from '@/data/Region/regency';
 import { MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
+import { peekFormOverlay } from '../lib/employee-form-overlay';
+import { assignedOrgUnit, departmentName as departmentNameFromErd, divisionName as divisionNameFromErd } from '../lib/employee-org';
 
-export const employeeColumns: Column<Employee>[] = [
-    { key: 'employee_number', label: 'ID Karyawan', sortable: true },
-    { key: 'full_name', label: 'Nama', sortable: true },
-    { key: 'email_self', label: 'Email' },
-    { key: 'phone_number', label: 'No. HP' },
-    { key: 'employment_type', label: 'Tipe Kerja' },
-    {
-        key: 'is_active',
-        label: 'Status',
-        render: (row) => <Badge variant={row.is_active ? 'success' : 'secondary'}>{row.is_active ? 'Aktif' : 'Nonaktif'}</Badge>,
-    },
-    {
-        key: 'id',
-        label: '',
-        align: 'right',
-        render: (row) => (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <MoreVertical className="cursor-pointer size-3.5 text-[#1B1B1B]" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => toast.info(`Detail ${row.full_name} belum tersedia.`)}>Detail</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                        onClick={() => toast.info('Hapus karyawan belum tersambung ke backend.')}
-                    >
-                        Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                        className="text-[#E84A39] focus:text-[#E84A39] text-red-500"
-                        onClick={() => toast.info('Hapus karyawan belum tersambung ke backend.')}
-                    >
-                        Arsipkan
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        ),
-    },
-];
+/** No dedicated branch/location module yet — approximated from the employee's city; falls back to the wizard's free-text Cabang for employees the ERD has no address for. */
+function branchName(employeeId: string): string {
+    const address = employeeAddress.find((a) => a.employee_id === employeeId && a.is_primary) ?? employeeAddress.find((a) => a.employee_id === employeeId);
+    if (address) {
+        const cityName = regency.find((r) => r.id === address.regency_id)?.name;
+        if (cityName) return cityName.replace(/^Kota\s+/i, '').replace(/^Kabupaten\s+/i, '');
+    }
+    const overlayBranch = peekFormOverlay(employeeId)?.data.branch;
+    return overlayBranch || '-';
+}
+
+/** Wizard-created employees (and any employee edited through the wizard) have no employeeAssignment row — fall back to the form overlay's department_id. */
+function departmentName(employeeId: string): string {
+    if (assignedOrgUnit(employeeId)) return departmentNameFromErd(employeeId);
+    const departmentId = peekFormOverlay(employeeId)?.data.department_id;
+    if (!departmentId) return '-';
+    return organization.find((u) => u.id === departmentId)?.name ?? '-';
+}
+
+/** Same fallback as departmentName, for division_id. */
+function divisionName(employeeId: string): string {
+    if (assignedOrgUnit(employeeId)) return divisionNameFromErd(employeeId);
+    const divisionId = peekFormOverlay(employeeId)?.data.division_id;
+    if (!divisionId) return '-';
+    return organization.find((u) => u.id === divisionId)?.name ?? '-';
+}
+
+export function buildEmployeeColumns(onEdit: (employee: Employee) => void): Column<Employee>[] {
+    return [
+        { key: 'employee_number', label: 'ID', sortable: true },
+        { key: 'full_name', label: 'Nama', sortable: true },
+        { key: 'branch', label: 'Cabang', render: (row) => branchName(row.id) },
+        { key: 'department', label: 'Departemen', render: (row) => departmentName(row.id) },
+        {
+            key: 'is_active',
+            label: 'Status',
+            render: (row) => <Badge variant={row.is_active ? 'success' : 'secondary'}>{row.is_active ? 'Aktif' : 'Nonaktif'}</Badge>,
+        },
+        { key: 'division', label: 'Divisi', render: (row) => divisionName(row.id) },
+        {
+            key: 'id',
+            label: '',
+            align: 'right',
+            render: (row) => (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <MoreVertical className="cursor-pointer size-3.5 text-[#1B1B1B]" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => toast.info(`Detail ${row.full_name} belum tersedia.`)}>Detail</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onEdit(row)}>Edit</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            className="text-[#E84A39] focus:text-[#E84A39] text-red-500"
+                            onClick={() => toast.info('Hapus karyawan belum tersambung ke backend.')}
+                        >
+                            Arsipkan
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ),
+        },
+    ];
+}

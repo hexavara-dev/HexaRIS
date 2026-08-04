@@ -1,14 +1,12 @@
 import { FileTypeIcon, toUploadedFile, useFilePreviewUrl, type SelectFieldOption } from '@/components/form/form-field';
-import { employee } from '@/data/Employee/employee';
 import { organization } from '@/data/Organization/organization';
-import { jobPosition } from '@/data/Position/jobPosition';
 import { type ReactNode } from 'react';
 import { type EmployeeFormData } from '../../types/employee-form';
-import { educationLevelOptions } from './education-entry';
+import { educationLevelOptions } from './education-step';
 import { employmentTypeOptions, workLocationOptions } from './experience-entry';
 import { bankOptions } from './financial-step';
 import { genderOptions, maritalStatusLabel, religionOptions } from './personal-step';
-import { branchOptions, contractOptions, jobLevelNameForPosition } from './provision-step';
+import { branchOptions, contractOptions, jobLevelOptions } from './provision-step';
 
 function labelFor(options: SelectFieldOption[], value: string) {
     return options.find((option) => option.value === value)?.label || '—';
@@ -16,14 +14,6 @@ function labelFor(options: SelectFieldOption[], value: string) {
 
 function orgUnitName(id: string) {
     return organization.find((unit) => unit.id === id)?.name || '—';
-}
-
-function jobPositionTitle(id: string) {
-    return jobPosition.find((p) => p.id === id)?.title || '—';
-}
-
-function employeeName(id: string) {
-    return employee.find((e) => e.id === id)?.full_name || '—';
 }
 
 function formatDate(value: string) {
@@ -82,28 +72,24 @@ export function PreviewStep({ data }: PreviewStepProps) {
         <div className="flex flex-col gap-5">
             <SummarySection title="Data Personal">
                 <SummaryRow label="Nama Lengkap" value={data.full_name} />
-                <SummaryRow label="Email Pribadi" value={data.email_self} />
-                <SummaryRow label="Email Perusahaan" value={data.email_company} />
                 <SummaryRow label="No Telp" value={data.phone_number} />
                 <SummaryRow label="Jenis Kelamin" value={labelFor(genderOptions, data.gender)} />
                 <SummaryRow label="Tgl Lahir" value={formatDate(data.birth_date)} />
                 <SummaryRow label="Agama" value={labelFor(religionOptions, data.religion)} />
                 <SummaryRow label="Status Pernikahan" value={maritalStatusLabel(data.is_married)} />
-                <SummaryRow label="NIK" value={data.identity_number} />
-                <SummaryRow label="NPWP" value={data.npwp_number} />
                 <div className="col-span-2">
                     <SummaryRow label="Alamat Lengkap" value={data.address} />
                 </div>
             </SummarySection>
 
-            {data.educations.map((education, index) => (
-                <SummarySection key={index} title={data.educations.length > 1 ? `Data Pendidikan ${index + 1}` : 'Data Pendidikan'}>
-                    <SummaryRow label="Jenjang Pendidikan" value={labelFor(educationLevelOptions, education.level)} />
-                    <SummaryRow label="Nama Institusi" value={education.institution} />
-                    <SummaryRow label="Jurusan" value={education.major} />
-                    <SummaryRow label="Nomor Ijazah" value={education.number} />
-                </SummarySection>
-            ))}
+            <SummarySection title="Data Pendidikan">
+                <SummaryRow label="Pendidikan Terakhir" value={labelFor(educationLevelOptions, data.education.level)} />
+                <SummaryRow label="Nama Institusi" value={data.education.institution} />
+                <SummaryRow label="Mulai" value={formatDate(data.education.start_date)} />
+                <SummaryRow label="Jurusan" value={data.education.major} />
+                <SummaryRow label="Lulus" value={formatDate(data.education.end_date)} />
+                <SummaryRow label="Nilai Akhir" value={data.education.final_score} />
+            </SummarySection>
 
             {data.work_experiences.map((experience, index) => (
                 <SummarySection key={index} title={data.work_experiences.length > 1 ? `Data Pengalaman ${index + 1}` : 'Data Pengalaman'}>
@@ -121,12 +107,10 @@ export function PreviewStep({ data }: PreviewStepProps) {
 
             <SummarySection title="Data Ketentuan">
                 <SummaryRow label="Cabang" value={labelFor(branchOptions, data.branch)} />
+                <SummaryRow label="Level" value={labelFor(jobLevelOptions, data.job_level)} />
                 <SummaryRow label="Departemen" value={orgUnitName(data.department_id)} />
-                <SummaryRow label="Divisi" value={orgUnitName(data.division_id)} />
-                <SummaryRow label="Jabatan" value={jobPositionTitle(data.job_position_id)} />
-                <SummaryRow label="Level" value={jobLevelNameForPosition(data.job_position_id) ?? '—'} />
-                <SummaryRow label="Atasan Langsung" value={employeeName(data.direct_manager_id)} />
                 <SummaryRow label="Kontrak" value={labelFor(contractOptions, data.contract_type)} />
+                <SummaryRow label="Divisi" value={orgUnitName(data.division_id)} />
                 <SummaryRow label="Tgl Gabung" value={formatDate(data.join_date)} />
             </SummarySection>
 
@@ -145,9 +129,7 @@ export function PreviewStep({ data }: PreviewStepProps) {
                     <DocumentRow label="KTP" file={data.ktp} />
                     <DocumentRow label="NPWP" file={data.npwp} />
                     <DocumentRow label="Surat Kontrak" file={data.contract} />
-                    {data.educations.map((education, index) => (
-                        <DocumentRow key={index} label="Ijazah/Transkrip" file={education.certificate} />
-                    ))}
+                    <DocumentRow label="Ijazah/Transkrip" file={data.education.certificate} />
                     {data.work_experiences.map((experience, index) => (
                         <DocumentRow key={index} label="Surat Referensi" file={experience.reference_letter} />
                     ))}

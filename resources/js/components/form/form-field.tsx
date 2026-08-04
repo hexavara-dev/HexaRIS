@@ -1,4 +1,4 @@
-import { Eye, EyeOff, FileText, Trash2, Upload, XCircle } from 'lucide-react';
+import { Eye, EyeOff, FileText, FolderClosed, Trash2, XCircle } from 'lucide-react';
 import { type ChangeEvent, type ReactNode, useEffect, useState } from 'react';
 
 import InputError from '@/components/input-error';
@@ -262,11 +262,11 @@ export function FileUploadField({
                 <label
                     htmlFor={inputId}
                     className={cn(
-                        'flex w-full cursor-pointer flex-col items-center gap-2 rounded border border-dashed border-[#808080] bg-[#F5F5F5] px-8 py-3.5',
+                        'flex w-full cursor-pointer flex-col items-center gap-2 rounded border border-dashed border-[#808080] px-8 py-3.5',
                         error && errorBorderClassName,
                     )}
                 >
-                    <Upload className="h-8 w-8 text-[#8F8F8F]" />
+                    <FolderClosed className="h-8 w-8 text-[#8F8F8F]" />
                     <span className="font-poppins text-center text-xs font-semibold text-[#121212]">{helperText}</span>
                     <input
                         id={inputId}

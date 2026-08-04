@@ -23,6 +23,8 @@ interface StepFormProps {
     /** Called when the final step is submitted. */
     onFinish: () => void;
     processing?: boolean;
+    /** Label for the last step's submit button — e.g. "Perbarui" when editing. */
+    finishLabel?: string;
 }
 
 /**
@@ -31,7 +33,7 @@ interface StepFormProps {
  * state belongs to the caller (Inertia `useForm`), reached from `content` by
  * ordinary closure.
  */
-export function StepForm({ steps, title, onCancel, onFinish, processing = false }: StepFormProps) {
+export function StepForm({ steps, title, onCancel, onFinish, processing = false, finishLabel = 'Simpan' }: StepFormProps) {
     // 0-indexed here; Stepper counts from 1.
     const [current, setCurrent] = useState(0);
 
@@ -76,7 +78,7 @@ export function StepForm({ steps, title, onCancel, onFinish, processing = false 
                         'hover:bg-[#1668a0]',
                     )}
                 >
-                    {isLast ? 'Simpan' : 'Selanjutnya'}
+                    {isLast ? finishLabel : 'Selanjutnya'}
                 </Button>
             </div>
         </form>

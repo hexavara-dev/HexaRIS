@@ -1,5 +1,5 @@
 import { SelectField, TextField, type SelectFieldOption } from '@/components/form/form-field';
-import { type EmployeeFormData } from '../../types/employee-form';
+import { type EmployeeFormData, type FieldErrors } from '../../types/employee-form';
 
 // Mirrors the bank_name values already seeded in @/data/Employee/employeeBankAccount.
 export const bankOptions: SelectFieldOption[] = [
@@ -13,7 +13,7 @@ export const bankOptions: SelectFieldOption[] = [
 interface FinancialStepProps {
     data: EmployeeFormData;
     setData: <K extends keyof EmployeeFormData>(key: K, value: EmployeeFormData[K]) => void;
-    errors: Partial<Record<keyof EmployeeFormData, string>>;
+    errors: FieldErrors;
 }
 
 export function FinancialStep({ data, setData, errors }: FinancialStepProps) {

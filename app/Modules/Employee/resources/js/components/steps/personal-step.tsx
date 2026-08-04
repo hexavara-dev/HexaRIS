@@ -2,7 +2,7 @@ import { SelectField, TextField, type SelectFieldOption } from '@/components/for
 import { province } from '@/data/Region/province';
 import { regency } from '@/data/Region/regency';
 import { useMemo } from 'react';
-import { type EmployeeFormData } from '../../types/employee-form';
+import { type EmployeeFormData, type FieldErrors } from '../../types/employee-form';
 import { DocumentUploads } from './document-uploads';
 
 export const genderOptions: SelectFieldOption[] = [
@@ -36,7 +36,7 @@ const provinceOptions: SelectFieldOption[] = province.map((p) => ({ value: p.id,
 interface PersonalStepProps {
     data: EmployeeFormData;
     setData: <K extends keyof EmployeeFormData>(key: K, value: EmployeeFormData[K]) => void;
-    errors: Partial<Record<keyof EmployeeFormData, string>>;
+    errors: FieldErrors;
 }
 
 export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
@@ -72,26 +72,6 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
                 placeholder="08xxxxxxxxxx"
             />
 
-            <TextField
-                label="Email Pribadi"
-                htmlFor="email_self"
-                required
-                type="email"
-                value={data.email_self}
-                onChange={(v) => setData('email_self', v)}
-                error={errors.email_self}
-                placeholder="nama@email.com"
-            />
-            <TextField
-                label="Email Perusahaan (Opsional)"
-                htmlFor="email_company"
-                type="email"
-                value={data.email_company}
-                onChange={(v) => setData('email_company', v)}
-                error={errors.email_company}
-                placeholder="nama@perusahaan.com"
-            />
-
             <SelectField
                 label="Jenis Kelamin"
                 htmlFor="gender"
@@ -122,24 +102,7 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
                 onChange={(v) => setData('birth_date', v)}
                 error={errors.birth_date}
             />
-            <TextField
-                label="Nomor KTP (NIK)"
-                htmlFor="identity_number"
-                required
-                value={data.identity_number}
-                onChange={(v) => setData('identity_number', v.replace(/\D/g, ''))}
-                error={errors.identity_number}
-                placeholder="16 digit sesuai KTP"
-            />
 
-            <TextField
-                label="Nomor NPWP (Opsional)"
-                htmlFor="npwp_number"
-                value={data.npwp_number}
-                onChange={(v) => setData('npwp_number', v)}
-                error={errors.npwp_number}
-                placeholder="00.000.000.0-000.000"
-            />
             {/* Two selects sharing one grid cell — the nesting case, and it is
                 just a nested grid. No wizard feature required. */}
             <div className="grid grid-cols-2 gap-6">
