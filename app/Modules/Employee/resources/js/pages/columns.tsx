@@ -37,7 +37,7 @@ function divisionName(employeeId: string): string {
     return organization.find((u) => u.id === divisionId)?.name ?? '-';
 }
 
-export function buildEmployeeColumns(onEdit: (employee: Employee) => void): Column<Employee>[] {
+export function buildEmployeeColumns(onEdit: (employee: Employee) => void, onDetail: (employee: Employee) => void): Column<Employee>[] {
     return [
         { key: 'employee_number', label: 'ID', sortable: true },
         { key: 'full_name', label: 'Nama', sortable: true },
@@ -59,7 +59,7 @@ export function buildEmployeeColumns(onEdit: (employee: Employee) => void): Colu
                         <MoreVertical className="cursor-pointer size-3.5 text-[#1B1B1B]" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => toast.info(`Detail ${row.full_name} belum tersedia.`)}>Detail</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onDetail(row)}>Detail</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => onEdit(row)}>Edit</DropdownMenuItem>
                         <DropdownMenuSeparator />

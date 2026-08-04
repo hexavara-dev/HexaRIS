@@ -15,6 +15,7 @@ import { FinancialStep } from '../components/steps/financial-step';
 import { PersonalStep } from '../components/steps/personal-step';
 import { PreviewStep } from '../components/steps/preview-step';
 import { ProvisionStep } from '../components/steps/provision-step';
+import { DetailDialog } from '../components/detail/detail-dialog';
 import { hydrateEmployeeFormData, saveFormOverlay } from '../lib/employee-form-overlay';
 import {
     applyFormDataToEmployee,
@@ -52,6 +53,7 @@ export default function Index() {
     const [overrides, setOverrides] = useState(loadEmployeeOverrides);
     const [validationErrors, setValidationErrors] = useState<FieldErrors>({});
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+    const [detailEmployee, setDetailEmployee] = useState<Employee | null>(null);
     const [fileFlags, setFileFlags] = useState<FileFieldFlags>(createEmptyFileFieldFlags());
     const { data, setData, processing, reset } = useForm<EmployeeFormData>(initialEmployeeFormData);
 
@@ -103,7 +105,9 @@ export default function Index() {
         [setData],
     );
 
-    const columns = useMemo(() => buildEmployeeColumns(openEdit), [openEdit]);
+    const openDetail = useCallback((row: Employee) => setDetailEmployee(row), []);
+
+    const columns = useMemo(() => buildEmployeeColumns(openEdit, openDetail), [openEdit, openDetail]);
 
     const steps: Step[] = [
         { label: 'Personal', content: <PersonalStep data={data} setData={setData} errors={validationErrors} /> },
@@ -180,6 +184,12 @@ export default function Index() {
                         </Dialog>
                     }
                 />
+
+                <Dialog open={detailEmployee !== null} onOpenChange={(open) => !open && setDetailEmployee(null)}>
+                    <DialogContent className="max-w-2xl" onInteractOutside={(e) => e.preventDefault()}>
+                        {detailEmployee && <DetailDialog employee={detailEmployee} />}
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );
