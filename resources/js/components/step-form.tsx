@@ -21,7 +21,7 @@ interface StepFormProps {
     /** Called from the "Batal" button on the first step. */
     onCancel: () => void;
     /** Called when the final step is submitted. */
-    onFinish: () => void;
+    onFinish: () => void | Promise<void>;
     processing?: boolean;
     /** Label for the last step's submit button — e.g. "Perbarui" when editing. */
     finishLabel?: string;

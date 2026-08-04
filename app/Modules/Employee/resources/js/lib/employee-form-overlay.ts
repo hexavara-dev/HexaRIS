@@ -125,7 +125,11 @@ export async function saveFormOverlay(employeeId: string, data: EmployeeFormData
 
         toast.error('Penyimpanan lokal penuh — dokumen tidak tersimpan, data lain tetap tersimpan.');
         store[employeeId] = { data: withoutFiles(sanitized), fileFlags };
-        window.localStorage.setItem(OVERLAY_STORAGE_KEY, JSON.stringify(store));
+        try {
+            window.localStorage.setItem(OVERLAY_STORAGE_KEY, JSON.stringify(store));
+        } catch {
+            toast.error('Penyimpanan lokal penuh — data form tidak tersimpan sama sekali.');
+        }
     }
 }
 

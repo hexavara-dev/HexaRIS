@@ -40,7 +40,7 @@ last step's button label (`"Simpan"` vs `"Perbarui"`) accordingly.
 | `resources/js/lib/employee-storage.ts` | Create/update wizard-created employees; a separate override store for edits to the 20 seed employees, which are never mutated directly |
 | `resources/js/lib/employee-form-overlay.ts` | Hydrates the form on Edit — exact, from a prior save through the wizard, or best-effort from the real ERD fixtures (`resources/js/data/Employee/*.ts`) for an employee never edited before |
 | `resources/js/lib/employee-org.ts` | Resolves an employee's department/division id from `employeeAssignment` + `organization` |
-| `resources/js/pages/columns.tsx` | `buildEmployeeColumns(onEdit)` — list columns; Cabang/Departemen/Divisi fall back to the form overlay when no ERD assignment exists (wizard-created or previously-edited employees) |
+| `resources/js/pages/columns.tsx` | `buildEmployeeColumns(onEdit, onDetail)` — list columns; Cabang/Departemen/Divisi fall back to the form overlay when no ERD assignment exists (wizard-created or previously-edited employees) |
 | `resources/js/components/detail/` | Read-only "Detail" dialog (row action) — six tabs mirroring the wizard's steps, sourced from the same `hydrateEmployeeFormData` Edit uses |
 
 ### localStorage keys

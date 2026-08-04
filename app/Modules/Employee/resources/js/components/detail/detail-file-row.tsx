@@ -17,7 +17,7 @@ export function DetailFileRow({ label, file }: DetailFileRowProps) {
     return (
         <div className="flex items-center justify-between gap-4 py-1">
             <p className="font-poppins text-sm text-[#353535]">
-                <span className="text-[#8F8F8F]">{label}</span> : {uploaded ? uploaded.name : '-'}
+                <span className="text-[#8F8F8F]">{label}</span> : {uploaded ? uploaded.name : '—'}
             </p>
             {uploaded ? (
                 <>

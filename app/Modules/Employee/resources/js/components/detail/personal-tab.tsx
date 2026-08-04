@@ -35,10 +35,10 @@ export function PersonalTab({ employee, data }: PersonalTabProps) {
             <div className="flex flex-col gap-2">
                 <p className="font-poppins text-sm font-semibold text-[#121212]">Data Identitas</p>
                 <DetailField label="Nomor Induk Karyawan" value={employee.employee_number} />
-                <DetailField label="Email Perusahaan" value={employee.email_company ?? '-'} />
+                <DetailField label="Email Perusahaan" value={employee.email_company ?? '—'} />
                 <DetailField label="Email Pribadi" value={employee.email_self} />
                 <DetailField label="No. KTP" value={employee.identity_number} />
-                <DetailField label="NPWP" value={employee.npwp_number ?? '-'} />
+                <DetailField label="NPWP" value={employee.npwp_number ?? '—'} />
                 <DetailField label="Golongan Darah" value={employee.blood_type} />
                 <DetailField label="Kewarganegaraan" value={employee.nationality} />
             </div>

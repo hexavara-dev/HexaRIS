@@ -43,7 +43,8 @@ function DocumentRow({ label, file }: { label: string; file: File | StoredFile |
             <div className="flex min-w-0 flex-1 flex-col items-start">
                 <p className="font-poppins text-sm text-[#353535]">{label}</p>
                 <p className="font-poppins w-full truncate text-xs text-[#808080]">
-                    {uploaded.name} · {uploaded.size}
+                    {uploaded.name}
+                    {uploaded.size ? ` · ${uploaded.size}` : ''}
                 </p>
             </div>
         </a>
