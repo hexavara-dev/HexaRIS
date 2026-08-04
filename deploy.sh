@@ -45,10 +45,11 @@ trap cleanup_on_fail EXIT
 
 cd "${REL}"
 
-echo "==> Linking shared .env and storage"
+echo "==> Linking shared .env, storage, and database"
 ln -sfn "${SHARED}/.env" "${REL}/.env"
 rm -rf "${REL}/storage"
 ln -sfn "${SHARED}/storage" "${REL}/storage"
+ln -sfn "${SHARED}/database.sqlite" "${REL}/database/database.sqlite"
 
 echo "==> Installing PHP dependencies (no-dev)"
 composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
