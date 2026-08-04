@@ -2,18 +2,16 @@
 # VPS bootstrap untuk HexaRIS — versi MINIMAL.
 # Target: Ubuntu 24.04 LTS. Jalankan sebagai: root.
 #
-# Stack saat ini: PHP 8.4 + Nginx + PostgreSQL + atomic release (symlink current).
+# Stack saat ini: PHP 8.4 + Nginx + SQLite + atomic release (symlink current).
 # GitHub Actions yang build assets dan rsync — VPS TIDAK clone repo.
 #
 # Jalankan SEKALI PER ENVIRONMENT:
 #   ENV=production DOMAIN=hris.hexavara.com \
 #   DEPLOY_PUBKEY="ssh-ed25519 AAAA... github-actions-hexaris-deploy" \
-#   DB_PASSWORD='password-kuat-di-sini' \
 #     bash vps-bootstrap.sh
 #
 #   ENV=staging DOMAIN=staging.hris.hexavara.com \
 #   DEPLOY_PUBKEY="ssh-ed25519 AAAA... github-actions-hexaris-deploy" \
-#   DB_PASSWORD='password-BERBEDA-untuk-staging' \
 #     bash vps-bootstrap.sh
 #
 # Idempotent: aman dijalankan ulang. Tidak menimpa user/key/.env yang sudah ada.
@@ -24,13 +22,13 @@
 #   [ ] Redis          — kalau cache/session/queue pindah dari database
 #   [ ] Supervisor     — kalau ada queue worker (job background)
 #   [ ] MinIO / S3     — kalau ada upload dokumen karyawan
-#   [ ] Python service — kalau face recognition / ML inference di-deploy di sini
-#   [ ] Role Postgres per-env — sekarang satu role untuk semua env
+#   [ ] PostgreSQL     — kalau skala data sudah outgrow SQLite
 #
 # TIDAK dilakukan skrip ini (harus manual):
 #   - Generate SSH keypair (di laptop, bukan di server)
 #   - Isi APP_KEY di shared/.env
 #   - Setup DNS
+#   - Jalankan Certbot setelah DNS resolve: certbot --nginx -d <DOMAIN>
 #   - Isi GitHub Environment secrets
 
 set -euo pipefail
@@ -51,7 +49,6 @@ esac
 
 : "${DOMAIN:?DOMAIN wajib diisi (mis. hris.hexavara.com)}"
 : "${DEPLOY_PUBKEY:?DEPLOY_PUBKEY wajib diisi (paste full ssh-ed25519 ... pubkey)}"
-: "${DB_PASSWORD:?DB_PASSWORD wajib diisi (password role Postgres)}"
 
 if [[ ! "${DEPLOY_PUBKEY}" =~ ^(ssh-ed25519|ssh-rsa|ecdsa-sha2-) ]]; then
   echo "ERROR: DEPLOY_PUBKEY tidak terlihat seperti SSH public key yang valid" >&2
@@ -60,15 +57,13 @@ fi
 
 APP_DIR="/var/www/${DOMAIN}"
 SHARED="${APP_DIR}/shared"
-DB_NAME="hexaris_${ENV}"
-DB_ROLE="hexaris_${ENV}"
-DEPLOY_USER="deploy-hris-hexavara"
+DEPLOY_USER="deploy"
 
-echo "==> Bootstrap HexaRIS — ENV=${ENV}, dir=${APP_DIR}, db=${DB_NAME}"
+echo "==> Bootstrap HexaRIS — ENV=${ENV}, dir=${APP_DIR}"
 
 # --- 1. Paket dasar --------------------------------------------------------
 
-echo "==> [1/7] apt update + tools dasar"
+echo "==> [1/6] apt update + tools dasar"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 # Sengaja TIDAK apt-get upgrade: skrip yang bisa dijalankan ulang tidak boleh
@@ -78,7 +73,7 @@ apt-get install -y curl wget git unzip ca-certificates gnupg lsb-release acl ufw
 
 # --- 2. PHP 8.4 ------------------------------------------------------------
 
-echo "==> [2/7] PHP 8.4 + ekstensi"
+echo "==> [2/6] PHP 8.4 + ekstensi"
 if ! ls /etc/apt/sources.list.d/ondrej-* >/dev/null 2>&1; then
   add-apt-repository -y ppa:ondrej/php
   apt-get update -y
@@ -86,7 +81,7 @@ fi
 
 apt-get install -y \
   php8.4 php8.4-cli php8.4-fpm \
-  php8.4-pgsql php8.4-mbstring php8.4-xml php8.4-curl php8.4-zip \
+  php8.4-sqlite3 php8.4-mbstring php8.4-xml php8.4-curl php8.4-zip \
   php8.4-bcmath php8.4-intl php8.4-gd
 
 # `php` di PATH HARUS resolve ke 8.4 — deploy.sh memanggil `php artisan` polos.
@@ -95,7 +90,7 @@ php -v | grep -q 'PHP 8.4' || { echo "ERROR: 'php' tidak resolve ke 8.4" >&2; ex
 
 # --- 3. Composer -----------------------------------------------------------
 
-echo "==> [3/7] Composer"
+echo "==> [3/6] Composer"
 if ! command -v composer >/dev/null 2>&1; then
   curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
   php /tmp/composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer
@@ -104,25 +99,9 @@ else
   echo "    composer sudah ada: $(composer --version | head -1)"
 fi
 
-# --- 4. PostgreSQL ---------------------------------------------------------
+# --- 4. Nginx --------------------------------------------------------------
 
-echo "==> [4/7] PostgreSQL — role+db ${DB_ROLE}"
-apt-get install -y postgresql postgresql-contrib
-
-if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${DB_ROLE}'" | grep -q 1; then
-  echo "    role ${DB_ROLE} sudah ada, password tidak diubah"
-else
-  sudo -u postgres psql -c "CREATE ROLE ${DB_ROLE} LOGIN PASSWORD '${DB_PASSWORD}';"
-fi
-
-sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1 \
-  || sudo -u postgres psql -c "CREATE DATABASE ${DB_NAME} OWNER ${DB_ROLE};"
-
-echo "    Postgres bind ke localhost secara default (cek: ss -tlnp | grep 5432)"
-
-# --- 5. Nginx --------------------------------------------------------------
-
-echo "==> [5/7] Nginx"
+echo "==> [4/6] Nginx"
 apt-get install -y nginx
 
 cat > "/etc/nginx/sites-available/${DOMAIN}" <<EOF
@@ -167,9 +146,9 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t || { echo "ERROR: konfigurasi nginx invalid" >&2; exit 1; }
 echo "    site ${DOMAIN} dibuat (reload setelah DNS resolve)"
 
-# --- 6. User deploy --------------------------------------------------------
+# --- 5. User deploy --------------------------------------------------------
 
-echo "==> [6/7] User '${DEPLOY_USER}' + SSH key"
+echo "==> [5/6] User '${DEPLOY_USER}' + SSH key"
 if ! id "${DEPLOY_USER}" >/dev/null 2>&1; then
   useradd -m -s /bin/bash "${DEPLOY_USER}"
   echo "    user ${DEPLOY_USER} dibuat"
@@ -195,7 +174,7 @@ ${DEPLOY_USER} ALL=(root) NOPASSWD: /usr/bin/systemctl reload php8.4-fpm
 EOF
 chmod 440 /etc/sudoers.d/hexaris-deploy
 
-# --- 7. Struktur atomic release + shared/.env ------------------------------
+# --- 6. Struktur atomic release + shared/.env + SQLite --------------------
 
 install -d -m 2775 -o "${DEPLOY_USER}" -g www-data "${APP_DIR}"
 sudo -u "${DEPLOY_USER}" mkdir -p "${APP_DIR}/releases"
@@ -212,6 +191,19 @@ chgrp -R www-data "${SHARED}/storage"
 chmod -R g+rwx "${SHARED}/storage"
 setfacl -R -m u:www-data:rwx "${SHARED}/storage"
 setfacl -R -d -m u:www-data:rwx "${SHARED}/storage"
+
+# SQLite database file — dimiliki www-data karena PHP-FPM berjalan sebagai www-data.
+# Parent dir (shared/) juga harus writable www-data agar SQLite bisa buat WAL/SHM.
+if [[ ! -f "${SHARED}/database.sqlite" ]]; then
+  touch "${SHARED}/database.sqlite"
+  echo "    database.sqlite dibuat"
+else
+  echo "    database.sqlite sudah ada, tidak diubah"
+fi
+chown www-data:www-data "${SHARED}/database.sqlite"
+chmod 664 "${SHARED}/database.sqlite"
+chown www-data:www-data "${SHARED}"
+chmod 775 "${SHARED}"
 
 if [[ ! -f "${SHARED}/.env" ]]; then
   cat > "${SHARED}/.env" <<EOF
@@ -232,20 +224,14 @@ LOG_CHANNEL=stack
 LOG_STACK=single
 LOG_LEVEL=warning
 
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=${DB_NAME}
-DB_USERNAME=${DB_ROLE}
-DB_PASSWORD=${DB_PASSWORD}
+DB_CONNECTION=sqlite
+DB_DATABASE=${SHARED}/database.sqlite
 
 SESSION_DRIVER=database
 SESSION_LIFETIME=120
 SESSION_DOMAIN=${DOMAIN}
 SESSION_SECURE_COOKIE=true
 
-# Belum pakai Redis — cache & queue lewat database dulu.
-# TODO: ganti ke redis kalau Redis sudah dipasang.
 CACHE_STORE=database
 QUEUE_CONNECTION=sync
 BROADCAST_CONNECTION=log
@@ -282,7 +268,7 @@ echo "=========================================="
 echo "  BOOTSTRAP SELESAI — ENV=${ENV}"
 echo "=========================================="
 echo "  Dir:      ${APP_DIR}"
-echo "  Database: ${DB_NAME} (role ${DB_ROLE})"
+echo "  Database: ${SHARED}/database.sqlite (SQLite)"
 echo "  Domain:   ${DOMAIN}"
 echo "  PHP:      $(php -v | head -1)"
 echo "------------------------------------------"
