@@ -36,6 +36,8 @@ export interface Employee {
     time_off_amount: number;
     nationality: Nationality;
     is_active: boolean;
+    /** Soft-hide flag — archived employees are excluded from the management list but never deleted. */
+    is_archived: boolean;
     company_id: string;
 }
 
@@ -69,6 +71,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0002-4a1b-9c2d-1234567890ab',
@@ -95,6 +98,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0003-4a1b-9c2d-1234567890ab',
@@ -121,6 +125,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0004-4a1b-9c2d-1234567890ab',
@@ -147,6 +152,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0005-4a1b-9c2d-1234567890ab',
@@ -173,6 +179,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0006-4a1b-9c2d-1234567890ab',
@@ -199,6 +206,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0007-4a1b-9c2d-1234567890ab',
@@ -225,6 +233,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0008-4a1b-9c2d-1234567890ab',
@@ -251,6 +260,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0009-4a1b-9c2d-1234567890ab',
@@ -277,6 +287,7 @@ export const employee: Employee[] = [
         nationality: 'WNA',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0010-4a1b-9c2d-1234567890ab',
@@ -303,6 +314,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: false,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     // Nikolas Raharjo — Direktur Utama, salah satu pendiri, bergabung sejak awal perusahaan berdiri.
     {
@@ -330,6 +342,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0012-4a1b-9c2d-1234567890ab',
@@ -356,6 +369,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0013-4a1b-9c2d-1234567890ab',
@@ -382,6 +396,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0014-4a1b-9c2d-1234567890ab',
@@ -408,6 +423,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0015-4a1b-9c2d-1234567890ab',
@@ -434,6 +450,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0016-4a1b-9c2d-1234567890ab',
@@ -460,6 +477,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0017-4a1b-9c2d-1234567890ab',
@@ -486,6 +504,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0018-4a1b-9c2d-1234567890ab',
@@ -512,6 +531,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0019-4a1b-9c2d-1234567890ab',
@@ -538,6 +558,7 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
     {
         id: 'a1b2c3d4-0020-4a1b-9c2d-1234567890ab',
@@ -564,5 +585,6 @@ export const employee: Employee[] = [
         nationality: 'WNI',
         is_active: true,
         company_id: COMPANY_ID,
+        is_archived: false,
     },
 ];

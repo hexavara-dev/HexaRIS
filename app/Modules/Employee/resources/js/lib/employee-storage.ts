@@ -57,6 +57,7 @@ function buildEmployeeFromForm(data: EmployeeFormData, existingCount: number): E
         time_off_amount: 12,
         nationality: 'WNI',
         is_active: true,
+        is_archived: false,
         company_id: COMPANY_ID,
         ...wizardEditableFields(data),
     };
