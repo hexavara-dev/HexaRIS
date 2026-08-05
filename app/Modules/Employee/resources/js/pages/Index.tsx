@@ -56,7 +56,7 @@ export default function Index() {
     const { data, setData, processing, reset } = useForm<EmployeeFormData>(initialEmployeeFormData);
 
     const allEmployees = useMemo(
-        () => [...employee.map((e) => ({ ...e, ...overrides[e.id] })), ...localEmployees],
+        () => [...employee.map((e) => ({ ...e, ...overrides[e.id] })), ...localEmployees].filter((e) => !e.is_archived),
         [overrides, localEmployees],
     );
 
