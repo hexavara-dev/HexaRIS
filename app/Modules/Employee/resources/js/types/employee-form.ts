@@ -1,3 +1,5 @@
+import { type StoredFile } from '@/components/form/form-field';
+
 // A type alias, not an interface: it is stored in EmployeeFormData, which
 // Inertia's useForm constrains to FormDataType (an index-signature type) —
 // interfaces have no implicit one.
@@ -12,7 +14,7 @@ export type WorkExperience = {
     work_location: string;
     /** Optional — kept as free text since past salaries may be a range or "confidential". */
     last_salary: string;
-    reference_letter: File | null;
+    reference_letter: File | StoredFile | null;
 };
 
 export function createEmptyWorkExperience(): WorkExperience {
@@ -29,6 +31,11 @@ export function createEmptyWorkExperience(): WorkExperience {
     };
 }
 
+/** True for the untouched default entry (the wizard always starts with one empty WorkExperience) — used to skip it in read-only views instead of showing an all-blank card. */
+export function isEmptyWorkExperience(experience: WorkExperience): boolean {
+    return !experience.company_name.trim() && !experience.position.trim();
+}
+
 /** Last completed education only — one entry per employee, no add/remove. */
 export type EducationEntry = {
     level: string;
@@ -37,7 +44,7 @@ export type EducationEntry = {
     start_date: string;
     end_date: string;
     final_score: string;
-    certificate: File | null;
+    certificate: File | StoredFile | null;
 };
 
 export function createEmptyEducationEntry(): EducationEntry {
@@ -87,9 +94,9 @@ export type EmployeeFormData = {
     /** Mirrors Employee.is_married directly — boolean, not a 'menikah'/'lajang' string. */
     is_married: boolean;
     address: string;
-    ktp: File | null;
-    npwp: File | null;
-    contract: File | null;
+    ktp: File | StoredFile | null;
+    npwp: File | StoredFile | null;
+    contract: File | StoredFile | null;
     education: EducationEntry;
     work_experiences: WorkExperience[];
     /** Optional — free-text branch name (no dedicated branch/location module yet). */

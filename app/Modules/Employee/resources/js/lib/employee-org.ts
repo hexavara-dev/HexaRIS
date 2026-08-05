@@ -1,5 +1,6 @@
 import { employeeAssignment } from '@/data/Employee/employeeAssignment';
 import { organization, type OrganizationUnit } from '@/data/Organization/organization';
+import { jobPosition } from '@/data/Position/jobPosition';
 
 /** The org unit an employee is currently assigned to, or null if no assignment exists. */
 export function assignedOrgUnit(employeeId: string): OrganizationUnit | null {
@@ -46,4 +47,11 @@ export function departmentName(employeeId: string): string {
 export function divisionName(employeeId: string): string {
     const unit = assignedOrgUnit(employeeId);
     return unit?.unit_type === 'DIVISION' ? unit.name : '-';
+}
+
+/** ERD-only — resolves employeeAssignment.job_position_id to its title. Returns null (not '-') so callers can layer their own fallback (e.g. the wizard's job_level for an employee with no ERD assignment). */
+export function positionTitle(employeeId: string): string | null {
+    const assignment = employeeAssignment.find((a) => a.employee_id === employeeId);
+    if (!assignment) return null;
+    return jobPosition.find((p) => p.id === assignment.job_position_id)?.title ?? null;
 }
