@@ -49,6 +49,7 @@ outline blue "Batal" (`border-[#1980C0] text-[#1980C0] hover:bg-[#1980C0]/5`), s
 "Arsipkan" (`bg-[#1980C0] hover:bg-[#1668a0]`), both `rounded-lg`.
 
 Copy (from the approved mockup, capitalization fixed):
+
 - Title: **"Arsipkan Karyawan?"** (mockup said "Pengguna" — corrected to match this module's
   established term for the entity, used everywhere else: toasts, page copy, etc.)
 - Description: **"Kamu yakin ingin mengarsipkan karyawan ini? Semua data yang sebelumnya
@@ -57,10 +58,12 @@ Copy (from the approved mockup, capitalization fixed):
 
 ## Decision: archive action reuses the wizard's existing save branch
 
-`columns.tsx`: `buildEmployeeColumns(onEdit, onDetail, onArchive)` — the "Arsipkan" item's
-`onClick` becomes `() => onArchive(row)`, replacing the placeholder toast. The `toast` import
-becomes unused in this file once this lands and must be removed (nothing else in `columns.tsx`
-calls it after this change).
+`columns.tsx`: `buildEmployeeColumns(onEdit, onArchive)` — the "Arsipkan" item's `onClick`
+becomes `() => onArchive(row)`, replacing the placeholder toast. (This branch forked from
+`main` before the separate, still-unmerged Employee Detail dialog PR — `buildEmployeeColumns`
+here only has `onEdit` today, and the "Detail" item stays exactly as its current placeholder;
+out of scope for this feature.) The `toast` import stays — "Detail" still calls
+`toast.info(...)`.
 
 `Index.tsx`: new `archiveTarget: Employee | null` state. Confirming the dialog patches
 `is_archived: true` via **exactly the same seed-vs-local branch `finish()`'s edit path already
