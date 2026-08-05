@@ -2,7 +2,10 @@
 # VPS bootstrap untuk HexaRIS — versi MINIMAL.
 # Target: Ubuntu 24.04 LTS. Jalankan sebagai: root.
 #
-# Stack saat ini: PHP 8.4 + Nginx + SQLite + atomic release (symlink current).
+# Stack saat ini: PHP 8.4 + Nginx + SQLite. Deploy langsung ke satu direktori
+# tetap (APP_DIR) — TANPA atomic release (tidak ada releases/, shared/, atau
+# symlink current). Deliberately simpler untuk proyek ini; rollback = redeploy
+# tag sebelumnya lewat GitHub Actions, bukan symlink flip instan.
 # GitHub Actions yang build assets dan rsync — VPS TIDAK clone repo.
 #
 # Jalankan SEKALI PER ENVIRONMENT:
@@ -26,7 +29,7 @@
 #
 # TIDAK dilakukan skrip ini (harus manual):
 #   - Generate SSH keypair (di laptop, bukan di server)
-#   - Isi APP_KEY di shared/.env
+#   - Isi APP_KEY di APP_DIR/.env
 #   - Setup DNS
 #   - Jalankan Certbot setelah DNS resolve: certbot --nginx -d <DOMAIN>
 #   - Isi GitHub Environment secrets
@@ -56,7 +59,6 @@ if [[ ! "${DEPLOY_PUBKEY}" =~ ^(ssh-ed25519|ssh-rsa|ecdsa-sha2-) ]]; then
 fi
 
 APP_DIR="/var/www/${DOMAIN}"
-SHARED="${APP_DIR}/shared"
 DEPLOY_USER="deploy"
 
 echo "==> Bootstrap HexaRIS — ENV=${ENV}, dir=${APP_DIR}"
@@ -109,13 +111,9 @@ server {
     listen 80;
     server_name ${DOMAIN};
 
-    # Menunjuk lewat symlink 'current' — inilah yang bikin deploy atomik.
-    root ${APP_DIR}/current/public;
+    # Flat layout — deploy.sh rsync langsung ke APP_DIR, tidak ada symlink current.
+    root ${APP_DIR}/public;
     index index.php;
-
-    # Wajib: tanpa ini nginx bisa cache path symlink lama setelah deploy,
-    # sehingga situs tetap menjalankan rilis sebelumnya walau current sudah pindah.
-    disable_symlinks off;
 
     charset utf-8;
     client_max_body_size 20M;
@@ -174,39 +172,44 @@ ${DEPLOY_USER} ALL=(root) NOPASSWD: /usr/bin/systemctl reload php8.4-fpm
 EOF
 chmod 440 /etc/sudoers.d/hexaris-deploy
 
-# --- 6. Struktur atomic release + shared/.env + SQLite --------------------
+# --- 6. Struktur APP_DIR flat + .env + SQLite -------------------------------
 
+# Flat layout: APP_DIR langsung berisi kode aplikasi (deploy.sh rsync ke sini),
+# bukan releases/<TS>/ + shared/. .env, storage/, dan database sqlite hidup
+# langsung di APP_DIR dan dikecualikan dari rsync --delete (lihat deploy.yml)
+# supaya tidak ikut tertimpa/terhapus tiap deploy.
 install -d -m 2775 -o "${DEPLOY_USER}" -g www-data "${APP_DIR}"
-sudo -u "${DEPLOY_USER}" mkdir -p "${APP_DIR}/releases"
 sudo -u "${DEPLOY_USER}" mkdir -p \
-  "${SHARED}/storage/app/public" \
-  "${SHARED}/storage/app/private" \
-  "${SHARED}/storage/framework/cache/data" \
-  "${SHARED}/storage/framework/sessions" \
-  "${SHARED}/storage/framework/views" \
-  "${SHARED}/storage/logs"
+  "${APP_DIR}/storage/app/public" \
+  "${APP_DIR}/storage/app/private" \
+  "${APP_DIR}/storage/framework/cache/data" \
+  "${APP_DIR}/storage/framework/sessions" \
+  "${APP_DIR}/storage/framework/views" \
+  "${APP_DIR}/storage/logs" \
+  "${APP_DIR}/database"
 
-# www-data harus bisa menulis ke shared/storage saat runtime.
-chgrp -R www-data "${SHARED}/storage"
-chmod -R g+rwx "${SHARED}/storage"
-setfacl -R -m u:www-data:rwx "${SHARED}/storage"
-setfacl -R -d -m u:www-data:rwx "${SHARED}/storage"
+# www-data harus bisa menulis ke storage/ saat runtime.
+chgrp -R www-data "${APP_DIR}/storage"
+chmod -R g+rwx "${APP_DIR}/storage"
+setfacl -R -m u:www-data:rwx "${APP_DIR}/storage"
+setfacl -R -d -m u:www-data:rwx "${APP_DIR}/storage"
 
 # SQLite database file — dimiliki www-data karena PHP-FPM berjalan sebagai www-data.
-# Parent dir (shared/) juga harus writable www-data agar SQLite bisa buat WAL/SHM.
-if [[ ! -f "${SHARED}/database.sqlite" ]]; then
-  touch "${SHARED}/database.sqlite"
+# Parent dir (database/) juga harus writable www-data agar SQLite bisa buat WAL/SHM.
+DB_PATH="${APP_DIR}/database/database.sqlite"
+if [[ ! -f "${DB_PATH}" ]]; then
+  touch "${DB_PATH}"
   echo "    database.sqlite dibuat"
 else
   echo "    database.sqlite sudah ada, tidak diubah"
 fi
-chown www-data:www-data "${SHARED}/database.sqlite"
-chmod 664 "${SHARED}/database.sqlite"
-chown www-data:www-data "${SHARED}"
-chmod 775 "${SHARED}"
+chown www-data:www-data "${DB_PATH}"
+chmod 664 "${DB_PATH}"
+chown www-data:www-data "${APP_DIR}/database"
+chmod 775 "${APP_DIR}/database"
 
-if [[ ! -f "${SHARED}/.env" ]]; then
-  cat > "${SHARED}/.env" <<EOF
+if [[ ! -f "${APP_DIR}/.env" ]]; then
+  cat > "${APP_DIR}/.env" <<EOF
 APP_NAME="HexaRIS"
 APP_ENV=${ENV}
 APP_DEBUG=false
@@ -225,7 +228,7 @@ LOG_STACK=single
 LOG_LEVEL=warning
 
 DB_CONNECTION=sqlite
-DB_DATABASE=${SHARED}/database.sqlite
+DB_DATABASE=${DB_PATH}
 
 SESSION_DRIVER=database
 SESSION_LIFETIME=120
@@ -241,11 +244,11 @@ MAIL_MAILER=log
 
 VITE_APP_NAME="\${APP_NAME}"
 EOF
-  chown "${DEPLOY_USER}:${DEPLOY_USER}" "${SHARED}/.env"
-  chmod 600 "${SHARED}/.env"
-  echo "    shared/.env dibuat (APP_KEY masih kosong — isi manual!)"
+  chown "${DEPLOY_USER}:${DEPLOY_USER}" "${APP_DIR}/.env"
+  chmod 600 "${APP_DIR}/.env"
+  echo "    .env dibuat (APP_KEY masih kosong — isi manual!)"
 else
-  echo "    ${SHARED}/.env sudah ada, tidak diubah"
+  echo "    ${APP_DIR}/.env sudah ada, tidak diubah"
 fi
 
 # --- Firewall --------------------------------------------------------------
@@ -268,14 +271,14 @@ echo "=========================================="
 echo "  BOOTSTRAP SELESAI — ENV=${ENV}"
 echo "=========================================="
 echo "  Dir:      ${APP_DIR}"
-echo "  Database: ${SHARED}/database.sqlite (SQLite)"
+echo "  Database: ${APP_DIR}/database/database.sqlite (SQLite)"
 echo "  Domain:   ${DOMAIN}"
 echo "  PHP:      $(php -v | head -1)"
 echo "------------------------------------------"
 echo "  LANGKAH BERIKUTNYA (manual)"
 echo "------------------------------------------"
 echo "  1. APP_KEY — di laptop jalankan: php artisan key:generate --show"
-echo "     lalu paste ke ${SHARED}/.env  (APP_KEY=base64:...)"
+echo "     lalu paste ke ${APP_DIR}/.env  (APP_KEY=base64:...)"
 echo ""
 echo "  2. DNS — buat A record ${DOMAIN} -> IP VPS ini"
 echo ""

@@ -91,40 +91,36 @@ jobs:
           # Kosong = widget disembunyikan + backend bypass.
           VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
 
-      - name: Compute release timestamp
-        id: rel
-        run: echo "ts=$(date -u +%Y%m%dT%H%M%SZ)" >> "$GITHUB_OUTPUT"
-
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
           install -m 600 /dev/stdin ~/.ssh/deploy_key <<< "${{ secrets.VPS_SSH_KEY }}"
           ssh-keyscan -p "${{ secrets.VPS_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Rsync release to VPS
-        env:
-          TS: ${{ steps.rel.outputs.ts }}
+      - name: Rsync build to VPS
         run: |
           # rsync sengaja TIDAK menghormati .gitignore. public/build git-ignored
           # tapi WAJIB terkirim (output Vite hasil build CI yang diserve server).
           # Jangan tambah --filter=':- .gitignore' — assets akan diam-diam
           # berhenti terkirim. vendor dikecualikan karena deploy.sh menjalankan
-          # composer install di server.
+          # composer install di server. Flat layout (tanpa atomic release) —
+          # rsync langsung ke APP_DIR; .env dan data yang persisten (storage/,
+          # database sqlite) dikecualikan supaya tidak ikut tertimpa/terhapus.
           rsync -az --delete \
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }}" \
             --exclude='.git' \
             --exclude='node_modules' \
             --exclude='vendor' \
             --exclude='.env' \
-            ./ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ vars.APP_DIR }}/releases/${TS}/"
+            --exclude='storage/' \
+            --exclude='database/*.sqlite' \
+            ./ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ vars.APP_DIR }}/"
 
-      - name: Finalize release on VPS
-        env:
-          TS: ${{ steps.rel.outputs.ts }}
+      - name: Finalize deploy on VPS
         run: |
           ssh -i ~/.ssh/deploy_key -p "${{ secrets.VPS_PORT }}" \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "bash ${{ vars.APP_DIR }}/releases/${TS}/deploy.sh ${TS}"
+            "bash ${{ vars.APP_DIR }}/deploy.sh"
 
       - name: Health check
         run: curl -fsS --retry 5 --retry-delay 3 "${{ vars.APP_HEALTH_URL }}"
@@ -137,7 +133,6 @@ jobs:
           SHA: ${{ steps.resolve.outputs.sha }}   # ADDED
           HEALTH_URL: ${{ vars.APP_HEALTH_URL }}
           APP_DIR: ${{ vars.APP_DIR }}
-          RELEASE: ${{ steps.rel.outputs.ts }}
         run: |
           APP_URL="${HEALTH_URL%/up}"
           {
@@ -151,5 +146,4 @@ jobs:
             echo "| Commit | \`${SHA:-n/a}\` |"
             echo "| Health check | ${HEALTH_URL} |"
             echo "| App dir | \`${APP_DIR}\` |"
-            echo "| Release | \`${RELEASE:-n/a}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
