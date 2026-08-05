@@ -40,7 +40,8 @@ last step's button label (`"Simpan"` vs `"Perbarui"`) accordingly.
 | `resources/js/lib/employee-storage.ts` | Create/update wizard-created employees; a separate override store for edits to the 20 seed employees, which are never mutated directly |
 | `resources/js/lib/employee-form-overlay.ts` | Hydrates the form on Edit — exact, from a prior save through the wizard, or best-effort from the real ERD fixtures (`resources/js/data/Employee/*.ts`) for an employee never edited before |
 | `resources/js/lib/employee-org.ts` | Resolves an employee's department/division id from `employeeAssignment` + `organization` |
-| `resources/js/pages/columns.tsx` | `buildEmployeeColumns(onEdit)` — list columns; Cabang/Departemen/Divisi fall back to the form overlay when no ERD assignment exists (wizard-created or previously-edited employees) |
+| `resources/js/pages/columns.tsx` | `buildEmployeeColumns(onEdit, onDetail)` — list columns; Cabang/Departemen/Divisi fall back to the form overlay when no ERD assignment exists (wizard-created or previously-edited employees) |
+| `resources/js/components/detail/` | Read-only "Detail" dialog (row action) — six tabs mirroring the wizard's steps, sourced from the same `hydrateEmployeeFormData` Edit uses |
 
 ### localStorage keys
 
@@ -52,11 +53,13 @@ last step's button label (`"Simpan"` vs `"Perbarui"`) accordingly.
 
 ### Accepted gaps
 
-- **Uploaded files are never actually persisted.** A `File` can't survive
-  `JSON.stringify`, so every upload field is discarded on save. `FileFieldFlags`
-  (`types/employee-form.ts`) tracks whether a *required* file was attached at the last
-  successful save, so Edit doesn't force re-uploading it — but there is no way to view or
-  download a previously uploaded document.
+- **Uploaded files persist as base64 (`StoredFile`, capped at 2MB each), not real storage.**
+  `saveFormOverlay` converts any freshly picked `File` via `FileReader` before writing to
+  `localStorage` — Edit and the row's "Detail" dialog can both preview a previously uploaded
+  file (eye icon) without needing to re-attach it. This is a stronger mock, not real
+  persistence: there is still no backend, `localStorage` has only ~5-10MB of headroom per
+  origin, and a save that would exceed it drops the file fields with a toast rather than
+  losing the rest of the form (see `employee-form-overlay.ts`'s `withoutFiles`).
 - **Pendidikan, Pengalaman Kerja, and Level (in Ketentuan) have no ERD equivalent** — the
   seed fixtures don't model education history, work experience, or a job-level taxonomy
   matching the wizard's Manajer/Direksi/Senior/Junior set. These start empty the first time

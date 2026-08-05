@@ -1,3 +1,4 @@
+import { fileToStoredFile, isStoredFile, type StoredFile } from '@/components/form/form-field';
 import { type Employee } from '@/data/Employee/employee';
 import { employeeAddress } from '@/data/Employee/employeeAddress';
 import { employeeAssignment } from '@/data/Employee/employeeAssignment';
@@ -6,6 +7,7 @@ import { employeeCompensation } from '@/data/Employee/employeeCompensation';
 import { employeeDocument } from '@/data/Employee/employeeDocument';
 import { employeeInsurance } from '@/data/Employee/employeeInsurance';
 import { employmentContract } from '@/data/Employee/employmentContract';
+import { toast } from 'sonner';
 import { bankOptions } from '../components/steps/financial-step';
 import { resolveOrgUnit } from './employee-org';
 import {
@@ -54,8 +56,30 @@ function sanitizeOverlayEntry(entry: unknown): FormOverlayEntry | null {
     };
 }
 
-/** Strips File objects before persisting — a File can't survive JSON.stringify/parse. */
-function sanitizeForStorage(data: EmployeeFormData): EmployeeFormData {
+async function toStoredFile(value: File | StoredFile | null): Promise<StoredFile | null> {
+    if (!value) return null;
+    return isStoredFile(value) ? value : fileToStoredFile(value);
+}
+
+/** Converts any freshly picked File to a StoredFile before persisting — a raw File can't survive JSON.stringify/parse, but a StoredFile (plain name/type/base64 strings) can. */
+async function sanitizeForStorage(data: EmployeeFormData): Promise<EmployeeFormData> {
+    return {
+        ...data,
+        ktp: await toStoredFile(data.ktp),
+        npwp: await toStoredFile(data.npwp),
+        contract: await toStoredFile(data.contract),
+        education: { ...data.education, certificate: await toStoredFile(data.education.certificate) },
+        work_experiences: await Promise.all(
+            data.work_experiences.map(async (experience) => ({
+                ...experience,
+                reference_letter: await toStoredFile(experience.reference_letter),
+            })),
+        ),
+    };
+}
+
+/** Drops every file field back to null — the fallback write when localStorage rejects the full save for being too large. */
+function withoutFiles(data: EmployeeFormData): EmployeeFormData {
     return {
         ...data,
         ktp: null,
@@ -87,11 +111,26 @@ function computeFileFlags(data: EmployeeFormData, previous: FileFieldFlags): Fil
  * employee) — passing it is what keeps a grandfathered-in file
  * grandfathered on every subsequent save, instead of only surviving one.
  */
-export function saveFormOverlay(employeeId: string, data: EmployeeFormData, previousFlags: FileFieldFlags): void {
+export async function saveFormOverlay(employeeId: string, data: EmployeeFormData, previousFlags: FileFieldFlags): Promise<void> {
     if (typeof window === 'undefined') return;
     const store = loadOverlayStore();
-    store[employeeId] = { data: sanitizeForStorage(data), fileFlags: computeFileFlags(data, previousFlags) };
-    window.localStorage.setItem(OVERLAY_STORAGE_KEY, JSON.stringify(store));
+    const fileFlags = computeFileFlags(data, previousFlags);
+    const sanitized = await sanitizeForStorage(data);
+
+    try {
+        store[employeeId] = { data: sanitized, fileFlags };
+        window.localStorage.setItem(OVERLAY_STORAGE_KEY, JSON.stringify(store));
+    } catch (error) {
+        if (!(error instanceof DOMException) || (error.name !== 'QuotaExceededError' && error.name !== 'NS_ERROR_DOM_QUOTA_REACHED')) throw error;
+
+        toast.error('Penyimpanan lokal penuh — dokumen tidak tersimpan, data lain tetap tersimpan.');
+        store[employeeId] = { data: withoutFiles(sanitized), fileFlags };
+        try {
+            window.localStorage.setItem(OVERLAY_STORAGE_KEY, JSON.stringify(store));
+        } catch {
+            toast.error('Penyimpanan lokal penuh — data form tidak tersimpan sama sekali.');
+        }
+    }
 }
 
 /** Raw overlay peek, with no ERD fallback — used by the list page to show wizard-only fields (branch, department, division) for employees the ERD has no assignment/address for. */

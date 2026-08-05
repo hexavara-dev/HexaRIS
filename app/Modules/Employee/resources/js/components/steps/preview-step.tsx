@@ -1,25 +1,12 @@
-import { FileTypeIcon, toUploadedFile, useFilePreviewUrl, type SelectFieldOption } from '@/components/form/form-field';
-import { organization } from '@/data/Organization/organization';
+import { FileTypeIcon, toUploadedFile, useFilePreviewUrl, type StoredFile } from '@/components/form/form-field';
 import { type ReactNode } from 'react';
+import { formatDate, labelFor, orgUnitName } from '../../lib/format-employee-form';
 import { type EmployeeFormData } from '../../types/employee-form';
 import { educationLevelOptions } from './education-step';
 import { employmentTypeOptions, workLocationOptions } from './experience-entry';
 import { bankOptions } from './financial-step';
 import { genderOptions, maritalStatusLabel, religionOptions } from './personal-step';
 import { branchOptions, contractOptions, jobLevelOptions } from './provision-step';
-
-function labelFor(options: SelectFieldOption[], value: string) {
-    return options.find((option) => option.value === value)?.label || '—';
-}
-
-function orgUnitName(id: string) {
-    return organization.find((unit) => unit.id === id)?.name || '—';
-}
-
-function formatDate(value: string) {
-    if (!value) return '—';
-    return new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-}
 
 function SummarySection({ title, children }: { title: string; children: ReactNode }) {
     return (
@@ -39,7 +26,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
     );
 }
 
-function DocumentRow({ label, file }: { label: string; file: File | null }) {
+function DocumentRow({ label, file }: { label: string; file: File | StoredFile | null }) {
     const uploaded = toUploadedFile(file);
     const previewUrl = useFilePreviewUrl(file);
     if (!uploaded) return null;
@@ -56,7 +43,8 @@ function DocumentRow({ label, file }: { label: string; file: File | null }) {
             <div className="flex min-w-0 flex-1 flex-col items-start">
                 <p className="font-poppins text-sm text-[#353535]">{label}</p>
                 <p className="font-poppins w-full truncate text-xs text-[#808080]">
-                    {uploaded.name} · {uploaded.size}
+                    {uploaded.name}
+                    {uploaded.size ? ` · ${uploaded.size}` : ''}
                 </p>
             </div>
         </a>

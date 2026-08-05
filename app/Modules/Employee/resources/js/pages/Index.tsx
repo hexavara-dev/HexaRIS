@@ -2,7 +2,7 @@ import { type FilterConfig, type SearchConfig, DataTable } from '@/components/da
 import { OverviewCard } from '@/components/design-system/card/overview-card';
 import { StepForm, type Step } from '@/components/step-form';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { employee, type Employee } from '@/data/Employee/employee';
 import AppLayout from '@/layouts/app-layout';
 import { useForm } from '@inertiajs/react';
@@ -15,6 +15,7 @@ import { FinancialStep } from '../components/steps/financial-step';
 import { PersonalStep } from '../components/steps/personal-step';
 import { PreviewStep } from '../components/steps/preview-step';
 import { ProvisionStep } from '../components/steps/provision-step';
+import { DetailDialog } from '../components/detail/detail-dialog';
 import { hydrateEmployeeFormData, saveFormOverlay } from '../lib/employee-form-overlay';
 import {
     applyFormDataToEmployee,
@@ -54,7 +55,9 @@ export default function Index() {
     const [validationErrors, setValidationErrors] = useState<FieldErrors>({});
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
     const [archiveTarget, setArchiveTarget] = useState<Employee | null>(null);
+    const [detailEmployee, setDetailEmployee] = useState<Employee | null>(null);
     const [fileFlags, setFileFlags] = useState<FileFieldFlags>(createEmptyFileFieldFlags());
+    const [saving, setSaving] = useState(false);
     const { data, setData, processing, reset } = useForm<EmployeeFormData>(initialEmployeeFormData);
 
     const allEmployees = useMemo(
@@ -120,6 +123,10 @@ export default function Index() {
 
     const columns = useMemo(() => buildEmployeeColumns(openEdit, onArchive), [openEdit, onArchive]);
 
+    const openDetail = useCallback((row: Employee) => setDetailEmployee(row), []);
+
+    const columns = useMemo(() => buildEmployeeColumns(openEdit, openDetail), [openEdit, openDetail]);
+
     const steps: Step[] = [
         { label: 'Personal', content: <PersonalStep data={data} setData={setData} errors={validationErrors} /> },
         { label: 'Pendidikan', content: <EducationStep data={data} setData={setData} errors={validationErrors} /> },
@@ -129,7 +136,7 @@ export default function Index() {
         { label: 'Pratinjau', content: <PreviewStep data={data} /> },
     ];
 
-    const finish = () => {
+    const finish = async () => {
         const nextErrors = validateEmployeeForm(data, fileFlags);
         if (Object.keys(nextErrors).length > 0) {
             setValidationErrors(nextErrors);
@@ -137,27 +144,36 @@ export default function Index() {
             return;
         }
 
+        if (saving) return;
+
         setValidationErrors({});
+        setSaving(true);
 
-        if (editingEmployee) {
-            if (localEmployees.some((e) => e.id === editingEmployee.id)) {
-                setLocalEmployees(updateLocalEmployee(editingEmployee.id, applyFormDataToEmployee(editingEmployee, data)));
+        try {
+            if (editingEmployee) {
+                if (localEmployees.some((e) => e.id === editingEmployee.id)) {
+                    setLocalEmployees(updateLocalEmployee(editingEmployee.id, applyFormDataToEmployee(editingEmployee, data)));
+                } else {
+                    // Only the wizard-editable subset, never the full merged Employee — otherwise this
+                    // override would freeze every other column (email, NIK, blood type, ...) at whatever
+                    // they happened to be on this one edit, hiding any later change to the seed fixture.
+                    setOverrides(saveEmployeeOverride(editingEmployee.id, wizardEditableFields(data)));
+                }
+                await saveFormOverlay(editingEmployee.id, data, fileFlags);
+                toast.success(`${data.full_name} berhasil diperbarui.`);
             } else {
-                // Only the wizard-editable subset, never the full merged Employee — otherwise this
-                // override would freeze every other column (email, NIK, blood type, ...) at whatever
-                // they happened to be on this one edit, hiding any later change to the seed fixture.
-                setOverrides(saveEmployeeOverride(editingEmployee.id, wizardEditableFields(data)));
+                const { employees, created } = saveLocalEmployee(data);
+                setLocalEmployees(employees);
+                await saveFormOverlay(created.id, data, fileFlags);
+                toast.success(`${data.full_name} berhasil ditambahkan.`);
             }
-            saveFormOverlay(editingEmployee.id, data, fileFlags);
-            toast.success(`${data.full_name} berhasil diperbarui.`);
-        } else {
-            const { employees, created } = saveLocalEmployee(data);
-            setLocalEmployees(employees);
-            saveFormOverlay(created.id, data, fileFlags);
-            toast.success(`${data.full_name} berhasil ditambahkan.`);
-        }
 
-        close();
+            close();
+        } catch {
+            toast.error('Gagal menyimpan — coba lagi.');
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -187,7 +203,7 @@ export default function Index() {
                                     steps={steps}
                                     title={editingEmployee ? 'Edit Karyawan' : 'Tambah Karyawan'}
                                     finishLabel={editingEmployee ? 'Perbarui' : 'Simpan'}
-                                    processing={processing}
+                                    processing={processing || saving}
                                     onCancel={close}
                                     onFinish={finish}
                                 />
@@ -195,13 +211,18 @@ export default function Index() {
                         </Dialog>
                     }
                 />
-
                 <ArchiveConfirmDialog
                     employeeName={archiveTarget?.full_name ?? ''}
                     open={archiveTarget !== null}
                     onOpenChange={(open) => !open && setArchiveTarget(null)}
                     onConfirm={confirmArchive}
                 />
+                <Dialog open={detailEmployee !== null} onOpenChange={(open) => !open && setDetailEmployee(null)}>
+                    <DialogContent className="max-w-2xl" onInteractOutside={(e) => e.preventDefault()}>
+                        <DialogDescription className="sr-only">Detail data karyawan {detailEmployee?.full_name}</DialogDescription>
+                        {detailEmployee && <DetailDialog employee={detailEmployee} />}
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );
