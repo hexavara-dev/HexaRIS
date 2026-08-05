@@ -37,7 +37,7 @@ function divisionName(employeeId: string): string {
     return organization.find((u) => u.id === divisionId)?.name ?? '-';
 }
 
-export function buildEmployeeColumns(onEdit: (employee: Employee) => void): Column<Employee>[] {
+export function buildEmployeeColumns(onEdit: (employee: Employee) => void, onArchive: (employee: Employee) => void): Column<Employee>[] {
     return [
         { key: 'employee_number', label: 'ID', sortable: true },
         { key: 'full_name', label: 'Nama', sortable: true },
@@ -63,10 +63,7 @@ export function buildEmployeeColumns(onEdit: (employee: Employee) => void): Colu
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => onEdit(row)}>Edit</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            className="text-[#E84A39] focus:text-[#E84A39] text-red-500"
-                            onClick={() => toast.info('Hapus karyawan belum tersambung ke backend.')}
-                        >
+                        <DropdownMenuItem className="text-[#E84A39] focus:text-[#E84A39] text-red-500" onClick={() => onArchive(row)}>
                             Arsipkan
                         </DropdownMenuItem>
                     </DropdownMenuContent>
