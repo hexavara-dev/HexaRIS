@@ -63,10 +63,7 @@ export function buildEmployeeColumns(onEdit: (employee: Employee) => void, onDet
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => onEdit(row)}>Edit</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            className="text-[#E84A39] focus:text-[#E84A39] text-red-500"
-                            onClick={() => toast.info('Hapus karyawan belum tersambung ke backend.')}
-                        >
+                        <DropdownMenuItem className="text-[#E84A39] focus:text-[#E84A39] text-red-500" onClick={() => onArchive(row)}>
                             Arsipkan
                         </DropdownMenuItem>
                     </DropdownMenuContent>
