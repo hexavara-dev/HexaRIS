@@ -6,7 +6,6 @@ import { employeeAddress } from '@/data/Employee/employeeAddress';
 import { organization } from '@/data/Organization/organization';
 import { regency } from '@/data/Region/regency';
 import { MoreVertical } from 'lucide-react';
-import { toast } from 'sonner';
 import { peekFormOverlay } from '../lib/employee-form-overlay';
 import { assignedOrgUnit, departmentName as departmentNameFromErd, divisionName as divisionNameFromErd } from '../lib/employee-org';
 
@@ -37,7 +36,11 @@ function divisionName(employeeId: string): string {
     return organization.find((u) => u.id === divisionId)?.name ?? '-';
 }
 
-export function buildEmployeeColumns(onEdit: (employee: Employee) => void, onDetail: (employee: Employee) => void): Column<Employee>[] {
+export function buildEmployeeColumns(
+    onEdit: (employee: Employee) => void,
+    onDetail: (employee: Employee) => void,
+    onArchive: (employee: Employee) => void,
+): Column<Employee>[] {
     return [
         { key: 'employee_number', label: 'ID', sortable: true },
         { key: 'full_name', label: 'Nama', sortable: true },

@@ -121,11 +121,12 @@ export default function Index() {
         setArchiveTarget(null);
     };
 
-    const columns = useMemo(() => buildEmployeeColumns(openEdit, onArchive), [openEdit, onArchive]);
-
     const openDetail = useCallback((row: Employee) => setDetailEmployee(row), []);
 
-    const columns = useMemo(() => buildEmployeeColumns(openEdit, openDetail), [openEdit, openDetail]);
+    const columns = useMemo(
+        () => buildEmployeeColumns(openEdit, openDetail, onArchive),
+        [openEdit, openDetail, onArchive],
+    );
 
     const steps: Step[] = [
         { label: 'Personal', content: <PersonalStep data={data} setData={setData} errors={validationErrors} /> },
