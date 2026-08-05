@@ -47,7 +47,7 @@ function NavGroup({ item, currentUrl }: { item: NavItem; currentUrl: string }) {
         <Collapsible open={open} onOpenChange={setOpen} className="group/collapsible">
             <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
-                    <SidebarMenuButton isActive={isChildActive} className={ACTIVE_CLASSES}>
+                    <SidebarMenuButton className={ACTIVE_CLASSES}>
                         <NavIcon item={item} />
                         <span className="min-w-0 truncate">{item.title}</span>
                         <ChevronRight className="ml-auto shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
