@@ -27,6 +27,7 @@ import {
 } from '../lib/employee-storage';
 import { validateEmployeeForm } from '../lib/validate-employee-form';
 import { createEmptyFileFieldFlags, initialEmployeeFormData, type EmployeeFormData, type FieldErrors, type FileFieldFlags } from '../types/employee-form';
+import { ArchiveConfirmDialog } from '../components/archive-confirm-dialog';
 import { buildEmployeeColumns } from './columns';
 
 const employeeSearch: SearchConfig = {
@@ -52,6 +53,7 @@ export default function Index() {
     const [overrides, setOverrides] = useState(loadEmployeeOverrides);
     const [validationErrors, setValidationErrors] = useState<FieldErrors>({});
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+    const [archiveTarget, setArchiveTarget] = useState<Employee | null>(null);
     const [fileFlags, setFileFlags] = useState<FileFieldFlags>(createEmptyFileFieldFlags());
     const { data, setData, processing, reset } = useForm<EmployeeFormData>(initialEmployeeFormData);
 
@@ -103,7 +105,20 @@ export default function Index() {
         [setData],
     );
 
-    const columns = useMemo(() => buildEmployeeColumns(openEdit), [openEdit]);
+    const onArchive = useCallback((row: Employee) => setArchiveTarget(row), []);
+
+    const confirmArchive = () => {
+        if (!archiveTarget) return;
+        if (localEmployees.some((e) => e.id === archiveTarget.id)) {
+            setLocalEmployees(updateLocalEmployee(archiveTarget.id, { ...archiveTarget, is_archived: true }));
+        } else {
+            setOverrides(saveEmployeeOverride(archiveTarget.id, { is_archived: true }));
+        }
+        toast.success(`${archiveTarget.full_name} berhasil diarsipkan.`);
+        setArchiveTarget(null);
+    };
+
+    const columns = useMemo(() => buildEmployeeColumns(openEdit, onArchive), [openEdit, onArchive]);
 
     const steps: Step[] = [
         { label: 'Personal', content: <PersonalStep data={data} setData={setData} errors={validationErrors} /> },
@@ -179,6 +194,13 @@ export default function Index() {
                             </DialogContent>
                         </Dialog>
                     }
+                />
+
+                <ArchiveConfirmDialog
+                    employeeName={archiveTarget?.full_name ?? ''}
+                    open={archiveTarget !== null}
+                    onOpenChange={(open) => !open && setArchiveTarget(null)}
+                    onConfirm={confirmArchive}
                 />
             </div>
         </AppLayout>
