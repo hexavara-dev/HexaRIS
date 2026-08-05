@@ -16,12 +16,12 @@ interface ArchiveConfirmDialogProps {
 export function ArchiveConfirmDialog({ employeeName, open, onOpenChange, onConfirm }: ArchiveConfirmDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md">
-                <DialogTitle className="font-poppins text-lg font-semibold text-[#121212]">Arsipkan Karyawan?</DialogTitle>
-                <DialogDescription className="font-poppins text-sm text-[#4F4F4F]">
+            <DialogContent className="max-w-md gap-5 rounded-2xl p-8" showCloseButton={false}>
+                <DialogTitle className="font-poppins text-xl font-semibold text-[#121212]">Arsipkan Karyawan?</DialogTitle>
+                <DialogDescription className="font-poppins text-sm leading-relaxed text-[#4F4F4F]">
                     Kamu yakin ingin mengarsipkan {employeeName}? Semua data yang sebelumnya terkait tidak lagi terhubung dengan karyawan ini.
                 </DialogDescription>
-                <div className="flex items-center gap-4 pt-2">
+                <div className="flex items-center gap-4">
                     <Button
                         type="button"
                         variant="outline"
