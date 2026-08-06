@@ -38,7 +38,7 @@ php artisan optimize
 
 # bootstrap/cache and storage/ are written by the deploy user, but the web
 # server (www-data) must also be able to write them. The deploy user is a
-# member of the www-data group (see vps-bootstrap.sh), so this needs no sudo.
+# member of the www-data group (set up manually on the server), so this needs no sudo.
 # Guarded so a not-yet-configured group doesn't abort the deploy.
 echo "==> Fixing bootstrap/cache and storage permissions"
 chmod -R ug+rwX "${APP_DIR}/bootstrap/cache" "${APP_DIR}/storage"
