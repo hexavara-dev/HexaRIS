@@ -38,7 +38,7 @@ export function deductionTotal(row: Pick<PayrollEntry, 'deductions'>): number {
 }
 
 export function totalEarnings(row: Pick<PayrollEntry, 'base_salary' | 'earnings'>): number {
-    return row.base_salary + allowanceTotal(row);
+    return row.base_salary + allowanceTotal(row) + row.earnings.overtime;
 }
 
 export function thp(row: Pick<PayrollEntry, 'base_salary' | 'earnings' | 'deductions'>): number {
