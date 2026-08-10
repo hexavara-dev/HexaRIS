@@ -12,7 +12,7 @@ import {
 } from '@/components/design-system/pop-up/add-department-dialog';
 import { type PersonOption } from '@/components/design-system/pop-up/people-picker';
 import { avatarFor, PersonSelect, STAFF_POOL } from '@/components/design-system/pop-up/person-select';
-import { ORG_STRUCTURE_STEPS, Stepper } from '@/components/design-system/stepper/stepper';
+import { StepForm, type Step } from '@/components/step-form';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -196,11 +196,9 @@ interface CreateStructureDialogProps {
 }
 
 export function CreateStructureDialog({ open, onOpenChange, onSave, existingTree }: CreateStructureDialogProps) {
-    const [step, setStep] = useState(1);
     const [departments, setDepartments] = useState<DraftDepartment[]>([]);
     const [addDeptOpen, setAddDeptOpen] = useState(false);
     const [isReconfiguring, setIsReconfiguring] = useState(false);
-    const scrollRef = useRef<HTMLDivElement>(null);
     const seededRef = useRef(false);
 
     useEffect(() => {
@@ -219,12 +217,10 @@ export function CreateStructureDialog({ open, onOpenChange, onSave, existingTree
         }
     }, [open, existingTree]);
 
-    useEffect(() => {
-        if (open) scrollRef.current?.scrollTo({ top: 0 });
-    }, [open, step]);
-
+    // Step position itself is StepForm's own state — closing the dialog unmounts
+    // it (Radix Dialog.Content isn't rendered while closed), so reopening always
+    // starts fresh at step 1 without needing to reset anything here.
     function resetAndClose() {
-        setStep(1);
         setDepartments([]);
         setAddDeptOpen(false);
         setIsReconfiguring(false);
@@ -368,348 +364,363 @@ export function CreateStructureDialog({ open, onOpenChange, onSave, existingTree
     const canProceedStep1 = departments.length > 0;
     const taken = pickedPersonIds(departments);
 
-    return (
-        <>
-            <Dialog open={open} onOpenChange={(next) => !next && resetAndClose()}>
-                <DialogContent className="flex max-h-[85vh] max-w-5xl flex-col gap-0 overflow-hidden rounded-2xl border-0 p-0 shadow-[0_1px_6px_0_rgba(0,0,0,0.09),2px_10px_16px_-2px_rgba(0,0,0,0.10)]">
-                    <div className="flex w-full items-center justify-between border-b border-[#E2E8F0] px-8 py-4">
-                        <p className="font-poppins text-xl font-bold text-[#0F172A]">
-                            {isReconfiguring ? 'Atur Ulang Struktur Organisasi Perusahaan' : 'Struktur Organisasi Perusahaan'}
-                        </p>
-                        <Stepper steps={ORG_STRUCTURE_STEPS} currentStep={step} />
-                    </div>
+    const steps: Step[] = [
+        {
+            label: 'Struktur',
+            canProceed: canProceedStep1,
+            content: (
+                <div className="flex w-full gap-6">
+                    <div className="flex w-full flex-col gap-6">
+                        <CompanyCard />
 
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-4">
-                        {step !== 1 && (
-                            <div className="mb-4">
-                                <CompanyCard />
-                            </div>
-                        )}
+                        <div className="flex w-full flex-col gap-2">
+                            <p className="font-poppins text-sm font-semibold text-black">
+                                Departemen <span className="text-[#E84A39]">*</span>
+                            </p>
+                            <p className="text-sm text-[#64748B]">Tambahkan seluruh departemen yang ada di perusahaan.</p>
 
-                        {step === 1 && (
-                            <div className="flex w-full gap-6">
-                                <div className="flex w-full flex-col gap-6">
-                                    <CompanyCard />
-
-                                    <div className="flex w-full flex-col gap-2">
-                                        <p className="font-poppins text-sm font-semibold text-black">
-                                            Departemen <span className="text-[#E84A39]">*</span>
-                                        </p>
-                                        <p className="text-sm text-[#64748B]">Tambahkan seluruh departemen yang ada di perusahaan.</p>
-
-                                        {departments.length === 0 ? (
-                                            <div className="mt-2 flex w-full flex-col items-center gap-2 rounded-xl border border-dashed border-[#E2E8F0] px-6 py-5 text-center">
-                                                <div className="flex size-11 items-center justify-center rounded-full bg-[#EEF8FF]">
-                                                    <Folder className="size-6 text-[#1980C0]" />
-                                                </div>
-                                                <p className="font-poppins text-sm font-semibold text-black">Belum ada departemen</p>
-                                                <p className="max-w-xs text-sm text-[#64748B]">
-                                                    Tambahkan departemen terlebih dahulu. Nanti Anda bisa menambahkan divisi di dalam departemen.
-                                                </p>
-                                                <Button
-                                                    variant="outline"
-                                                    className="h-auto gap-2 rounded-lg border-[#1980C0] px-4 py-2 text-sm text-[#1980C0] hover:bg-[#1980C0]/10 hover:text-[#1980C0]"
-                                                    onClick={() => setAddDeptOpen(true)}
-                                                >
-                                                    <Plus className="size-4" />
-                                                    Tambah Departemen
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            <div className="mt-2 flex w-full flex-col gap-3">
-                                                {departments.map((department) => {
-                                                    const departmentTaken = new Set(
-                                                        departments
-                                                            .filter((sibling) => sibling.id !== department.id)
-                                                            .map((sibling) => shortName(sibling.name)),
-                                                    );
-                                                    const departmentOptions = filterAvailable(
-                                                        DEPARTMENT_CATALOG,
-                                                        shortName(department.name),
-                                                        departmentTaken,
-                                                    );
-                                                    return (
-                                                        <div
-                                                            key={department.id}
-                                                            className="flex w-full flex-col gap-3 rounded-xl border border-[#E2E8F0] p-4"
-                                                        >
-                                                            <div className="flex w-full items-center gap-2">
-                                                                <Select
-                                                                    value={shortName(department.name) || undefined}
-                                                                    onValueChange={(value) => renameDepartment(department.id, value)}
-                                                                >
-                                                                    <SelectTrigger className="font-poppins h-auto flex-1 gap-1 border-0 bg-transparent p-0 text-sm font-semibold text-black shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:size-4 [&>svg]:text-[#94A3B8] [&>svg]:opacity-100">
-                                                                        <SelectValue placeholder="Pilih Departemen" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {departmentOptions.map((name) => (
-                                                                            <SelectItem key={name} value={name}>
-                                                                                {name}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => removeDepartment(department.id)}
-                                                                    aria-label={`Hapus ${department.name}`}
-                                                                >
-                                                                    <Trash2 className="size-4 text-[#E84A39]" />
-                                                                </button>
-                                                            </div>
-
-                                                            {department.divisions.length > 0 && (
-                                                                <div className="flex w-full flex-col gap-2">
-                                                                    {department.divisions.map((division) => {
-                                                                        const divisionTaken = new Set(
-                                                                            department.divisions.map((sibling) => sibling.name).filter(Boolean),
-                                                                        );
-                                                                        const divisionOptions = filterAvailable(
-                                                                            DIVISION_CATALOG,
-                                                                            division.name,
-                                                                            divisionTaken,
-                                                                        );
-                                                                        return (
-                                                                            <div
-                                                                                key={division.id}
-                                                                                className="flex h-11 w-full items-center gap-2 rounded-xl border border-[#E2E8F0] px-4"
-                                                                            >
-                                                                                <Select
-                                                                                    value={division.name || undefined}
-                                                                                    onValueChange={(value) =>
-                                                                                        renameDivision(department.id, division.id, value)
-                                                                                    }
-                                                                                >
-                                                                                    <SelectTrigger className="h-11 flex-1 rounded-none border-0 bg-transparent p-0 shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:text-[#94A3B8] [&>svg]:opacity-100">
-                                                                                        <SelectValue placeholder="Pilih Divisi" />
-                                                                                    </SelectTrigger>
-                                                                                    <SelectContent>
-                                                                                        {divisionOptions.map((name) => (
-                                                                                            <SelectItem key={name} value={name}>
-                                                                                                {name}
-                                                                                            </SelectItem>
-                                                                                        ))}
-                                                                                    </SelectContent>
-                                                                                </Select>
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() =>
-                                                                                        removeDivisionFromDepartment(department.id, division.id)
-                                                                                    }
-                                                                                    aria-label={`Hapus ${division.name}`}
-                                                                                >
-                                                                                    <Trash2 className="size-4 text-[#E84A39]" />
-                                                                                </button>
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setAddDeptOpen(true)}
-                                                    className="flex w-full items-center justify-center gap-1 rounded-xl border border-dashed border-[#1980C0] py-3 text-sm font-semibold text-[#1980C0]"
-                                                >
-                                                    <Plus className="size-4" />
-                                                    Tambah Departemen Lainnya
-                                                </button>
-                                            </div>
-                                        )}
+                            {departments.length === 0 ? (
+                                <div className="mt-2 flex w-full flex-col items-center gap-2 rounded-xl border border-dashed border-[#E2E8F0] px-6 py-5 text-center">
+                                    <div className="flex size-11 items-center justify-center rounded-full bg-[#EEF8FF]">
+                                        <Folder className="size-6 text-[#1980C0]" />
                                     </div>
+                                    <p className="font-poppins text-sm font-semibold text-black">Belum ada departemen</p>
+                                    <p className="max-w-xs text-sm text-[#64748B]">
+                                        Tambahkan departemen terlebih dahulu. Nanti Anda bisa menambahkan divisi di dalam departemen.
+                                    </p>
+                                    <Button
+                                        variant="outline"
+                                        className="h-auto gap-2 rounded-lg border-[#1980C0] px-4 py-2 text-sm text-[#1980C0] hover:bg-[#1980C0]/10 hover:text-[#1980C0]"
+                                        onClick={() => setAddDeptOpen(true)}
+                                    >
+                                        <Plus className="size-4" />
+                                        Tambah Departemen
+                                    </Button>
                                 </div>
-
-                                <div className="w-full max-w-xs shrink-0 rounded-xl border border-[#E2E8F0] p-4">
-                                    <p className="font-poppins mb-4 text-sm font-semibold text-black">Preview Struktur</p>
-                                    <div className="flex flex-col gap-3">
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#EEF8FF]">
-                                                <img src={logoPt} alt="" className="size-4" />
-                                            </div>
-                                            <div className="flex flex-col items-start">
-                                                <p className="font-poppins text-sm font-semibold text-black">{COMPANY_NAME}</p>
-                                                <p className="text-xs text-[#64748B]">CEO / Direktur Utama</p>
-                                            </div>
-                                        </div>
-
-                                        {departments.length === 0 ? (
-                                            <div className="flex flex-col items-center gap-3 py-6 text-center">
-                                                <img src={iconStruktur} alt="" className="h-24 w-auto" />
-                                                <p className="font-poppins text-sm font-semibold text-black">Belum ada struktur</p>
-                                                <p className="text-xs text-[#64748B]">Tambahkan departemen untuk melihat preview struktur.</p>
-                                            </div>
-                                        ) : (
-                                            departments.map((department) => (
-                                                <div key={department.id} className="flex flex-col gap-1">
-                                                    <p className="pl-2 text-sm font-medium text-[#0F172A]">{department.name}</p>
-                                                    {department.divisions.map((division) => (
-                                                        <p key={division.id} className="pl-4 text-sm text-[#64748B]">
-                                                            {division.name}
-                                                        </p>
-                                                    ))}
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {step === 2 && (
-                            <div className="flex w-full flex-col gap-2">
-                                <p className="font-poppins text-lg font-semibold text-black">Daftar Departemen &amp; Divisi</p>
-                                <p className="text-sm text-[#64748B]">Atur delegasi staff dan penanggung jawab di masing-masing sub-bidang.</p>
-
-                                <div className="mt-2 flex w-full flex-col gap-5">
-                                    {departments.map((department) => (
-                                        <div
-                                            key={department.id}
-                                            className="flex max-h-[360px] w-full flex-col gap-3 rounded-xl border border-[#E2E8F0] p-5"
-                                        >
-                                            <div className="flex w-full shrink-0 items-center justify-between">
-                                                <p className="font-poppins text-base font-semibold text-black">{department.name}</p>
-                                                {!department.hasDivisions && (
-                                                    <Button
-                                                        variant="outline"
-                                                        className="h-auto gap-1 rounded-lg border-[#1980C0] px-3 py-1.5 text-xs text-[#1980C0] hover:bg-[#1980C0]/10 hover:text-[#1980C0]"
-                                                        onClick={() => addStaffSlot(department.id)}
+                            ) : (
+                                <div className="mt-2 flex w-full flex-col gap-3">
+                                    {departments.map((department) => {
+                                        const departmentTaken = new Set(
+                                            departments.filter((sibling) => sibling.id !== department.id).map((sibling) => shortName(sibling.name)),
+                                        );
+                                        const departmentOptions = filterAvailable(DEPARTMENT_CATALOG, shortName(department.name), departmentTaken);
+                                        return (
+                                            <div key={department.id} className="flex w-full flex-col gap-3 rounded-xl border border-[#E2E8F0] p-4">
+                                                <div className="flex w-full items-center gap-2">
+                                                    <Select
+                                                        value={shortName(department.name) || undefined}
+                                                        onValueChange={(value) => renameDepartment(department.id, value)}
                                                     >
-                                                        <Plus className="size-3.5" />
-                                                        Staff
-                                                    </Button>
-                                                )}
-                                            </div>
+                                                        <SelectTrigger className="font-poppins h-auto flex-1 gap-1 border-0 bg-transparent p-0 text-sm font-semibold text-black shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:size-4 [&>svg]:text-[#94A3B8] [&>svg]:opacity-100">
+                                                            <SelectValue placeholder="Pilih Departemen" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {departmentOptions.map((name) => (
+                                                                <SelectItem key={name} value={name}>
+                                                                    {name}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeDepartment(department.id)}
+                                                        aria-label={`Hapus ${department.name}`}
+                                                    >
+                                                        <Trash2 className="size-4 text-[#E84A39]" />
+                                                    </button>
+                                                </div>
 
-                                            <div className="flex w-full flex-1 flex-col gap-4 overflow-y-auto pr-1">
-                                                <PersonSelect
-                                                    value={department.headPersonId}
-                                                    onChange={(person) => setDepartmentHead(department.id, person.id)}
-                                                    placeholder="Pilih Kepala Departemen"
-                                                    taken={taken}
-                                                />
-
-                                                {!department.hasDivisions &&
-                                                    department.staff.map((slot) => (
-                                                        <div key={slot.id} className="flex w-full items-center gap-3">
-                                                            <div className="flex-1">
-                                                                <PersonSelect
-                                                                    value={slot.personId}
-                                                                    onChange={(person) => setStaffPerson(department.id, slot.id, person.id)}
-                                                                    placeholder="Pilih Staff"
-                                                                    taken={taken}
-                                                                />
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => removeStaffSlot(department.id, slot.id)}
-                                                                aria-label="Hapus staff"
-                                                            >
-                                                                <Trash2 className="size-4 text-[#E84A39]" />
-                                                            </button>
-                                                        </div>
-                                                    ))}
-
-                                                {department.hasDivisions &&
-                                                    department.divisions.map((division) => (
-                                                        <div
-                                                            key={division.id}
-                                                            className="flex w-full flex-col gap-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4"
-                                                        >
-                                                            <div className="flex w-full items-center justify-between">
-                                                                <p className="font-poppins text-sm font-semibold text-black">{division.name}</p>
-                                                                <Button
-                                                                    variant="outline"
-                                                                    className="h-auto gap-1 rounded-lg border-[#1980C0] bg-white px-3 py-1.5 text-xs text-[#1980C0] hover:bg-[#1980C0]/10 hover:text-[#1980C0]"
-                                                                    onClick={() => addDivisionStaffSlot(department.id, division.id)}
+                                                {department.divisions.length > 0 && (
+                                                    <div className="flex w-full flex-col gap-2">
+                                                        {department.divisions.map((division) => {
+                                                            const divisionTaken = new Set(
+                                                                department.divisions.map((sibling) => sibling.name).filter(Boolean),
+                                                            );
+                                                            const divisionOptions = filterAvailable(DIVISION_CATALOG, division.name, divisionTaken);
+                                                            return (
+                                                                <div
+                                                                    key={division.id}
+                                                                    className="flex h-11 w-full items-center gap-2 rounded-xl border border-[#E2E8F0] px-4"
                                                                 >
-                                                                    <Plus className="size-3.5" />
-                                                                    Staff
-                                                                </Button>
-                                                            </div>
-
-                                                            <PersonSelect
-                                                                value={division.headPersonId}
-                                                                onChange={(person) => setDivisionHead(department.id, division.id, person.id)}
-                                                                placeholder="Pilih Kepala Divisi (Opsional)"
-                                                                taken={taken}
-                                                            />
-
-                                                            {division.staff.map((slot) => (
-                                                                <div key={slot.id} className="flex w-full items-center gap-3">
-                                                                    <div className="flex-1">
-                                                                        <PersonSelect
-                                                                            value={slot.personId}
-                                                                            onChange={(person) =>
-                                                                                setDivisionStaffPerson(department.id, division.id, slot.id, person.id)
-                                                                            }
-                                                                            placeholder="Pilih Staff"
-                                                                            taken={taken}
-                                                                        />
-                                                                    </div>
+                                                                    <Select
+                                                                        value={division.name || undefined}
+                                                                        onValueChange={(value) => renameDivision(department.id, division.id, value)}
+                                                                    >
+                                                                        <SelectTrigger className="h-11 flex-1 rounded-none border-0 bg-transparent p-0 shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:text-[#94A3B8] [&>svg]:opacity-100">
+                                                                            <SelectValue placeholder="Pilih Divisi" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            {divisionOptions.map((name) => (
+                                                                                <SelectItem key={name} value={name}>
+                                                                                    {name}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => removeDivisionStaffSlot(department.id, division.id, slot.id)}
-                                                                        aria-label="Hapus staff"
+                                                                        onClick={() => removeDivisionFromDepartment(department.id, division.id)}
+                                                                        aria-label={`Hapus ${division.name}`}
                                                                     >
                                                                         <Trash2 className="size-4 text-[#E84A39]" />
                                                                     </button>
                                                                 </div>
-                                                            ))}
-                                                        </div>
-                                                    ))}
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setAddDeptOpen(true)}
+                                        className="flex w-full items-center justify-center gap-1 rounded-xl border border-dashed border-[#1980C0] py-3 text-sm font-semibold text-[#1980C0]"
+                                    >
+                                        <Plus className="size-4" />
+                                        Tambah Departemen Lainnya
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="w-full max-w-xs shrink-0 rounded-xl border border-[#E2E8F0] p-4">
+                        <p className="font-poppins mb-4 text-sm font-semibold text-black">Preview Struktur</p>
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#EEF8FF]">
+                                    <img src={logoPt} alt="" className="size-4" />
+                                </div>
+                                <div className="flex flex-col items-start">
+                                    <p className="font-poppins text-sm font-semibold text-black">{COMPANY_NAME}</p>
+                                    <p className="text-xs text-[#64748B]">CEO / Direktur Utama</p>
                                 </div>
                             </div>
-                        )}
 
-                        {step === 3 && (
-                            <div className="flex w-full flex-col gap-4">
-                                <p className="font-poppins text-lg font-semibold text-black">Preview</p>
-                                <p className="text-sm text-[#64748B]">Tinjau kembali sebelum menyimpan struktur organisasi.</p>
+                            {departments.length === 0 ? (
+                                <div className="flex flex-col items-center gap-3 py-6 text-center">
+                                    <img src={iconStruktur} alt="" className="h-24 w-auto" />
+                                    <p className="font-poppins text-sm font-semibold text-black">Belum ada struktur</p>
+                                    <p className="text-xs text-[#64748B]">Tambahkan departemen untuk melihat preview struktur.</p>
+                                </div>
+                            ) : (
+                                departments.map((department) => (
+                                    <div key={department.id} className="flex flex-col gap-1">
+                                        <p className="pl-2 text-sm font-medium text-[#0F172A]">{department.name}</p>
+                                        {department.divisions.map((division) => (
+                                            <p key={division.id} className="pl-4 text-sm text-[#64748B]">
+                                                {division.name}
+                                            </p>
+                                        ))}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            label: 'Staff',
+            content: (
+                <div className="flex w-full flex-col gap-2">
+                    <div className="mb-4">
+                        <CompanyCard />
+                    </div>
+                    <p className="font-poppins text-lg font-semibold text-black">Daftar Departemen &amp; Divisi</p>
+                    <p className="text-sm text-[#64748B]">Atur delegasi staff dan penanggung jawab di masing-masing sub-bidang.</p>
 
-                                {departments.map((department) => {
-                                    const allStaffCount =
-                                        (department.headPersonId ? 1 : 0) +
-                                        department.staff.filter((slot) => slot.personId).length +
-                                        department.divisions.reduce(
-                                            (sum, division) =>
-                                                sum + (division.headPersonId ? 1 : 0) + division.staff.filter((slot) => slot.personId).length,
-                                            0,
-                                        );
+                    <div className="mt-2 flex w-full flex-col gap-5">
+                        {departments.map((department) => (
+                            <div key={department.id} className="flex max-h-[360px] w-full flex-col gap-3 rounded-xl border border-[#E2E8F0] p-5">
+                                <div className="flex w-full shrink-0 items-center justify-between">
+                                    <p className="font-poppins text-base font-semibold text-black">{department.name}</p>
+                                    {!department.hasDivisions && (
+                                        <Button
+                                            variant="outline"
+                                            className="h-auto gap-1 rounded-lg border-[#1980C0] px-3 py-1.5 text-xs text-[#1980C0] hover:bg-[#1980C0]/10 hover:text-[#1980C0]"
+                                            onClick={() => addStaffSlot(department.id)}
+                                        >
+                                            <Plus className="size-3.5" />
+                                            Staff
+                                        </Button>
+                                    )}
+                                </div>
 
-                                    return (
-                                        <div key={department.id} className="flex w-full flex-col gap-3 rounded-xl border border-[#E2E8F0] p-5">
-                                            <div className="flex w-full items-center justify-between border-b border-[#E2E8F0] pb-3">
-                                                <p className="font-poppins text-base font-semibold text-black">{department.name}</p>
-                                                <span className="rounded-full bg-[#F8FAFC] px-2.5 py-1 text-xs text-[#64748B]">
-                                                    {allStaffCount} Staff
-                                                </span>
+                                <div className="flex w-full flex-1 flex-col gap-4 overflow-y-auto pr-1">
+                                    <PersonSelect
+                                        value={department.headPersonId}
+                                        onChange={(person) => setDepartmentHead(department.id, person.id)}
+                                        placeholder="Pilih Kepala Departemen"
+                                        taken={taken}
+                                    />
+
+                                    {!department.hasDivisions &&
+                                        department.staff.map((slot) => (
+                                            <div key={slot.id} className="flex w-full items-center gap-3">
+                                                <div className="flex-1">
+                                                    <PersonSelect
+                                                        value={slot.personId}
+                                                        onChange={(person) => setStaffPerson(department.id, slot.id, person.id)}
+                                                        placeholder="Pilih Staff"
+                                                        taken={taken}
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeStaffSlot(department.id, slot.id)}
+                                                    aria-label="Hapus staff"
+                                                >
+                                                    <Trash2 className="size-4 text-[#E84A39]" />
+                                                </button>
                                             </div>
+                                        ))}
 
-                                            {findPerson(department.headPersonId) && (
-                                                <div className="flex w-full items-center gap-3 rounded-xl border border-[#E2E8F0] p-3">
-                                                    <Avatar className="size-9">
-                                                        <AvatarImage src={avatarFor(findPerson(department.headPersonId)!.name)} />
-                                                        <AvatarFallback className="text-xs">
-                                                            {findPerson(department.headPersonId)!.name.slice(0, 2).toUpperCase()}
-                                                        </AvatarFallback>
+                                    {department.hasDivisions &&
+                                        department.divisions.map((division) => (
+                                            <div
+                                                key={division.id}
+                                                className="flex w-full flex-col gap-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4"
+                                            >
+                                                <div className="flex w-full items-center justify-between">
+                                                    <p className="font-poppins text-sm font-semibold text-black">{division.name}</p>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="h-auto gap-1 rounded-lg border-[#1980C0] bg-white px-3 py-1.5 text-xs text-[#1980C0] hover:bg-[#1980C0]/10 hover:text-[#1980C0]"
+                                                        onClick={() => addDivisionStaffSlot(department.id, division.id)}
+                                                    >
+                                                        <Plus className="size-3.5" />
+                                                        Staff
+                                                    </Button>
+                                                </div>
+
+                                                <PersonSelect
+                                                    value={division.headPersonId}
+                                                    onChange={(person) => setDivisionHead(department.id, division.id, person.id)}
+                                                    placeholder="Pilih Kepala Divisi (Opsional)"
+                                                    taken={taken}
+                                                />
+
+                                                {division.staff.map((slot) => (
+                                                    <div key={slot.id} className="flex w-full items-center gap-3">
+                                                        <div className="flex-1">
+                                                            <PersonSelect
+                                                                value={slot.personId}
+                                                                onChange={(person) =>
+                                                                    setDivisionStaffPerson(department.id, division.id, slot.id, person.id)
+                                                                }
+                                                                placeholder="Pilih Staff"
+                                                                taken={taken}
+                                                            />
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeDivisionStaffSlot(department.id, division.id, slot.id)}
+                                                            aria-label="Hapus staff"
+                                                        >
+                                                            <Trash2 className="size-4 text-[#E84A39]" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ),
+        },
+        {
+            label: 'Preview',
+            content: (
+                <div className="flex w-full flex-col gap-4">
+                    <div className="mb-4">
+                        <CompanyCard />
+                    </div>
+                    <p className="font-poppins text-lg font-semibold text-black">Preview</p>
+                    <p className="text-sm text-[#64748B]">Tinjau kembali sebelum menyimpan struktur organisasi.</p>
+
+                    {departments.map((department) => {
+                        const allStaffCount =
+                            (department.headPersonId ? 1 : 0) +
+                            department.staff.filter((slot) => slot.personId).length +
+                            department.divisions.reduce(
+                                (sum, division) => sum + (division.headPersonId ? 1 : 0) + division.staff.filter((slot) => slot.personId).length,
+                                0,
+                            );
+
+                        return (
+                            <div key={department.id} className="flex w-full flex-col gap-3 rounded-xl border border-[#E2E8F0] p-5">
+                                <div className="flex w-full items-center justify-between border-b border-[#E2E8F0] pb-3">
+                                    <p className="font-poppins text-base font-semibold text-black">{department.name}</p>
+                                    <span className="rounded-full bg-[#F8FAFC] px-2.5 py-1 text-xs text-[#64748B]">{allStaffCount} Staff</span>
+                                </div>
+
+                                {findPerson(department.headPersonId) && (
+                                    <div className="flex w-full items-center gap-3 rounded-xl border border-[#E2E8F0] p-3">
+                                        <Avatar className="size-9">
+                                            <AvatarImage src={avatarFor(findPerson(department.headPersonId)!.name)} />
+                                            <AvatarFallback className="text-xs">
+                                                {findPerson(department.headPersonId)!.name.slice(0, 2).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex flex-col items-start">
+                                            <p className="font-poppins text-sm font-semibold text-black">
+                                                {findPerson(department.headPersonId)!.name}
+                                            </p>
+                                            <p className="text-xs text-[#64748B]">Kepala Departemen {shortName(department.name)}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {!department.hasDivisions &&
+                                    department.staff
+                                        .filter((slot) => slot.personId)
+                                        .map((slot) => {
+                                            const person = findPerson(slot.personId)!;
+                                            return (
+                                                <div key={slot.id} className="flex w-full items-center gap-3 rounded-xl border border-[#E2E8F0] p-3">
+                                                    <Avatar className="size-8">
+                                                        <AvatarImage src={avatarFor(person.name)} />
+                                                        <AvatarFallback className="text-xs">{person.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex flex-col items-start">
-                                                        <p className="font-poppins text-sm font-semibold text-black">
-                                                            {findPerson(department.headPersonId)!.name}
-                                                        </p>
-                                                        <p className="text-xs text-[#64748B]">Kepala Departemen {shortName(department.name)}</p>
+                                                        <p className="text-sm font-medium text-black">{person.name}</p>
+                                                        <p className="text-xs text-[#64748B]">Staff {shortName(department.name)}</p>
                                                     </div>
                                                 </div>
-                                            )}
+                                            );
+                                        })}
 
-                                            {!department.hasDivisions &&
-                                                department.staff
+                                {department.divisions.length > 0 && (
+                                    <div className="grid w-full grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+                                        {department.divisions.map((division) => (
+                                            <div key={division.id} className="flex w-full flex-col gap-3">
+                                                <p className="border-b border-[#E2E8F0] pb-2 text-xs text-[#64748B]">{division.name}</p>
+                                                {!findPerson(division.headPersonId) && division.staff.every((slot) => !slot.personId) && (
+                                                    <p className="text-sm text-[#94A3B8]">Belum ada staff.</p>
+                                                )}
+                                                {findPerson(division.headPersonId) && (
+                                                    <div className="flex w-full items-center gap-3 rounded-xl border border-[#E2E8F0] p-3">
+                                                        <Avatar className="size-8">
+                                                            <AvatarImage src={avatarFor(findPerson(division.headPersonId)!.name)} />
+                                                            <AvatarFallback className="text-xs">
+                                                                {findPerson(division.headPersonId)!.name.slice(0, 2).toUpperCase()}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex flex-col items-start">
+                                                            <p className="text-sm font-medium text-black">
+                                                                {findPerson(division.headPersonId)!.name}
+                                                            </p>
+                                                            <p className="text-xs text-[#64748B]">Kepala Divisi {division.name}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {division.staff
                                                     .filter((slot) => slot.personId)
                                                     .map((slot) => {
                                                         const person = findPerson(slot.personId)!;
@@ -726,98 +737,34 @@ export function CreateStructureDialog({ open, onOpenChange, onSave, existingTree
                                                                 </Avatar>
                                                                 <div className="flex flex-col items-start">
                                                                     <p className="text-sm font-medium text-black">{person.name}</p>
-                                                                    <p className="text-xs text-[#64748B]">Staff {shortName(department.name)}</p>
+                                                                    <p className="text-xs text-[#64748B]">Staff {division.name}</p>
                                                                 </div>
                                                             </div>
                                                         );
                                                     })}
-
-                                            {department.divisions.length > 0 && (
-                                                <div className="grid w-full grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-                                                    {department.divisions.map((division) => (
-                                                        <div key={division.id} className="flex w-full flex-col gap-3">
-                                                            <p className="border-b border-[#E2E8F0] pb-2 text-xs text-[#64748B]">{division.name}</p>
-                                                            {!findPerson(division.headPersonId) && division.staff.every((slot) => !slot.personId) && (
-                                                                <p className="text-sm text-[#94A3B8]">Belum ada staff.</p>
-                                                            )}
-                                                            {findPerson(division.headPersonId) && (
-                                                                <div className="flex w-full items-center gap-3 rounded-xl border border-[#E2E8F0] p-3">
-                                                                    <Avatar className="size-8">
-                                                                        <AvatarImage src={avatarFor(findPerson(division.headPersonId)!.name)} />
-                                                                        <AvatarFallback className="text-xs">
-                                                                            {findPerson(division.headPersonId)!.name.slice(0, 2).toUpperCase()}
-                                                                        </AvatarFallback>
-                                                                    </Avatar>
-                                                                    <div className="flex flex-col items-start">
-                                                                        <p className="text-sm font-medium text-black">
-                                                                            {findPerson(division.headPersonId)!.name}
-                                                                        </p>
-                                                                        <p className="text-xs text-[#64748B]">Kepala Divisi {division.name}</p>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                            {division.staff
-                                                                .filter((slot) => slot.personId)
-                                                                .map((slot) => {
-                                                                    const person = findPerson(slot.personId)!;
-                                                                    return (
-                                                                        <div
-                                                                            key={slot.id}
-                                                                            className="flex w-full items-center gap-3 rounded-xl border border-[#E2E8F0] p-3"
-                                                                        >
-                                                                            <Avatar className="size-8">
-                                                                                <AvatarImage src={avatarFor(person.name)} />
-                                                                                <AvatarFallback className="text-xs">
-                                                                                    {person.name.slice(0, 2).toUpperCase()}
-                                                                                </AvatarFallback>
-                                                                            </Avatar>
-                                                                            <div className="flex flex-col items-start">
-                                                                                <p className="text-sm font-medium text-black">{person.name}</p>
-                                                                                <p className="text-xs text-[#64748B]">Staff {division.name}</p>
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
+                        );
+                    })}
+                </div>
+            ),
+        },
+    ];
 
-                    <div className="flex w-full items-center justify-between border-t border-[#E2E8F0] px-8 py-5">
-                        <div className="flex items-center gap-3">
-                            <Button variant="outline" className="h-auto rounded-lg px-6 py-2.5" onClick={resetAndClose}>
-                                Batal
-                            </Button>
-                            {step > 1 && (
-                                <button
-                                    type="button"
-                                    className="text-sm font-semibold text-[#1980C0]"
-                                    onClick={() => setStep((current) => current - 1)}
-                                >
-                                    Kembali
-                                </button>
-                            )}
-                        </div>
-                        {step < 3 ? (
-                            <Button
-                                className="h-auto rounded-lg px-6 py-2.5"
-                                onClick={() => setStep((current) => current + 1)}
-                                disabled={step === 1 && !canProceedStep1}
-                            >
-                                Selanjutnya
-                            </Button>
-                        ) : (
-                            <Button className="h-auto rounded-lg px-6 py-2.5" onClick={handleSave}>
-                                Simpan
-                            </Button>
-                        )}
-                    </div>
+    return (
+        <>
+            <Dialog open={open} onOpenChange={(next) => !next && resetAndClose()}>
+                <DialogContent className="flex max-w-5xl flex-col gap-0" onInteractOutside={(event) => event.preventDefault()}>
+                    <StepForm
+                        steps={steps}
+                        title={isReconfiguring ? 'Atur Ulang Struktur Organisasi Perusahaan' : 'Struktur Organisasi Perusahaan'}
+                        finishLabel="Simpan"
+                        onCancel={resetAndClose}
+                        onFinish={handleSave}
+                    />
                 </DialogContent>
             </Dialog>
 
