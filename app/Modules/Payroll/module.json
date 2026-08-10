@@ -1,0 +1,7 @@
+{
+    "name": "Payroll",
+    "alias": "payroll",
+    "version": "1.0.0",
+    "description": "Payroll module",
+    "dependencies": []
+}
