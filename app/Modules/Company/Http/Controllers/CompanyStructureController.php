@@ -7,7 +7,7 @@ use Inertia\Response;
 
 class CompanyStructureController
 {
-    public function __invoke(): Response
+    public function index(): Response
     {
         return Inertia::render('Company::pages/Structure');
     }
