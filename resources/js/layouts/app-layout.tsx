@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import { Toaster } from '@/components/toaster';
 import { useFlash } from '@/hooks/use-flash';
+import { usePendingToast } from '@/hooks/use-pending-toast';
 import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
 import { breadcrumbsFor, titleFor } from '@/lib/navigation';
 import { type BreadcrumbItem } from '@/types';
@@ -34,6 +35,7 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children, tabTitle, breadcrumbs, headerActions, headerTitle, ...props }: AppLayoutProps) {
     useFlash();
+    usePendingToast();
 
     const { url } = usePage();
     const derivedTabTitle = tabTitle ?? titleFor(url);
