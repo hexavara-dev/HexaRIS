@@ -6,6 +6,7 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { deleteAllowance, loadAllowances } from '../../lib/payroll-settings-storage';
 import { buildTunjanganColumns } from './tunjangan-columns';
+import { TunjanganFormDialog } from './tunjangan-form-dialog';
 
 const search: SearchConfig = { keys: ['nama'], placeholder: 'Search' };
 
@@ -58,7 +59,7 @@ export function TunjanganPanel() {
                 }
             />
 
-            {formOpen && <div>Form dialog arrives in Task 10{formTarget ? ` (editing "${formTarget.nama}")` : ''}</div>}
+            <TunjanganFormDialog open={formOpen} onOpenChange={setFormOpen} target={formTarget} onSaved={refresh} />
 
             <ConfirmDialog
                 open={deleteTarget !== null}
