@@ -13,6 +13,6 @@ export const payrollDeductionSettings: PayrollDeductionSettings = {
     alpha: { aktif: true, nominal: 300_000 },
     terlambat: { aktif: true, toleransi_menit: 15, nominal_per_30_menit: 10_000 },
     bpjs_kesehatan: { aktif: true, persentase_karyawan: 1, persentase_perusahaan: 4 },
-    bpjs_ketenagakerjaan: { aktif: true, persentase_karyawan: 1, persentase_perusahaan: 2 },
+    bpjs_ketenagakerjaan: { aktif: true, persentase_karyawan: 2, persentase_perusahaan: 2 },
     pph21: { aktif: true, metode: 'ter', pajak_ditanggung: 'karyawan' },
 };
