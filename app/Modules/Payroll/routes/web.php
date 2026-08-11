@@ -6,4 +6,6 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth')->group(function () {
     Route::get('payroll/data', [PayrollController::class, 'index'])
         ->name('payroll.data.index')->middleware('can:payroll.viewAny');
+    Route::get('payroll/settings', [PayrollController::class, 'settings'])
+        ->name('payroll.settings.index')->middleware('can:payroll.update');
 });
