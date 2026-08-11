@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { useState } from 'react';
+import { TunjanganPanel } from './settings/tunjangan-panel';
 import { UmumPanel } from './settings/umum-panel';
 
 const TAB_LIST_CLASS = 'flex items-start rounded-lg border border-[#E7E7E7] w-full h-[45px]';
@@ -32,7 +33,7 @@ export default function Settings() {
                         <UmumPanel />
                     </TabsContent>
                     <TabsContent value="tunjangan" className="w-full pt-[19px]">
-                        <div>Coming in a later task</div>
+                        <TunjanganPanel />
                     </TabsContent>
                     <TabsContent value="potongan" className="w-full pt-[19px]">
                         <div>Coming in a later task</div>
