@@ -95,7 +95,18 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           install -m 600 /dev/stdin ~/.ssh/deploy_key <<< "${{ secrets.VPS_SSH_KEY }}"
-          ssh-keyscan -p "${{ secrets.VPS_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          for attempt in 1 2 3; do
+            if ssh-keyscan -T 10 -p "${{ secrets.VPS_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null; then
+              break
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Unable to fetch SSH host key from ${{ secrets.VPS_HOST }}:${{ secrets.VPS_PORT }}"
+              exit 1
+            fi
+
+            sleep 2
+          done
 
       - name: Rsync build to VPS
         run: |
