@@ -1,12 +1,10 @@
 import { type Column } from '@/components/data-table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type PayrollStatus } from '@/data/Payroll/payrollEntry';
 import { cn } from '@/lib/utils';
-import { SquarePen } from 'lucide-react';
-import { allowanceTotal, deductionTotal, formatCurrency, thp, type PayrollRow } from '../lib/payroll-row';
-
-const STATUS_LABEL: Record<PayrollStatus, string> = { selesai: 'Selesai', proses: 'Proses', belum: 'Belum' };
-const STATUS_COLOR: Record<PayrollStatus, string> = { selesai: 'text-[#46B52B]', proses: 'text-[#CA8A04]', belum: 'text-[#E84A39]' };
+import { MoreVertical } from 'lucide-react';
+import { allowanceTotal, deductionTotal, formatCurrency, STATUS_COLOR, STATUS_LABEL, thp, type PayrollRow } from '../lib/payroll-row';
 
 function StatusCell({ row, onStatusChange }: { row: PayrollRow; onStatusChange: (row: PayrollRow, status: PayrollStatus) => void }) {
     return (
@@ -26,8 +24,10 @@ function StatusCell({ row, onStatusChange }: { row: PayrollRow; onStatusChange: 
 }
 
 export function buildPayrollColumns(
+    onDetail: (row: PayrollRow) => void,
     onEdit: (row: PayrollRow) => void,
     onStatusChange: (row: PayrollRow, status: PayrollStatus) => void,
+    onDelete: (row: PayrollRow) => void,
 ): Column<PayrollRow>[] {
     return [
         { key: 'employee_number', label: 'ID', sortable: true },
@@ -53,9 +53,26 @@ export function buildPayrollColumns(
             label: '',
             align: 'right',
             render: (row) => (
-                <button type="button" onClick={() => onEdit(row)} className="cursor-pointer rounded-md border border-[#E7E7E7] p-1.5">
-                    <SquarePen className="size-3.5 text-black" />
-                </button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <MoreVertical className="cursor-pointer size-3.5 text-[#1B1B1B]" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onDetail(row)}>Detail</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onEdit(row)}>Edit</DropdownMenuItem>
+                        {/* Hapus temporarily disabled per product request — hidden via CSS rather than removed,
+                            so the already-working delete plumbing (Index.tsx, payroll-storage.ts) stays wired and
+                            this can ship by just dropping the `hidden` class once the flow is ready. */}
+                        <DropdownMenuSeparator className="hidden" />
+                        <DropdownMenuItem
+                            className="hidden text-[#E84A39] focus:text-[#E84A39] text-red-500"
+                            onClick={() => onDelete(row)}
+                        >
+                            Hapus
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             ),
         },
     ];

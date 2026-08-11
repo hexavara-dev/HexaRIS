@@ -1,6 +1,7 @@
 import { type PayrollEntry } from '@/data/Payroll/payrollEntry';
 
 const STORAGE_KEY = 'hexaris.payroll.overrides';
+const DELETED_STORAGE_KEY = 'hexaris.payroll.deleted';
 
 export function loadPayrollOverrides(): Record<string, Partial<PayrollEntry>> {
     if (typeof window === 'undefined') return {};
@@ -21,8 +22,31 @@ export function savePayrollOverride(id: string, patch: Partial<PayrollEntry>): R
     try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {
-        // Quota exceeded or storage disabled — the returned in-memory overrides still apply
-        // for this session; only cross-refresh persistence silently fails.
+        // Quota exceeded or storage disabled — this write is lost; the next successful save
+        // starts from the last persisted state, not from this one.
+    }
+    return next;
+}
+
+export function loadDeletedPayrollIds(): string[] {
+    if (typeof window === 'undefined') return [];
+    try {
+        const raw = window.localStorage.getItem(DELETED_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw) as unknown;
+        return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+    } catch {
+        return [];
+    }
+}
+
+export function markPayrollDeleted(id: string): string[] {
+    const deleted = loadDeletedPayrollIds();
+    const next = deleted.includes(id) ? deleted : [...deleted, id];
+    try {
+        window.localStorage.setItem(DELETED_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+        // Quota exceeded or storage disabled — this delete is lost; the row reappears on next load.
     }
     return next;
 }

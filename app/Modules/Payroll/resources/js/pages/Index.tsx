@@ -1,3 +1,4 @@
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { ActiveEmployeesIcon, KpiStatCard, PayrollStatusIcon, TotalSalaryIcon } from '@/components/design-system/card/kpi-stat';
 import { Input } from '@/components/ui/input';
@@ -9,27 +10,37 @@ import { period } from '@/data/Payroll/period';
 import AppLayout from '@/layouts/app-layout';
 import { Search } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { PayrollDetailDialog } from '../components/payroll-detail-dialog';
 import { formatCurrency, thp, toPayrollRow, type PayrollRow } from '../lib/payroll-row';
-import { loadPayrollOverrides, savePayrollOverride } from '../lib/payroll-storage';
+import { loadDeletedPayrollIds, loadPayrollOverrides, markPayrollDeleted, savePayrollOverride } from '../lib/payroll-storage';
 import { buildPayrollColumns } from './columns';
 
 const ALL_BRANCHES = 'all';
 const CURRENT_PERIOD_ID = period[period.length - 1].id;
 
 export default function Index() {
+    // The reference design places Search/Cabang/Periode above the KPI cards, but DataTable's built-in
+    // toolbar (its `search`/`filters` props) always renders directly above the table — so this page
+    // filters `data` itself before handing it to DataTable instead of using that built-in toolbar.
     const [overrides, setOverrides] = useState(loadPayrollOverrides);
+    const [deletedIds, setDeletedIds] = useState(loadDeletedPayrollIds);
     const [searchValue, setSearchValue] = useState('');
     const [branchFilter, setBranchFilter] = useState(ALL_BRANCHES);
     const [periodFilter, setPeriodFilter] = useState(CURRENT_PERIOD_ID);
     const [editingRow, setEditingRow] = useState<PayrollRow | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [initialMode, setInitialMode] = useState<'view' | 'edit'>('view');
+    const [deleteTarget, setDeleteTarget] = useState<PayrollRow | null>(null);
 
     const employeeById = useMemo(() => new Map(employee.map((e) => [e.id, e])), []);
 
     const allRows = useMemo(
-        () => payrollEntry.map((entry) => toPayrollRow({ ...entry, ...overrides[entry.id] }, employeeById)),
-        [overrides, employeeById],
+        () =>
+            payrollEntry
+                .map((entry) => toPayrollRow({ ...entry, ...overrides[entry.id] }, employeeById))
+                .filter((row) => !deletedIds.includes(row.id)),
+        [overrides, employeeById, deletedIds],
     );
 
     const scopedRows = useMemo(
@@ -43,7 +54,9 @@ export default function Index() {
         return scopedRows.filter((row) => row.full_name.toLowerCase().includes(query) || row.employee_number.toLowerCase().includes(query));
     }, [scopedRows, searchValue]);
 
-    const totalActiveEmployees = scopedRows.length;
+    // Defense in depth: count distinct employees rather than rows, so a future entry point that
+    // somehow produces two rows for the same employee within a period can't inflate this KPI.
+    const totalActiveEmployees = useMemo(() => new Set(scopedRows.map((row) => row.employee_id)).size, [scopedRows]);
     const totalPayable = useMemo(() => scopedRows.reduce((sum, row) => sum + thp(row), 0), [scopedRows]);
     const statusCounts = useMemo(
         () => ({
@@ -53,8 +66,15 @@ export default function Index() {
         [scopedRows],
     );
 
+    const openDetail = useCallback((row: PayrollRow) => {
+        setEditingRow(row);
+        setInitialMode('view');
+        setDialogOpen(true);
+    }, []);
+
     const openEdit = useCallback((row: PayrollRow) => {
         setEditingRow(row);
+        setInitialMode('edit');
         setDialogOpen(true);
     }, []);
 
@@ -67,7 +87,19 @@ export default function Index() {
         setEditingRow((current) => (current && current.id === entryId ? { ...current, ...patch } : current));
     }, []);
 
-    const columns = useMemo(() => buildPayrollColumns(openEdit, onStatusChange), [openEdit, onStatusChange]);
+    const onDelete = useCallback((row: PayrollRow) => setDeleteTarget(row), []);
+
+    const confirmDelete = () => {
+        if (!deleteTarget) return;
+        setDeletedIds(markPayrollDeleted(deleteTarget.id));
+        toast.success(`Data gaji ${deleteTarget.full_name} berhasil dihapus.`);
+        setDeleteTarget(null);
+    };
+
+    const columns = useMemo(
+        () => buildPayrollColumns(openDetail, openEdit, onStatusChange, onDelete),
+        [openDetail, openEdit, onStatusChange, onDelete],
+    );
 
     return (
         <AppLayout>
@@ -131,6 +163,18 @@ export default function Index() {
                     }}
                     row={editingRow}
                     onSaved={onSaved}
+                    initialMode={initialMode}
+                />
+
+                <ConfirmDialog
+                    open={deleteTarget !== null}
+                    onOpenChange={(open) => !open && setDeleteTarget(null)}
+                    onConfirm={confirmDelete}
+                    title="Hapus Data Gaji?"
+                    description={
+                        deleteTarget ? `Data gaji ${deleteTarget.full_name} untuk periode ini akan dihapus. Tindakan ini tidak bisa dibatalkan.` : undefined
+                    }
+                    confirmLabel="Hapus"
                 />
             </div>
         </AppLayout>

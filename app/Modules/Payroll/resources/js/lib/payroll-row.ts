@@ -1,8 +1,11 @@
 import { type Employee } from '@/data/Employee/employee';
 import { employeeAssignment } from '@/data/Employee/employeeAssignment';
 import { branch } from '@/data/Payroll/branch';
-import { type PayrollEntry } from '@/data/Payroll/payrollEntry';
+import { type PayrollEntry, type PayrollStatus } from '@/data/Payroll/payrollEntry';
 import { jobPosition } from '@/data/Position/jobPosition';
+
+export const STATUS_LABEL: Record<PayrollStatus, string> = { selesai: 'Selesai', proses: 'Proses', belum: 'Belum' };
+export const STATUS_COLOR: Record<PayrollStatus, string> = { selesai: 'text-[#46B52B]', proses: 'text-[#CA8A04]', belum: 'text-[#E84A39]' };
 
 export interface PayrollRow extends PayrollEntry {
     employee_number: string;
