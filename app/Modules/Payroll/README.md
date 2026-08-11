@@ -7,7 +7,7 @@ Self-contained `Payroll` module.
 | Permission | Purpose |
 |---|---|
 | `payroll.viewAny` | List payroll data (`/payroll/data`) |
-| `payroll.update` | Declared, but not currently wired to any route — see below |
+| `payroll.update` | Gates the Pengaturan Gaji page (`/payroll/settings`) |
 
 Run `php artisan permission:sync` after changing `permissions.php`.
 
@@ -16,13 +16,20 @@ Run `php artisan permission:sync` after changing `permissions.php`.
 | Method | URI | Name | Permission |
 |---|---|---|---|
 | `GET` | `payroll/data` | `payroll.data.index` | `payroll.viewAny` |
+| `GET` | `payroll/settings` | `payroll.settings.index` | `payroll.update` |
 
-This is the only real route in the module. `payroll.update` is declared for
-future use but does not currently gate anything — there is no backend write
-path yet. All edits (status change, "Edit Slip Gaji" dialog) are entirely
+There is no backend write path for either page yet. All edits (status
+change, "Edit Slip Gaji" dialog, Pengaturan Gaji forms) are entirely
 client-side, applied through a `localStorage` overrides overlay that is
 merged over the seed data at render time, the same pattern used by the
 Employee module's mocked wizard. See `resources/js/lib/payroll-storage.ts`.
+
+Pengaturan Gaji's own settings (BPJS %, Alpha/Terlambat, PPh21, Lembur rate,
+active Tunjangan) are persisted separately in
+`resources/js/lib/payroll-settings-storage.ts`. Data Gaji's displayed
+earnings/deductions are not baked into the seed data — they are recomputed
+fresh on every render from these settings via `recomputeRow()` in
+`resources/js/lib/payroll-row.ts`.
 
 ## No database migrations
 

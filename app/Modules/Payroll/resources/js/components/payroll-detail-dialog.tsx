@@ -22,15 +22,6 @@ interface EditableFields {
     payment_date: string;
     payment_method: string;
     base_salary: string;
-    position_allowance: string;
-    meal_allowance: string;
-    transport_allowance: string;
-    overtime: string;
-    alpha: string;
-    late: string;
-    bpjs_health: string;
-    bpjs_employment: string;
-    pph21: string;
 }
 
 function toEditableFields(row: RecomputedPayrollRow): EditableFields {
@@ -40,18 +31,14 @@ function toEditableFields(row: RecomputedPayrollRow): EditableFields {
         payment_date: row.payment_date ?? '',
         payment_method: row.payment_method ?? '',
         base_salary: String(row.base_salary),
-        position_allowance: String(row.earnings.position_allowance),
-        meal_allowance: String(row.earnings.meal_allowance),
-        transport_allowance: String(row.earnings.transport_allowance),
-        overtime: String(row.earnings.overtime),
-        alpha: String(row.deductions.alpha),
-        late: String(row.deductions.late),
-        bpjs_health: String(row.deductions.bpjs_health),
-        bpjs_employment: String(row.deductions.bpjs_employment),
-        pph21: String(row.deductions.pph21),
     };
 }
 
+// Only period_id/status/payment_date/payment_method/base_salary are still editable here — every
+// other earnings/deductions field is settings-driven (see Pengaturan Gaji) and comes back out of
+// `row` as the *recomputed* display value, not the original seed. Patching those back in would
+// feed a previous recompute's output into the next recompute's input (see payroll-row.ts's
+// `recomputeRow` doc comment), so `toPatch` must never include `earnings`/`deductions`.
 function toPatch(fields: EditableFields): Partial<PayrollEntry> {
     return {
         period_id: fields.period_id,
@@ -59,19 +46,6 @@ function toPatch(fields: EditableFields): Partial<PayrollEntry> {
         payment_date: fields.payment_date || null,
         payment_method: fields.payment_method || null,
         base_salary: toNumber(fields.base_salary),
-        earnings: {
-            position_allowance: toNumber(fields.position_allowance),
-            meal_allowance: toNumber(fields.meal_allowance),
-            transport_allowance: toNumber(fields.transport_allowance),
-            overtime: toNumber(fields.overtime),
-        },
-        deductions: {
-            alpha: toNumber(fields.alpha),
-            late: toNumber(fields.late),
-            bpjs_health: toNumber(fields.bpjs_health),
-            bpjs_employment: toNumber(fields.bpjs_employment),
-            pph21: toNumber(fields.pph21),
-        },
     };
 }
 

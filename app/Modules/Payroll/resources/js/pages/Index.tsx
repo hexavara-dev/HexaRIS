@@ -29,7 +29,7 @@ export default function Index() {
     const [searchValue, setSearchValue] = useState('');
     const [branchFilter, setBranchFilter] = useState(ALL_BRANCHES);
     const [periodFilter, setPeriodFilter] = useState(CURRENT_PERIOD_ID);
-    const [editingRow, setEditingRow] = useState<RecomputedPayrollRow | null>(null);
+    const [editingRowId, setEditingRowId] = useState<string | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [initialMode, setInitialMode] = useState<'view' | 'edit'>('view');
     const [deleteTarget, setDeleteTarget] = useState<RecomputedPayrollRow | null>(null);
@@ -49,6 +49,11 @@ export default function Index() {
                 .map((row) => recomputeRow(row, settings)),
         [overrides, employeeById, deletedIds, settings],
     );
+
+    // Derived live from `allRows` by id (rather than kept as its own state snapshot) so it's always
+    // the current recomputed value — the same object the table shows — instead of going stale after
+    // a Simpan that only changes part of the underlying row (see payroll-row.ts's `recomputeRow`).
+    const editingRow = useMemo(() => allRows.find((row) => row.id === editingRowId) ?? null, [allRows, editingRowId]);
 
     const scopedRows = useMemo(
         () => allRows.filter((row) => row.period_id === periodFilter && (branchFilter === ALL_BRANCHES || row.branch_id === branchFilter)),
@@ -74,13 +79,13 @@ export default function Index() {
     );
 
     const openDetail = useCallback((row: RecomputedPayrollRow) => {
-        setEditingRow(row);
+        setEditingRowId(row.id);
         setInitialMode('view');
         setDialogOpen(true);
     }, []);
 
     const openEdit = useCallback((row: RecomputedPayrollRow) => {
-        setEditingRow(row);
+        setEditingRowId(row.id);
         setInitialMode('edit');
         setDialogOpen(true);
     }, []);
@@ -91,7 +96,6 @@ export default function Index() {
 
     const onSaved = useCallback((entryId: string, patch: Partial<PayrollEntry>) => {
         setOverrides(savePayrollOverride(entryId, patch));
-        setEditingRow((current) => (current && current.id === entryId ? { ...current, ...patch } : current));
     }, []);
 
     const onDelete = useCallback((row: RecomputedPayrollRow) => setDeleteTarget(row), []);
@@ -166,7 +170,7 @@ export default function Index() {
                     open={dialogOpen}
                     onOpenChange={(open) => {
                         setDialogOpen(open);
-                        if (!open) setEditingRow(null);
+                        if (!open) setEditingRowId(null);
                     }}
                     row={editingRow}
                     onSaved={onSaved}
