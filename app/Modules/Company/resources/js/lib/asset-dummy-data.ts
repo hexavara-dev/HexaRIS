@@ -34,7 +34,7 @@ export function generateDummyAssets(): Asset[] {
         const availableUnits = totalUnits - loanedUnits;
 
         rows.push({
-            id: `EM${87 + i}`,
+            id: `EM${String(87 + i).padStart(4, '0')}`,
             category,
             name,
             totalUnits,

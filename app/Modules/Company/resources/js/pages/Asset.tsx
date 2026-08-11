@@ -1,4 +1,4 @@
-import { DataTable } from '@/components/data-table';
+import { type FilterConfig, type SearchConfig, DataTable } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
@@ -15,6 +15,9 @@ import { ASSET_TABS, BRANCH_OPTIONS, type AssetTab } from '../lib/asset-catalog'
 import { generateDummyAssets } from '../lib/asset-dummy-data';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Manajemen Aset', href: '/company/asset' }];
+
+const assetSearch: SearchConfig = { keys: ['name', 'id'], placeholder: 'Cari nama atau id aset…' };
+const assetFilters: FilterConfig[] = [{ key: 'branch', type: 'select', label: 'Cabang', options: BRANCH_OPTIONS }];
 
 export default function Asset() {
     const [activeTab, setActiveTab] = useState<AssetTab>('company');
@@ -40,8 +43,8 @@ export default function Asset() {
                         <DataTable
                             columns={assetColumns}
                             data={assets}
-                            search={{ keys: ['name', 'id'], placeholder: 'Search' }}
-                            filters={[{ key: 'branch', type: 'select', label: 'Cabang', options: BRANCH_OPTIONS }]}
+                            search={assetSearch}
+                            filters={assetFilters}
                             actions={
                                 <>
                                     <button
