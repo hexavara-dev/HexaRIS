@@ -4,9 +4,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { type PayrollStatus } from '@/data/Payroll/payrollEntry';
 import { cn } from '@/lib/utils';
 import { MoreVertical } from 'lucide-react';
-import { allowanceTotal, deductionTotal, formatCurrency, STATUS_COLOR, STATUS_LABEL, thp, type PayrollRow } from '../lib/payroll-row';
+import { allowanceTotal, deductionTotal, formatCurrency, STATUS_COLOR, STATUS_LABEL, thp, type RecomputedPayrollRow } from '../lib/payroll-row';
 
-function StatusCell({ row, onStatusChange }: { row: PayrollRow; onStatusChange: (row: PayrollRow, status: PayrollStatus) => void }) {
+function StatusCell({
+    row,
+    onStatusChange,
+}: {
+    row: RecomputedPayrollRow;
+    onStatusChange: (row: RecomputedPayrollRow, status: PayrollStatus) => void;
+}) {
     return (
         <Select value={row.status} onValueChange={(value) => onStatusChange(row, value as PayrollStatus)}>
             <SelectTrigger className={cn('h-7 w-fit gap-1.5 rounded-lg border-[#E7E7E7] px-2 py-1 font-poppins text-xs', STATUS_COLOR[row.status])}>
@@ -24,11 +30,11 @@ function StatusCell({ row, onStatusChange }: { row: PayrollRow; onStatusChange: 
 }
 
 export function buildPayrollColumns(
-    onDetail: (row: PayrollRow) => void,
-    onEdit: (row: PayrollRow) => void,
-    onStatusChange: (row: PayrollRow, status: PayrollStatus) => void,
-    onDelete: (row: PayrollRow) => void,
-): Column<PayrollRow>[] {
+    onDetail: (row: RecomputedPayrollRow) => void,
+    onEdit: (row: RecomputedPayrollRow) => void,
+    onStatusChange: (row: RecomputedPayrollRow, status: PayrollStatus) => void,
+    onDelete: (row: RecomputedPayrollRow) => void,
+): Column<RecomputedPayrollRow>[] {
     return [
         { key: 'employee_number', label: 'ID', sortable: true },
         {

@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { type ReactNode, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
-import { deductionTotal, formatCurrency, formatDate, STATUS_COLOR, STATUS_LABEL, thp, totalEarnings, type PayrollRow } from '../lib/payroll-row';
+import { deductionTotal, formatCurrency, formatDate, STATUS_COLOR, STATUS_LABEL, thp, totalEarnings, type RecomputedPayrollRow } from '../lib/payroll-row';
 
 const PAYMENT_METHODS = ['Tunai', 'Transfer Bank'];
 
@@ -33,7 +33,7 @@ interface EditableFields {
     pph21: string;
 }
 
-function toEditableFields(row: PayrollRow): EditableFields {
+function toEditableFields(row: RecomputedPayrollRow): EditableFields {
     return {
         period_id: row.period_id,
         status: row.status,
@@ -58,26 +58,6 @@ function toPatch(fields: EditableFields): Partial<PayrollEntry> {
         status: fields.status,
         payment_date: fields.payment_date || null,
         payment_method: fields.payment_method || null,
-        base_salary: toNumber(fields.base_salary),
-        earnings: {
-            position_allowance: toNumber(fields.position_allowance),
-            meal_allowance: toNumber(fields.meal_allowance),
-            transport_allowance: toNumber(fields.transport_allowance),
-            overtime: toNumber(fields.overtime),
-        },
-        deductions: {
-            alpha: toNumber(fields.alpha),
-            late: toNumber(fields.late),
-            bpjs_health: toNumber(fields.bpjs_health),
-            bpjs_employment: toNumber(fields.bpjs_employment),
-            pph21: toNumber(fields.pph21),
-        },
-    };
-}
-
-/** Shapes the live edit draft into what totalEarnings/deductionTotal/thp expect, so edit-mode totals stay in sync with the shared calculation. */
-function toTotalsInput(fields: EditableFields): Pick<PayrollEntry, 'base_salary' | 'earnings' | 'deductions'> {
-    return {
         base_salary: toNumber(fields.base_salary),
         earnings: {
             position_allowance: toNumber(fields.position_allowance),
@@ -181,7 +161,7 @@ function SalarySectionEdit({
 interface PayrollDetailDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    row: PayrollRow | null;
+    row: RecomputedPayrollRow | null;
     onSaved: (entryId: string, patch: Partial<PayrollEntry>) => void;
     initialMode: 'view' | 'edit';
 }
@@ -204,9 +184,7 @@ export function PayrollDetailDialog({ open, onOpenChange, row, onSaved, initialM
 
     const earningsView = [
         { label: 'Gaji Pokok', amount: row.base_salary },
-        { label: 'Tunjangan Jabatan', amount: row.earnings.position_allowance },
-        { label: 'Tunjangan Makan', amount: row.earnings.meal_allowance },
-        { label: 'Tunjangan Transport', amount: row.earnings.transport_allowance },
+        ...row.allowance_items.map((item) => ({ label: item.nama, amount: item.nominal })),
         { label: 'Lembur', amount: row.earnings.overtime },
     ];
     const deductionsView = [
@@ -216,9 +194,11 @@ export function PayrollDetailDialog({ open, onOpenChange, row, onSaved, initialM
         { label: 'BPJS Ketenagakerjaan', amount: row.deductions.bpjs_employment },
         { label: 'PPh 21', amount: row.deductions.pph21 },
     ];
-    // View mode shows the saved, authoritative `row`; edit mode shows live totals from the `fields` draft
-    // so amounts (e.g. Lembur) update GAJI BERSIH (THP) immediately instead of only after Simpan.
-    const totalsSource = mode === 'view' ? row : toTotalsInput(fields);
+    // View mode shows the saved, authoritative `row`; edit mode overlays the live `base_salary` draft
+    // onto `row` so GAJI BERSIH (THP) updates immediately as it's typed instead of only after Simpan.
+    // Every other earnings/deductions field is read-only in edit mode (settings-driven), so it's
+    // sourced straight from `row` either way.
+    const totalsSource = mode === 'view' ? row : { ...row, base_salary: toNumber(fields.base_salary) };
     const totalEarningsView = totalEarnings(totalsSource);
     const totalDeductionsView = deductionTotal(totalsSource);
     const netSalary = thp(totalsSource);
@@ -337,30 +317,12 @@ export function PayrollDetailDialog({ open, onOpenChange, row, onSaved, initialM
                                     </div>
                                 ) : (
                                     <div className="flex w-full flex-col items-start gap-[18px]">
-                                        <SalarySectionEdit
-                                            title="PENDAPATAN"
-                                            rows={[
-                                                { label: 'Gaji Pokok', key: 'base_salary' },
-                                                { label: 'Tunjangan Jabatan', key: 'position_allowance' },
-                                                { label: 'Tunjangan Makan', key: 'meal_allowance' },
-                                                { label: 'Tunjangan Transport', key: 'transport_allowance' },
-                                                { label: 'Lembur', key: 'overtime' },
-                                            ]}
-                                            fields={fields}
-                                            setField={setField}
-                                        />
-                                        <SalarySectionEdit
-                                            title="POTONGAN"
-                                            rows={[
-                                                { label: 'Alpha', key: 'alpha' },
-                                                { label: 'Terlambat', key: 'late' },
-                                                { label: 'BPJS Kesehatan', key: 'bpjs_health' },
-                                                { label: 'BPJS Ketenagakerjaan', key: 'bpjs_employment' },
-                                                { label: 'PPh 21', key: 'pph21' },
-                                            ]}
-                                            fields={fields}
-                                            setField={setField}
-                                        />
+                                        {/* Only Gaji Pokok stays editable per employee here — every other PENDAPATAN/POTONGAN
+                                            line is now settings-driven (see Pengaturan Gaji) and would silently revert on
+                                            next render if edited here, so it's read-only instead of misleadingly editable. */}
+                                        <SalarySectionEdit title="PENDAPATAN" rows={[{ label: 'Gaji Pokok', key: 'base_salary' }]} fields={fields} setField={setField} />
+                                        <SalarySectionView title="" items={earningsView.slice(1)} total={totalEarningsView} totalLabel="Total Pendapatan" />
+                                        <SalarySectionView title="POTONGAN" items={deductionsView} total={totalDeductionsView} totalLabel="Total Potongan" />
                                     </div>
                                 )}
 
