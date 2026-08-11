@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { useState } from 'react';
+import { PotonganPanel } from './settings/potongan-panel';
 import { TunjanganPanel } from './settings/tunjangan-panel';
 import { UmumPanel } from './settings/umum-panel';
 
@@ -36,7 +37,7 @@ export default function Settings() {
                         <TunjanganPanel />
                     </TabsContent>
                     <TabsContent value="potongan" className="w-full pt-[19px]">
-                        <div>Coming in a later task</div>
+                        <PotonganPanel />
                     </TabsContent>
                     <TabsContent value="lembur" className="w-full pt-[19px]">
                         <div>Coming in a later task</div>
