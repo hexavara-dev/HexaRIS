@@ -10,12 +10,25 @@ const ALLOWANCE_OVERRIDES_KEY = 'hexaris.payroll.settings.allowances.overrides';
 const ALLOWANCE_CREATED_KEY = 'hexaris.payroll.settings.allowances.created';
 const ALLOWANCE_DELETED_KEY = 'hexaris.payroll.settings.allowances.deleted';
 
-function loadJson<T>(key: string, fallback: T): T {
+function loadObjectJson<T extends object>(key: string, fallback: T): T {
     if (typeof window === 'undefined') return fallback;
     try {
         const raw = window.localStorage.getItem(key);
         if (!raw) return fallback;
-        return JSON.parse(raw) as T;
+        const parsed = JSON.parse(raw) as unknown;
+        return typeof parsed === 'object' && parsed !== null ? (parsed as T) : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+function loadArrayJson<T>(key: string, fallback: T[]): T[] {
+    if (typeof window === 'undefined') return fallback;
+    try {
+        const raw = window.localStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw) as unknown;
+        return Array.isArray(parsed) ? (parsed as T[]) : fallback;
     } catch {
         return fallback;
     }
@@ -31,7 +44,7 @@ function saveJson(key: string, value: unknown): void {
 }
 
 export function loadGeneralSettings(): PayrollGeneralSettings {
-    return { ...payrollGeneralSettings, ...loadJson<Partial<PayrollGeneralSettings>>(GENERAL_KEY, {}) };
+    return { ...payrollGeneralSettings, ...loadObjectJson<Partial<PayrollGeneralSettings>>(GENERAL_KEY, {}) };
 }
 
 export function saveGeneralSettings(patch: Partial<PayrollGeneralSettings>): PayrollGeneralSettings {
@@ -41,7 +54,7 @@ export function saveGeneralSettings(patch: Partial<PayrollGeneralSettings>): Pay
 }
 
 export function loadDeductionSettings(): PayrollDeductionSettings {
-    return { ...payrollDeductionSettings, ...loadJson<Partial<PayrollDeductionSettings>>(DEDUCTIONS_KEY, {}) };
+    return { ...payrollDeductionSettings, ...loadObjectJson<Partial<PayrollDeductionSettings>>(DEDUCTIONS_KEY, {}) };
 }
 
 export function saveDeductionSettings(patch: Partial<PayrollDeductionSettings>): PayrollDeductionSettings {
@@ -51,7 +64,7 @@ export function saveDeductionSettings(patch: Partial<PayrollDeductionSettings>):
 }
 
 export function loadOvertimeSettings(): PayrollOvertimeSettings {
-    return { ...payrollOvertimeSettings, ...loadJson<Partial<PayrollOvertimeSettings>>(OVERTIME_KEY, {}) };
+    return { ...payrollOvertimeSettings, ...loadObjectJson<Partial<PayrollOvertimeSettings>>(OVERTIME_KEY, {}) };
 }
 
 export function saveOvertimeSettings(patch: Partial<PayrollOvertimeSettings>): PayrollOvertimeSettings {
@@ -61,15 +74,15 @@ export function saveOvertimeSettings(patch: Partial<PayrollOvertimeSettings>): P
 }
 
 function loadAllowanceOverrides(): Record<string, Partial<PayrollAllowance>> {
-    return loadJson<Record<string, Partial<PayrollAllowance>>>(ALLOWANCE_OVERRIDES_KEY, {});
+    return loadObjectJson<Record<string, Partial<PayrollAllowance>>>(ALLOWANCE_OVERRIDES_KEY, {});
 }
 
 function loadCreatedAllowances(): PayrollAllowance[] {
-    return loadJson<PayrollAllowance[]>(ALLOWANCE_CREATED_KEY, []);
+    return loadArrayJson<PayrollAllowance>(ALLOWANCE_CREATED_KEY, []);
 }
 
 function loadDeletedAllowanceIds(): string[] {
-    return loadJson<string[]>(ALLOWANCE_DELETED_KEY, []);
+    return loadArrayJson<string>(ALLOWANCE_DELETED_KEY, []);
 }
 
 /** Seed rows (with any saved override applied) plus locally-created rows, minus deleted ids — the single source every Tunjangan panel/recompute reads from. */
