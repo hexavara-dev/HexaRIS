@@ -11,7 +11,7 @@ function karyawanLabel(employeeId: string): string {
     const emp = employee.find((e) => e.id === employeeId);
     if (!emp) return '-';
     const position = positionTitleFor(employeeId);
-    return position === '-' ? emp.full_name : `${emp.full_name} ${position}`;
+    return position === '-' ? emp.full_name : `${emp.full_name} - ${position}`;
 }
 
 function formatDate(iso: string): string {

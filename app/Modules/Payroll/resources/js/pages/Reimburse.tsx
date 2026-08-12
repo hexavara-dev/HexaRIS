@@ -2,6 +2,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { employee } from '@/data/Employee/employee';
 import { branch } from '@/data/Payroll/branch';
 import { type ReimburseEntry } from '@/data/Payroll/reimburseEntry';
 import AppLayout from '@/layouts/app-layout';
@@ -13,9 +14,11 @@ import { ReimburseBuktiDialog } from './reimburse/reimburse-bukti-dialog';
 import { buildReimburseColumns } from './reimburse/reimburse-columns';
 import { ReimburseFormDialog } from './reimburse/reimburse-form-dialog';
 
+const ALL_BRANCHES = 'all';
+
 export default function Reimburse() {
     const [entries, setEntries] = useState<ReimburseEntry[]>(loadReimburseEntries);
-    const [branchFilter, setBranchFilter] = useState(branch[0].id);
+    const [branchFilter, setBranchFilter] = useState(ALL_BRANCHES);
     const [searchValue, setSearchValue] = useState('');
     const [formOpen, setFormOpen] = useState(false);
     const [formTarget, setFormTarget] = useState<ReimburseEntry | null>(null);
@@ -26,7 +29,17 @@ export default function Reimburse() {
 
     const tableRows = useMemo(() => {
         const query = searchValue.trim().toLowerCase();
-        return entries.filter((e) => e.branch_id === branchFilter).filter((e) => !query || e.keperluan.toLowerCase().includes(query));
+        return entries
+            .filter((e) => branchFilter === ALL_BRANCHES || e.branch_id === branchFilter)
+            .filter((e) => {
+                if (!query) return true;
+                const emp = employee.find((c) => c.id === e.employee_id);
+                return (
+                    e.keperluan.toLowerCase().includes(query) ||
+                    Boolean(emp?.full_name.toLowerCase().includes(query)) ||
+                    Boolean(emp?.employee_number.toLowerCase().includes(query))
+                );
+            });
     }, [entries, branchFilter, searchValue]);
 
     const openCreate = () => {
@@ -62,6 +75,7 @@ export default function Reimburse() {
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value={ALL_BRANCHES}>Semua Cabang</SelectItem>
                                 {branch.map((b) => (
                                     <SelectItem key={b.id} value={b.id}>
                                         Cabang: {b.name}
@@ -87,7 +101,13 @@ export default function Reimburse() {
                 <DataTable columns={columns} data={tableRows} variant="design-system" />
             </div>
 
-            <ReimburseFormDialog open={formOpen} onOpenChange={setFormOpen} target={formTarget} defaultBranchId={branchFilter} onSaved={refresh} />
+            <ReimburseFormDialog
+                open={formOpen}
+                onOpenChange={setFormOpen}
+                target={formTarget}
+                defaultBranchId={branchFilter === ALL_BRANCHES ? branch[0].id : branchFilter}
+                onSaved={refresh}
+            />
 
             <ReimburseBuktiDialog open={buktiTarget !== null} onOpenChange={(open) => !open && setBuktiTarget(null)} entry={buktiTarget} />
 

@@ -90,15 +90,15 @@ export function ReimburseFormDialog({ open, onOpenChange, target, defaultBranchI
                 bukti,
             };
 
-            if (target) {
-                updateReimburseEntry(target.id, patch);
-            } else {
-                createReimburseEntry({ ...patch, branch_id: defaultBranchId });
-            }
+            const ok = target ? updateReimburseEntry(target.id, patch) : createReimburseEntry({ ...patch, branch_id: defaultBranchId }).ok;
 
-            toast.success('Berhasil Disimpan');
-            onSaved();
-            onOpenChange(false);
+            if (ok) {
+                toast.success('Berhasil Disimpan');
+                onSaved();
+                onOpenChange(false);
+            } else {
+                toast.error('Gagal menyimpan — penyimpanan lokal penuh atau bermasalah.');
+            }
         } catch {
             toast.error('Gagal menyimpan. Coba lagi.');
         } finally {

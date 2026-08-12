@@ -28,12 +28,13 @@ function loadArrayJson<T>(key: string, fallback: T[]): T[] {
     }
 }
 
-function saveJson(key: string, value: unknown): void {
+/** Returns false (instead of throwing) when the write fails — e.g. QuotaExceededError from a large base64 `bukti` upload — so callers can surface the failure instead of reporting a save that never landed. */
+function saveJson(key: string, value: unknown): boolean {
     try {
         window.localStorage.setItem(key, JSON.stringify(value));
+        return true;
     } catch {
-        // Quota exceeded or storage disabled — this write is lost; the next successful save
-        // starts from the last persisted state, not from this one.
+        return false;
     }
 }
 
@@ -58,27 +59,26 @@ export function loadReimburseEntries(): ReimburseEntry[] {
 }
 
 /** Edit path for a seed entry — never mutates reimburseEntry.ts, only this overlay. */
-function saveOverride(id: string, patch: Partial<ReimburseEntry>): void {
+function saveOverride(id: string, patch: Partial<ReimburseEntry>): boolean {
     const overrides = loadOverrides();
-    saveJson(REIMBURSE_OVERRIDES_KEY, { ...overrides, [id]: { ...overrides[id], ...patch } });
+    return saveJson(REIMBURSE_OVERRIDES_KEY, { ...overrides, [id]: { ...overrides[id], ...patch } });
 }
 
 /** Edit path for a locally-created entry — replaces it in place in the created list. */
-function updateCreated(id: string, patch: Partial<ReimburseEntry>): void {
+function updateCreated(id: string, patch: Partial<ReimburseEntry>): boolean {
     const created = loadCreated();
-    saveJson(
+    return saveJson(
         REIMBURSE_CREATED_KEY,
         created.map((r) => (r.id === id ? { ...r, ...patch } : r)),
     );
 }
 
-/** Dispatches to the override overlay or the created-list, whichever owns this id. */
-export function updateReimburseEntry(id: string, patch: Partial<ReimburseEntry>): void {
+/** Dispatches to the override overlay or the created-list, whichever owns this id. Returns false when the write failed (e.g. quota exceeded) so the caller can avoid reporting a save that never landed. */
+export function updateReimburseEntry(id: string, patch: Partial<ReimburseEntry>): boolean {
     if (loadCreated().some((r) => r.id === id)) {
-        updateCreated(id, patch);
-    } else {
-        saveOverride(id, patch);
+        return updateCreated(id, patch);
     }
+    return saveOverride(id, patch);
 }
 
 // Monotonic: counts every entry ever created (ignoring the deleted-ids filter
@@ -89,10 +89,11 @@ function nextReimburseId(): string {
     return `RB-${String(next).padStart(2, '0')}`;
 }
 
-export function createReimburseEntry(data: Omit<ReimburseEntry, 'id'>): ReimburseEntry {
-    const created: ReimburseEntry = { ...data, id: nextReimburseId() };
-    saveJson(REIMBURSE_CREATED_KEY, [...loadCreated(), created]);
-    return created;
+/** `ok: false` means the write failed (e.g. quota exceeded by a large base64 `bukti` upload) — the caller should not treat `entry` as persisted. */
+export function createReimburseEntry(data: Omit<ReimburseEntry, 'id'>): { entry: ReimburseEntry; ok: boolean } {
+    const entry: ReimburseEntry = { ...data, id: nextReimburseId() };
+    const ok = saveJson(REIMBURSE_CREATED_KEY, [...loadCreated(), entry]);
+    return { entry, ok };
 }
 
 export function deleteReimburseEntry(id: string): void {
