@@ -73,32 +73,37 @@ export function ReimburseFormDialog({ open, onOpenChange, target, defaultBranchI
 
     const save = async () => {
         setSaving(true);
-        const bukti: StoredFile = form.bukti
-            ? isStoredFile(form.bukti)
-                ? form.bukti
-                : await fileToStoredFile(form.bukti)
-            : { name: '', type: '', dataUrl: '' };
-        const nominal = Number(form.nominal.replace(/\D/g, '')) || 0;
-        const patch = {
-            employee_id: form.employee_id,
-            tanggal_pengeluaran: form.tanggal_pengeluaran,
-            tanggal_reimburse: form.tanggal_reimburse,
-            keperluan: form.keperluan,
-            nominal,
-            metode_bayar: form.metode_bayar,
-            bukti,
-        };
+        try {
+            const bukti: StoredFile = form.bukti
+                ? isStoredFile(form.bukti)
+                    ? form.bukti
+                    : await fileToStoredFile(form.bukti)
+                : { name: '', type: '', dataUrl: '' };
+            const nominal = Number(form.nominal.replace(/\D/g, '')) || 0;
+            const patch = {
+                employee_id: form.employee_id,
+                tanggal_pengeluaran: form.tanggal_pengeluaran,
+                tanggal_reimburse: form.tanggal_reimburse,
+                keperluan: form.keperluan,
+                nominal,
+                metode_bayar: form.metode_bayar,
+                bukti,
+            };
 
-        if (target) {
-            updateReimburseEntry(target.id, patch);
-        } else {
-            createReimburseEntry({ ...patch, branch_id: defaultBranchId });
+            if (target) {
+                updateReimburseEntry(target.id, patch);
+            } else {
+                createReimburseEntry({ ...patch, branch_id: defaultBranchId });
+            }
+
+            toast.success('Berhasil Disimpan');
+            onSaved();
+            onOpenChange(false);
+        } catch {
+            toast.error('Gagal menyimpan. Coba lagi.');
+        } finally {
+            setSaving(false);
         }
-
-        setSaving(false);
-        toast.success('Berhasil Disimpan');
-        onSaved();
-        onOpenChange(false);
     };
 
     const canSave =
@@ -106,11 +111,18 @@ export function ReimburseFormDialog({ open, onOpenChange, target, defaultBranchI
         form.keperluan.trim().length > 0 &&
         form.tanggal_pengeluaran.length > 0 &&
         form.tanggal_reimburse.length > 0 &&
+        Number(form.nominal.replace(/\D/g, '')) > 0 &&
         form.bukti !== null &&
         !saving;
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog
+            open={open}
+            onOpenChange={(next) => {
+                if (!next && saving) return;
+                onOpenChange(next);
+            }}
+        >
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle className="font-poppins text-base font-semibold text-[#121212]">
@@ -182,7 +194,7 @@ export function ReimburseFormDialog({ open, onOpenChange, target, defaultBranchI
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
                         Batal
                     </Button>
                     <Button onClick={save} disabled={!canSave}>
