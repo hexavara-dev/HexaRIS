@@ -61,9 +61,23 @@ interface TextFieldProps {
     onChange: (value: string) => void;
     placeholder?: string;
     disabled?: boolean;
+    /** Overrides the default (tall, heavily-rounded) input box — e.g. a flatter `rounded-lg py-2` box to match a page's own established convention. */
+    inputClassName?: string;
 }
 
-export function TextField({ label, htmlFor, error, hint, required, type = 'text', value, onChange, placeholder, disabled }: TextFieldProps) {
+export function TextField({
+    label,
+    htmlFor,
+    error,
+    hint,
+    required,
+    type = 'text',
+    value,
+    onChange,
+    placeholder,
+    disabled,
+    inputClassName,
+}: TextFieldProps) {
     return (
         <FormField label={label} htmlFor={htmlFor} error={error} hint={hint} required={required}>
             <Input
@@ -73,7 +87,7 @@ export function TextField({ label, htmlFor, error, hint, required, type = 'text'
                 onChange={(event) => onChange(event.target.value)}
                 placeholder={placeholder}
                 disabled={disabled}
-                className={cn(fieldInputClassName, error && errorBorderClassName)}
+                className={cn(inputClassName ?? fieldInputClassName, error && errorBorderClassName)}
             />
         </FormField>
     );
@@ -123,13 +137,27 @@ interface SelectFieldProps {
     placeholder?: string;
     options: SelectFieldOption[];
     disabled?: boolean;
+    /** Overrides the default (tall, heavily-rounded) trigger box — e.g. a flatter `rounded-lg py-2` box to match a page's own established convention. */
+    inputClassName?: string;
 }
 
-export function SelectField({ label, htmlFor, error, hint, required, value, onValueChange, placeholder, options, disabled }: SelectFieldProps) {
+export function SelectField({
+    label,
+    htmlFor,
+    error,
+    hint,
+    required,
+    value,
+    onValueChange,
+    placeholder,
+    options,
+    disabled,
+    inputClassName,
+}: SelectFieldProps) {
     return (
         <FormField label={label} htmlFor={htmlFor} error={error} hint={hint} required={required}>
             <Select value={value} onValueChange={onValueChange} disabled={disabled}>
-                <SelectTrigger id={htmlFor} className={cn(fieldInputClassName, 'justify-between', error && errorBorderClassName)}>
+                <SelectTrigger id={htmlFor} className={cn(inputClassName ?? fieldInputClassName, 'justify-between', error && errorBorderClassName)}>
                     <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
                 <SelectContent>

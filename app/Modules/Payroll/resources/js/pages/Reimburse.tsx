@@ -1,5 +1,6 @@
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
+import { NotificationBell } from '@/components/notification-bell';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { employee } from '@/data/Employee/employee';
@@ -66,8 +67,8 @@ export default function Reimburse() {
     const columns = buildReimburseColumns(openEdit, onDelete, onViewBukti);
 
     return (
-        <AppLayout>
-            <div className="flex flex-col items-start gap-[19px] p-6">
+        <AppLayout headerActions={<NotificationBell />}>
+            <div className="flex flex-col gap-[19px] p-6">
                 <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Select value={branchFilter} onValueChange={setBranchFilter}>
@@ -116,9 +117,11 @@ export default function Reimburse() {
                 onOpenChange={(open) => !open && setDeleteTarget(null)}
                 onConfirm={confirmDelete}
                 title="Hapus Reimburse?"
-                description="Anda akan menghapus data Reimburse ini secara permanen. Tindakan ini tidak dapat dibatalkan dan seluruh informasi terkait akan hilang."
+                description={'Anda akan menghapus data Reimburse ini secara permanen.\nTindakan ini tidak dapat dibatalkan dan seluruh informasi terkait\nakan hilang.'}
                 confirmLabel="Hapus"
                 cancelLabel="Batal"
+                destructive={false}
+                preventOutsideClose
             />
         </AppLayout>
     );

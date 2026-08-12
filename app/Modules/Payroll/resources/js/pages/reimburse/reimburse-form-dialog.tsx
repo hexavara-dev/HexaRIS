@@ -2,6 +2,7 @@ import { FileUploadField, SelectField, TextField, fileToStoredFile, isStoredFile
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { employee } from '@/data/Employee/employee';
+import { cn } from '@/lib/utils';
 import { type ReimburseEntry } from '@/data/Payroll/reimburseEntry';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -12,6 +13,16 @@ const METODE_OPTIONS = [
     { value: 'tunai', label: 'Tunai' },
     { value: 'transfer', label: 'Transfer' },
 ];
+
+// Flatter, less-rounded box than form-field.tsx's default — matches the input style already
+// established across this Payroll module's other settings forms (Potongan/Lembur/Tunjangan).
+const FLAT_INPUT_CLASS =
+    'h-auto w-full rounded-lg border-[#E7E7E7] px-4 py-2 font-poppins text-sm placeholder:text-[#ACACAC] disabled:bg-[#F5F5F5] disabled:text-[#ACACAC]';
+
+// Karyawan's option label ("Nama - Jabatan") can run long — SelectTrigger's shared
+// [&>span]:line-clamp-1 would otherwise cut it off with an ellipsis. Given the field its own
+// full-width row and let the value wrap onto a second line instead of truncating.
+const KARYAWAN_INPUT_CLASS = cn(FLAT_INPUT_CLASS, 'text-left [&>span]:line-clamp-none [&>span]:whitespace-normal');
 
 const EMPLOYEE_OPTIONS = employee
     .filter((e) => e.is_active)
@@ -123,8 +134,8 @@ export function ReimburseFormDialog({ open, onOpenChange, target, defaultBranchI
                 onOpenChange(next);
             }}
         >
-            <DialogContent>
-                <DialogHeader>
+            <DialogContent className="max-w-2xl" onInteractOutside={(e) => e.preventDefault()}>
+                <DialogHeader className="border-b border-[#E7E7E7] pb-4">
                     <DialogTitle className="font-poppins text-base font-semibold text-[#121212]">
                         {target ? 'Edit Reimburse' : 'Tambah Reimburse'}
                     </DialogTitle>
@@ -139,6 +150,7 @@ export function ReimburseFormDialog({ open, onOpenChange, target, defaultBranchI
                         value={form.employee_id}
                         onValueChange={(v) => setForm((f) => ({ ...f, employee_id: v }))}
                         options={EMPLOYEE_OPTIONS}
+                        inputClassName={KARYAWAN_INPUT_CLASS}
                     />
                     <TextField
                         label="Keperluan"
@@ -147,6 +159,7 @@ export function ReimburseFormDialog({ open, onOpenChange, target, defaultBranchI
                         placeholder="Masukkan Keperluan"
                         value={form.keperluan}
                         onChange={(v) => setForm((f) => ({ ...f, keperluan: v }))}
+                        inputClassName={FLAT_INPUT_CLASS}
                     />
                     <TextField
                         label="Tgl Pengeluaran"
@@ -155,6 +168,7 @@ export function ReimburseFormDialog({ open, onOpenChange, target, defaultBranchI
                         type="date"
                         value={form.tanggal_pengeluaran}
                         onChange={(v) => setForm((f) => ({ ...f, tanggal_pengeluaran: v }))}
+                        inputClassName={FLAT_INPUT_CLASS}
                     />
                     <TextField
                         label="Nominal"
@@ -163,6 +177,7 @@ export function ReimburseFormDialog({ open, onOpenChange, target, defaultBranchI
                         placeholder="Rp. 0"
                         value={form.nominal}
                         onChange={(v) => setForm((f) => ({ ...f, nominal: formatRupiahInput(v.replace(/\D/g, '')) }))}
+                        inputClassName={FLAT_INPUT_CLASS}
                     />
                     <TextField
                         label="Tgl Reimburse"
@@ -171,6 +186,7 @@ export function ReimburseFormDialog({ open, onOpenChange, target, defaultBranchI
                         type="date"
                         value={form.tanggal_reimburse}
                         onChange={(v) => setForm((f) => ({ ...f, tanggal_reimburse: v }))}
+                        inputClassName={FLAT_INPUT_CLASS}
                     />
                     <SelectField
                         label="Metode Bayar"
@@ -180,6 +196,7 @@ export function ReimburseFormDialog({ open, onOpenChange, target, defaultBranchI
                         value={form.metode_bayar}
                         onValueChange={(v) => setForm((f) => ({ ...f, metode_bayar: v as ReimburseEntry['metode_bayar'] }))}
                         options={METODE_OPTIONS}
+                        inputClassName={FLAT_INPUT_CLASS}
                     />
                     <div className="col-span-2">
                         <FileUploadField
