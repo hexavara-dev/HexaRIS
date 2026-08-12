@@ -6,7 +6,7 @@
 export const DEFAULT_LEMBUR_RATE = 50_000;
 
 export interface PayrollOvertimeSettings {
-    hitungan: 'jam';
+    hitungan: 'jam' | 'hari';
     nominal_per_jam: number;
 }
 

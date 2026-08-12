@@ -4,11 +4,12 @@ import { type PayrollAllowance } from '@/data/Payroll/payrollAllowance';
 import { MoreVertical } from 'lucide-react';
 import { formatCurrency } from '../../lib/payroll-row';
 
-const PERIODE_LABEL: Record<PayrollAllowance['periode'], string> = { bulanan: 'Bulanan', harian: 'Harian', sekali: 'Sekali' };
+const PERIODE_LABEL: Record<PayrollAllowance['periode'], string> = { bulanan: 'Bulanan', harian: 'Harian', tahunan: 'Tahunan' };
 
 export function buildTunjanganColumns(
     onEdit: (row: PayrollAllowance) => void,
     onDelete: (row: PayrollAllowance) => void,
+    onToggleActive: (row: PayrollAllowance) => void,
 ): Column<PayrollAllowance>[] {
     return [
         { key: 'id', label: 'ID', sortable: true },
@@ -34,19 +35,23 @@ export function buildTunjanganColumns(
             key: 'actions',
             label: '',
             align: 'right',
+            cellClassName: 'border-l border-[#E7E7E7]',
             render: (row) => (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <MoreVertical className="cursor-pointer size-3.5 text-[#1B1B1B]" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onEdit(row)}>Edit</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-[#E84A39] focus:text-[#E84A39] text-red-500" onClick={() => onDelete(row)}>
-                            Hapus
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center justify-end">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <MoreVertical className="size-3.5 cursor-pointer text-[#1B1B1B]" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => onToggleActive(row)}>{row.aktif ? 'Non Aktifkan' : 'Aktifkan'}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onEdit(row)}>Edit</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-[#E84A39] focus:text-[#E84A39]" onClick={() => onDelete(row)}>
+                                Hapus
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             ),
         },
     ];

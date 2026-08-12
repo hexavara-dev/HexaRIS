@@ -37,20 +37,24 @@ export function UmumPanel() {
                 </RadioGroup>
             </div>
 
-            <TextField
-                label="Tanggal Pembayaran"
-                htmlFor="tanggal_pembayaran"
-                value={tanggalInput}
-                onChange={(value) => setTanggalInput(value.replace(/\D/g, ''))}
-            />
+            <div className="w-full">
+                <TextField
+                    label="Tanggal Pembayaran"
+                    htmlFor="tanggal_pembayaran"
+                    value={tanggalInput}
+                    onChange={(value) => setTanggalInput(value.replace(/\D/g, ''))}
+                />
+            </div>
 
-            <SelectField
-                label="Mata Uang"
-                htmlFor="mata_uang"
-                value={settings.mata_uang}
-                onValueChange={() => {}}
-                options={[{ value: 'IDR', label: 'Rupiah (IDR)' }]}
-            />
+            <div className="w-full">
+                <SelectField
+                    label="Mata Uang"
+                    htmlFor="mata_uang"
+                    value={settings.mata_uang}
+                    onValueChange={() => {}}
+                    options={[{ value: 'IDR', label: 'Rupiah (IDR)' }]}
+                />
+            </div>
 
             <div className="flex w-full justify-end pt-4">
                 <button

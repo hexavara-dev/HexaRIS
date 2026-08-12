@@ -9,21 +9,25 @@ import { createAllowance, updateAllowance } from '../../lib/payroll-settings-sto
 const PERIODE_OPTIONS = [
     { value: 'bulanan', label: 'Bulanan' },
     { value: 'harian', label: 'Harian' },
-    { value: 'sekali', label: 'Sekali' },
+    { value: 'tahunan', label: 'Tahunan' },
 ];
+
+function formatRupiahInput(digits: string): string {
+    if (!digits) return '';
+    return `Rp. ${Number(digits).toLocaleString('id-ID')}`;
+}
 
 interface FormState {
     nama: string;
     nominal: string;
     periode: PayrollAllowance['periode'];
-    aktif: boolean;
 }
 
-const EMPTY_FORM: FormState = { nama: '', nominal: '', periode: 'bulanan', aktif: true };
+const EMPTY_FORM: FormState = { nama: '', nominal: '', periode: 'bulanan' };
 
 function toFormState(target: PayrollAllowance | null): FormState {
     if (!target) return EMPTY_FORM;
-    return { nama: target.nama, nominal: String(target.nominal), periode: target.periode, aktif: target.aktif };
+    return { nama: target.nama, nominal: formatRupiahInput(String(target.nominal)), periode: target.periode };
 }
 
 interface TunjanganFormDialogProps {
@@ -43,19 +47,20 @@ export function TunjanganFormDialog({ open, onOpenChange, target, onSaved }: Tun
     const save = () => {
         const nominal = Number(form.nominal.replace(/\D/g, '')) || 0;
         if (target) {
-            updateAllowance(target.id, { nama: form.nama, nominal, periode: form.periode, aktif: form.aktif });
-            toast.success(`${form.nama} berhasil diperbarui.`);
+            // Status isn't editable here — it's toggled from the row's action menu — so aktif is
+            // left out of the patch and the existing value is preserved untouched.
+            updateAllowance(target.id, { nama: form.nama, nominal, periode: form.periode });
         } else {
-            createAllowance({ nama: form.nama, nominal, periode: form.periode, aktif: form.aktif });
-            toast.success(`${form.nama} berhasil ditambahkan.`);
+            createAllowance({ nama: form.nama, nominal, periode: form.periode, aktif: true });
         }
+        toast.success('Berhasil Disimpan');
         onSaved();
         onOpenChange(false);
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent onInteractOutside={(e) => e.preventDefault()}>
+            <DialogContent>
                 <DialogHeader>
                     <DialogTitle className="font-poppins text-base font-semibold text-[#121212]">
                         {target ? 'Edit Tunjangan' : 'Tambah Tunjangan'}
@@ -69,8 +74,8 @@ export function TunjanganFormDialog({ open, onOpenChange, target, onSaved }: Tun
                         htmlFor="nominal"
                         required
                         value={form.nominal}
-                        onChange={(v) => setForm((f) => ({ ...f, nominal: v.replace(/\D/g, '') }))}
-                        placeholder="Rp 0"
+                        onChange={(v) => setForm((f) => ({ ...f, nominal: formatRupiahInput(v.replace(/\D/g, '')) }))}
+                        placeholder="Rp. 0"
                     />
                     <SelectField
                         label="Periode"
@@ -79,17 +84,6 @@ export function TunjanganFormDialog({ open, onOpenChange, target, onSaved }: Tun
                         value={form.periode}
                         onValueChange={(v) => setForm((f) => ({ ...f, periode: v as PayrollAllowance['periode'] }))}
                         options={PERIODE_OPTIONS}
-                    />
-                    <SelectField
-                        label="Status"
-                        htmlFor="aktif"
-                        required
-                        value={form.aktif ? 'aktif' : 'nonaktif'}
-                        onValueChange={(v) => setForm((f) => ({ ...f, aktif: v === 'aktif' }))}
-                        options={[
-                            { value: 'aktif', label: 'Aktif' },
-                            { value: 'nonaktif', label: 'Nonaktif' },
-                        ]}
                     />
                 </div>
 

@@ -9,18 +9,27 @@ function toNumber(value: string): number {
     return Number(value.replace(/\D/g, '')) || 0;
 }
 
-function SettingRow({ label, control, aktif }: { label: string; control: ReactNode; aktif?: boolean }) {
+function formatRupiahInput(digits: string): string {
+    if (!digits) return '';
+    return `Rp. ${Number(digits).toLocaleString('id-ID')}`;
+}
+
+function SettingRow({ label, control, aktif, bold }: { label: string; control: ReactNode; aktif?: boolean; bold?: boolean }) {
     return (
         <div className={aktif === false ? 'flex w-full items-center justify-between opacity-50' : 'flex w-full items-center justify-between'}>
-            <p className="font-poppins text-sm text-[#4F4F4F]">{label}</p>
+            <p className={bold ? 'font-poppins text-sm font-semibold text-black' : 'font-poppins text-sm text-[#4F4F4F]'}>{label}</p>
             {control}
         </div>
     );
 }
 
+function Divider() {
+    return <div className="h-px w-full bg-[#E7E7E7]" />;
+}
+
 function NumberInput({ value, onChange, suffix, disabled }: { value: number; onChange: (v: number) => void; suffix?: string; disabled?: boolean }) {
     return (
-        <div className="flex items-center gap-2">
+        <div className="flex w-[220px] items-center gap-2">
             <input
                 type="text"
                 value={value}
@@ -29,6 +38,39 @@ function NumberInput({ value, onChange, suffix, disabled }: { value: number; onC
                 className="font-poppins w-[180px] rounded-lg border border-[#E7E7E7] px-4 py-2 text-sm disabled:bg-[#F5F5F5] disabled:text-[#ACACAC]"
             />
             {suffix && <span className="font-poppins text-sm text-[#4F4F4F]">{suffix}</span>}
+        </div>
+    );
+}
+
+function RupiahInput({ value, onChange, suffix, disabled }: { value: number; onChange: (v: number) => void; suffix?: string; disabled?: boolean }) {
+    return (
+        <div className="flex w-[220px] items-center gap-2">
+            <input
+                type="text"
+                value={value ? formatRupiahInput(String(value)) : ''}
+                placeholder="Rp. 0"
+                disabled={disabled}
+                onChange={(e) => onChange(toNumber(e.target.value))}
+                className="font-poppins w-[180px] rounded-lg border border-[#E7E7E7] px-4 py-2 text-sm disabled:bg-[#F5F5F5] disabled:text-[#ACACAC]"
+            />
+            {suffix && <span className="font-poppins text-sm text-[#4F4F4F]">{suffix}</span>}
+        </div>
+    );
+}
+
+// Native type="number" so the browser renders the up/down spin arrows the reference design shows
+// on every percentage field.
+function PercentInput({ value, onChange, disabled }: { value: number; onChange: (v: number) => void; disabled?: boolean }) {
+    return (
+        <div className="flex w-[220px] items-center gap-2">
+            <input
+                type="number"
+                value={value}
+                disabled={disabled}
+                onChange={(e) => onChange(Number(e.target.value) || 0)}
+                className="font-poppins w-[180px] rounded-lg border border-[#E7E7E7] px-4 py-2 text-sm disabled:bg-[#F5F5F5] disabled:text-[#ACACAC]"
+            />
+            <span className="font-poppins text-sm text-[#4F4F4F]">%</span>
         </div>
     );
 }
@@ -59,21 +101,24 @@ export function PotonganPanel() {
             <Section title="Absensi">
                 <SettingRow
                     label="Potong Jika Alpha"
+                    bold
                     control={<Switch checked={settings.alpha.aktif} onCheckedChange={(v) => set('alpha', { aktif: v })} />}
                 />
                 <SettingRow
                     label="Nominal"
                     aktif={settings.alpha.aktif}
                     control={
-                        <NumberInput
+                        <RupiahInput
                             value={settings.alpha.nominal}
                             disabled={!settings.alpha.aktif}
                             onChange={(v) => set('alpha', { nominal: v })}
                         />
                     }
                 />
+                <Divider />
                 <SettingRow
                     label="Potong Jika Terlambat"
+                    bold
                     control={<Switch checked={settings.terlambat.aktif} onCheckedChange={(v) => set('terlambat', { aktif: v })} />}
                 />
                 <SettingRow
@@ -92,7 +137,7 @@ export function PotonganPanel() {
                     label="Nominal Potongan"
                     aktif={settings.terlambat.aktif}
                     control={
-                        <NumberInput
+                        <RupiahInput
                             value={settings.terlambat.nominal_per_30_menit}
                             suffix="/ 30 Menit"
                             disabled={!settings.terlambat.aktif}
@@ -112,9 +157,8 @@ export function PotonganPanel() {
                     label="Persentase Karyawan"
                     aktif={settings.bpjs_kesehatan.aktif}
                     control={
-                        <NumberInput
+                        <PercentInput
                             value={settings.bpjs_kesehatan.persentase_karyawan}
-                            suffix="%"
                             disabled={!settings.bpjs_kesehatan.aktif}
                             onChange={(v) => set('bpjs_kesehatan', { persentase_karyawan: v })}
                         />
@@ -124,15 +168,15 @@ export function PotonganPanel() {
                     label="Persentase Perusahaan"
                     aktif={settings.bpjs_kesehatan.aktif}
                     control={
-                        <NumberInput
+                        <PercentInput
                             value={settings.bpjs_kesehatan.persentase_perusahaan}
-                            suffix="%"
                             disabled={!settings.bpjs_kesehatan.aktif}
                             onChange={(v) => set('bpjs_kesehatan', { persentase_perusahaan: v })}
                         />
                     }
                 />
 
+                <Divider />
                 <p className="font-poppins text-sm font-semibold text-black">BPJS Ketenagakerjaan</p>
                 <SettingRow
                     label="Aktifkan BPJS Ketenagakerjaan"
@@ -142,9 +186,8 @@ export function PotonganPanel() {
                     label="Persentase Karyawan"
                     aktif={settings.bpjs_ketenagakerjaan.aktif}
                     control={
-                        <NumberInput
+                        <PercentInput
                             value={settings.bpjs_ketenagakerjaan.persentase_karyawan}
-                            suffix="%"
                             disabled={!settings.bpjs_ketenagakerjaan.aktif}
                             onChange={(v) => set('bpjs_ketenagakerjaan', { persentase_karyawan: v })}
                         />
@@ -154,9 +197,8 @@ export function PotonganPanel() {
                     label="Persentase Perusahaan"
                     aktif={settings.bpjs_ketenagakerjaan.aktif}
                     control={
-                        <NumberInput
+                        <PercentInput
                             value={settings.bpjs_ketenagakerjaan.persentase_perusahaan}
-                            suffix="%"
                             disabled={!settings.bpjs_ketenagakerjaan.aktif}
                             onChange={(v) => set('bpjs_ketenagakerjaan', { persentase_perusahaan: v })}
                         />
@@ -169,7 +211,7 @@ export function PotonganPanel() {
                     label="Aktifkan PPh 21"
                     control={<Switch checked={settings.pph21.aktif} onCheckedChange={(v) => set('pph21', { aktif: v })} />}
                 />
-                <div className="w-full max-w-xs">
+                <div className="w-full">
                     <SelectField
                         label="Metode Perhitungan"
                         htmlFor="metode"
@@ -182,7 +224,7 @@ export function PotonganPanel() {
                         ]}
                     />
                 </div>
-                <div className="w-full max-w-xs">
+                <div className="w-full">
                     <SelectField
                         label="Pajak Ditanggung"
                         htmlFor="pajak_ditanggung"

@@ -4,7 +4,7 @@ import { type PayrollAllowance } from '@/data/Payroll/payrollAllowance';
 import { Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { deleteAllowance, loadAllowances } from '../../lib/payroll-settings-storage';
+import { deleteAllowance, loadAllowances, updateAllowance } from '../../lib/payroll-settings-storage';
 import { buildTunjanganColumns } from './tunjangan-columns';
 import { TunjanganFormDialog } from './tunjangan-form-dialog';
 
@@ -30,18 +30,27 @@ export function TunjanganPanel() {
 
     const onDelete = useCallback((row: PayrollAllowance) => setDeleteTarget(row), []);
 
+    const onToggleActive = useCallback(
+        (row: PayrollAllowance) => {
+            updateAllowance(row.id, { aktif: !row.aktif });
+            refresh();
+            toast.success('Berhasil Disimpan');
+        },
+        [refresh],
+    );
+
     const confirmDelete = () => {
         if (!deleteTarget) return;
         deleteAllowance(deleteTarget.id);
         refresh();
-        toast.success(`${deleteTarget.nama} berhasil dihapus.`);
+        toast.success('Berhasil Disimpan');
         setDeleteTarget(null);
     };
 
-    const columns = buildTunjanganColumns(openEdit, onDelete);
+    const columns = buildTunjanganColumns(openEdit, onDelete, onToggleActive);
 
     return (
-        <div className="flex w-full flex-col items-start gap-4">
+        <div className="flex w-full flex-col gap-4">
             <DataTable
                 columns={columns}
                 data={allowances}
@@ -66,8 +75,9 @@ export function TunjanganPanel() {
                 onOpenChange={(open) => !open && setDeleteTarget(null)}
                 onConfirm={confirmDelete}
                 title="Hapus Tunjangan?"
-                description={deleteTarget ? `Tunjangan "${deleteTarget.nama}" akan dihapus. Tindakan ini tidak bisa dibatalkan.` : undefined}
+                description="Anda akan menghapus data Tunjangan ini secara permanen. Tindakan ini tidak dapat dibatalkan dan seluruh informasi terkait akan hilang."
                 confirmLabel="Hapus"
+                cancelLabel="Batal"
             />
         </div>
     );

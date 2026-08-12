@@ -8,6 +8,7 @@ interface Props {
     title?: string;
     description?: string;
     confirmLabel?: string;
+    cancelLabel?: string;
     destructive?: boolean;
 }
 
@@ -18,6 +19,7 @@ export function ConfirmDialog({
     title = 'Are you sure?',
     description,
     confirmLabel = 'Confirm',
+    cancelLabel = 'Cancel',
     destructive = true,
 }: Props) {
     return (
@@ -29,7 +31,7 @@ export function ConfirmDialog({
                 </DialogHeader>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancel
+                        {cancelLabel}
                     </Button>
                     <Button
                         variant={destructive ? 'destructive' : 'default'}

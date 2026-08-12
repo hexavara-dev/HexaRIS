@@ -1,3 +1,4 @@
+import { NotificationBell } from '@/components/notification-bell';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { useState } from 'react';
@@ -14,7 +15,7 @@ export default function Settings() {
     const [tab, setTab] = useState('umum');
 
     return (
-        <AppLayout>
+        <AppLayout headerActions={<NotificationBell />}>
             <div className="flex flex-col items-start gap-[19px] p-6">
                 <Tabs value={tab} onValueChange={setTab} className="w-full">
                     <TabsList className={TAB_LIST_CLASS}>

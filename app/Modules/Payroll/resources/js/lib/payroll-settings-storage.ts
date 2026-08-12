@@ -117,8 +117,15 @@ export function updateAllowance(id: string, patch: Partial<PayrollAllowance>): v
     }
 }
 
+// Monotonic: counts every allowance ever created (ignoring the deleted-ids filter loadAllowances
+// applies), so a new id never repeats a prior one even after some rows have been deleted.
+function nextAllowanceId(): string {
+    const next = payrollAllowance.length + loadCreatedAllowances().length + 1;
+    return `PGT ${String(next).padStart(2, '0')}`;
+}
+
 export function createAllowance(data: Omit<PayrollAllowance, 'id'>): PayrollAllowance {
-    const created: PayrollAllowance = { ...data, id: `allowance-local-${crypto.randomUUID()}` };
+    const created: PayrollAllowance = { ...data, id: nextAllowanceId() };
     saveJson(ALLOWANCE_CREATED_KEY, [...loadCreatedAllowances(), created]);
     return created;
 }
