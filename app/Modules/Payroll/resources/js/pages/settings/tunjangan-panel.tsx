@@ -75,9 +75,11 @@ export function TunjanganPanel() {
                 onOpenChange={(open) => !open && setDeleteTarget(null)}
                 onConfirm={confirmDelete}
                 title="Hapus Tunjangan?"
-                description="Anda akan menghapus data Tunjangan ini secara permanen. Tindakan ini tidak dapat dibatalkan dan seluruh informasi terkait akan hilang."
+                description={'Anda akan menghapus data Tunjangan ini secara permanen.\nTindakan ini tidak dapat dibatalkan dan seluruh informasi terkait\nakan hilang.'}
                 confirmLabel="Hapus"
                 cancelLabel="Batal"
+                destructive={false}
+                preventOutsideClose
             />
         </div>
     );

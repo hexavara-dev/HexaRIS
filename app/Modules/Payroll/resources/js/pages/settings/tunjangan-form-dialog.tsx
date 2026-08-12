@@ -60,7 +60,7 @@ export function TunjanganFormDialog({ open, onOpenChange, target, onSaved }: Tun
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent onInteractOutside={(e) => e.preventDefault()}>
                 <DialogHeader>
                     <DialogTitle className="font-poppins text-base font-semibold text-[#121212]">
                         {target ? 'Edit Tunjangan' : 'Tambah Tunjangan'}
