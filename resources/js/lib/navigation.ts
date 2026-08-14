@@ -53,7 +53,7 @@ export const navigation: NavNode[] = [
         children: [
             { title: 'Struktur Organisasi', url: '/company/structure', iconSrc: navOrgStructure, inSidebar: true },
             { title: 'Dokumen Center', url: '/company/documents', iconSrc: navDocumentCenter, inSidebar: true },
-            { title: 'Manajemen Aset', url: '/company/assets', iconSrc: navAssetManagement, inSidebar: true },
+            { title: 'Manajemen Aset', url: '/company/asset', iconSrc: navAssetManagement, inSidebar: true },
         ],
     },
     {
