@@ -8,12 +8,12 @@ interface DeleteAssetDialogProps {
     onConfirm: () => void;
 }
 
-/** Confirmation before deleting a loaned asset — module-styled, matching DeleteTemplateDialog's pattern rather than the generic shared ConfirmDialog. */
+/** Confirmation before deleting an asset row — module-styled, matching DeleteTemplateDialog's pattern rather than the generic shared ConfirmDialog. */
 export function DeleteAssetDialog({ open, onOpenChange, onConfirm }: DeleteAssetDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl gap-5 rounded-2xl p-8" showCloseButton={false}>
-                <DialogTitle className="font-poppins text-xl font-semibold text-[#121212]">Hapus Aset Dipinjam?</DialogTitle>
+                <DialogTitle className="font-poppins text-xl font-semibold text-[#121212]">Hapus Aset?</DialogTitle>
                 <DialogDescription className="font-poppins text-sm leading-relaxed text-[#4F4F4F]">
                     Anda akan menghapus data aset perusahaan secara permanen. Tindakan ini tidak dapat dibatalkan dan seluruh informasi terkait aset
                     akan hilang.

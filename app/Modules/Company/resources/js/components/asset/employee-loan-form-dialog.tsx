@@ -1,5 +1,5 @@
 import { SelectField, TextField } from '@/components/form/form-field';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { BRANCH_OPTIONS, CATEGORY_OPTIONS, EMPLOYEE_OPTIONS } from '../../lib/asset-catalog';
@@ -37,6 +37,12 @@ export function EmployeeLoanFormDialog({
 }: EmployeeLoanFormDialogProps) {
     const [form, setForm] = useState<EmployeeLoanFormState>(initialValues);
     const [errors, setErrors] = useState<Partial<Record<keyof EmployeeLoanFormState, string>>>({});
+
+    // Mirrors the draft-reset pattern in AssetFilterDialog: the dialog stays mounted per row, so
+    // `initialValues` can go stale (e.g. after a Return action) between opens without this sync.
+    useEffect(() => {
+        if (open) setForm(initialValues);
+    }, [open, initialValues]);
 
     function resetAndClose() {
         setForm(initialValues);
