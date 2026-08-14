@@ -2,19 +2,21 @@ import { type FilterConfig, type SearchConfig, DataTable } from '@/components/da
 import { EmptyState } from '@/components/empty-state';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Filter, PackageSearch } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
 
 import { AddAssetMenu } from '../components/asset/add-asset-menu';
 import { type NewCompanyAssetValues } from '../components/asset/add-company-asset-dialog';
+import { AssetFilterDialog } from '../components/asset/asset-filter-dialog';
 import { createAssetColumns } from '../components/asset/asset-columns';
 import { AssetStatCards } from '../components/asset/asset-stat-cards';
 import { type EmployeeLoanFormState } from '../components/asset/employee-loan-form-dialog';
 import { ASSET_TABS, BRANCH_OPTIONS, type AssetTab } from '../lib/asset-catalog';
 import { type Asset, formatDateDMY, generateDummyAssets } from '../lib/asset-dummy-data';
+import { EMPTY_ASSET_FILTER, isAssetFilterActive, matchesAssetFilter } from '../lib/asset-filter';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Manajemen Aset', href: '/company/asset' }];
 
@@ -24,6 +26,8 @@ const assetFilters: FilterConfig[] = [{ key: 'branch', type: 'select', label: 'C
 export default function Asset() {
     const [activeTab, setActiveTab] = useState<AssetTab>('company');
     const [assets, setAssets] = useState<Asset[]>(() => generateDummyAssets());
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [filterValue, setFilterValue] = useState(EMPTY_ASSET_FILTER);
 
     // Counts up from the initial dummy set's size so newly added rows get an id
     // that never collides with an existing one, even after deletes.
@@ -101,6 +105,9 @@ export default function Asset() {
         [],
     );
 
+    const filteredAssets = useMemo(() => assets.filter((asset) => matchesAssetFilter(asset, filterValue)), [assets, filterValue]);
+    const filterActive = isAssetFilterActive(filterValue);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Manajemen Aset" />
@@ -120,17 +127,22 @@ export default function Asset() {
                     <TabsContent value="company">
                         <DataTable
                             columns={columns}
-                            data={assets}
+                            data={filteredAssets}
                             search={assetSearch}
                             filters={assetFilters}
                             actions={
                                 <>
                                     <button
                                         type="button"
-                                        onClick={() => toast('Segera hadir')}
+                                        onClick={() => setFilterOpen(true)}
                                         aria-label="Filter"
                                         title="Filter"
-                                        className="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] transition-colors hover:bg-[#F1F5F9]"
+                                        className={cn(
+                                            'flex size-9 cursor-pointer items-center justify-center rounded-lg border transition-colors',
+                                            filterActive
+                                                ? 'border-[#1980C0] text-[#1980C0]'
+                                                : 'border-[#E2E8F0] text-[#64748B] hover:bg-[#F1F5F9]',
+                                        )}
                                     >
                                         <Filter className="size-4" />
                                     </button>
@@ -149,6 +161,8 @@ export default function Asset() {
                     </TabsContent>
                 </Tabs>
             </div>
+
+            <AssetFilterDialog open={filterOpen} onOpenChange={setFilterOpen} value={filterValue} onApply={setFilterValue} />
         </AppLayout>
     );
 }
