@@ -21,20 +21,24 @@ export function AssetStatCards({ assets }: { assets: Asset[] }) {
 
     return (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <KpiStatCard label="Total Semua Aset" iconBackground="rgba(139,92,246,0.10)" icon={<Boxes className="size-5 shrink-0 text-[#8B5CF6]" />}>
+            <KpiStatCard
+                label="Total Semua Aset"
+                iconBackground="rgba(25,128,192,0.10)"
+                icon={<Boxes className="size-5 shrink-0 text-[#1980C0]" />}
+            >
                 <p className="font-poppins w-fit text-2xl font-semibold text-black">{totals.total}</p>
             </KpiStatCard>
             <KpiStatCard
                 label="Total Aset Dipinjam Karyawan"
-                iconBackground="rgba(234,88,12,0.10)"
-                icon={<Repeat className="size-5 shrink-0 text-[#EA580C]" />}
+                iconBackground="rgba(25,128,192,0.10)"
+                icon={<Repeat className="size-5 shrink-0 text-[#1980C0]" />}
             >
                 <p className="font-poppins w-fit text-2xl font-semibold text-black">{totals.loaned}</p>
             </KpiStatCard>
             <KpiStatCard
                 label="Total Aset Tersedia"
-                iconBackground="rgba(22,163,74,0.10)"
-                icon={<PackageCheck className="size-5 shrink-0 text-[#16A34A]" />}
+                iconBackground="rgba(25,128,192,0.10)"
+                icon={<PackageCheck className="size-5 shrink-0 text-[#1980C0]" />}
             >
                 <p className="font-poppins w-fit text-2xl font-semibold text-black">{totals.available}</p>
             </KpiStatCard>
