@@ -1,4 +1,4 @@
-import { BRANCH_OPTIONS } from './asset-catalog';
+import { BRANCH_OPTIONS, CATEGORY_OPTIONS } from './asset-catalog';
 
 export interface Asset {
     id: string;
@@ -9,9 +9,11 @@ export interface Asset {
     availableUnits: number;
     procurementDate: string;
     branch: string;
+    /** Data URL from the "Upload Foto Aset" picker — undefined for the generated dummy rows and anything added without a photo. */
+    photoUrl?: string;
 }
 
-const CATEGORIES = ['Laptop', 'Monitor', 'Keyboard', 'Mouse', 'Printer'];
+const CATEGORIES = CATEGORY_OPTIONS.map((option) => option.value);
 const NAMES: Record<string, string[]> = {
     Laptop: ['Macbook Air M4', 'Macbook Pro M3', 'ThinkPad X1 Carbon', 'Dell XPS 13'],
     Monitor: ['LG UltraFine 27"', 'Dell UltraSharp 24"'],
@@ -20,6 +22,14 @@ const NAMES: Record<string, string[]> = {
     Printer: ['Epson L3210', 'HP LaserJet Pro'],
 };
 const PROCUREMENT_DATES = ['12/09/26', '03/04/26', '21/11/25', '08/01/26', '17/06/26'];
+
+/** Converts a native `<input type="date">` value ("YYYY-MM-DD") to this table's display format ("DD/MM/YY"). */
+export function formatDateDMY(isoDate: string): string {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+    if (!match) return isoDate;
+    const [, year, month, day] = match;
+    return `${day}/${month}/${year.slice(2)}`;
+}
 
 /** Deterministic — no Math.random()/Date.now(), so the list renders identically on every load. */
 export function generateDummyAssets(): Asset[] {

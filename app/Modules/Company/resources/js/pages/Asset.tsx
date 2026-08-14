@@ -5,14 +5,16 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Filter, PackageSearch } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { AddAssetMenu } from '../components/asset/add-asset-menu';
-import { assetColumns } from '../components/asset/asset-columns';
+import { type NewCompanyAssetValues } from '../components/asset/add-company-asset-dialog';
+import { createAssetColumns } from '../components/asset/asset-columns';
 import { AssetStatCards } from '../components/asset/asset-stat-cards';
+import { type EmployeeLoanFormState } from '../components/asset/employee-loan-form-dialog';
 import { ASSET_TABS, BRANCH_OPTIONS, type AssetTab } from '../lib/asset-catalog';
-import { generateDummyAssets } from '../lib/asset-dummy-data';
+import { type Asset, formatDateDMY, generateDummyAssets } from '../lib/asset-dummy-data';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Manajemen Aset', href: '/company/asset' }];
 
@@ -21,7 +23,83 @@ const assetFilters: FilterConfig[] = [{ key: 'branch', type: 'select', label: 'C
 
 export default function Asset() {
     const [activeTab, setActiveTab] = useState<AssetTab>('company');
-    const assets = useMemo(() => generateDummyAssets(), []);
+    const [assets, setAssets] = useState<Asset[]>(() => generateDummyAssets());
+
+    // Counts up from the initial dummy set's size so newly added rows get an id
+    // that never collides with an existing one, even after deletes.
+    const nextSequenceRef = useRef(assets.length);
+    function nextAssetId() {
+        nextSequenceRef.current += 1;
+        return `EM${String(9000 + nextSequenceRef.current).padStart(4, '0')}`;
+    }
+
+    const handleAddCompanyAsset = (values: NewCompanyAssetValues) => {
+        const newAsset: Asset = {
+            id: nextAssetId(),
+            category: values.category,
+            name: values.name,
+            totalUnits: values.quantity,
+            loanedUnits: 0,
+            availableUnits: values.quantity,
+            procurementDate: formatDateDMY(values.procurementDate),
+            branch: values.branch,
+            photoUrl: values.photoUrl,
+        };
+        setAssets((prev) => [newAsset, ...prev]);
+    };
+
+    const handleAddEmployeeLoan = (values: EmployeeLoanFormState) => {
+        const quantity = Number(values.quantity);
+        const newAsset: Asset = {
+            id: nextAssetId(),
+            category: values.category,
+            name: values.name,
+            totalUnits: quantity,
+            loanedUnits: quantity,
+            availableUnits: 0,
+            procurementDate: formatDateDMY(values.loanDate),
+            branch: values.branch,
+        };
+        setAssets((prev) => [newAsset, ...prev]);
+    };
+
+    const handleUpdateEmployeeLoan = (assetId: string, values: EmployeeLoanFormState) => {
+        setAssets((prev) =>
+            prev.map((asset) => {
+                if (asset.id !== assetId) return asset;
+                const loanedUnits = Number(values.quantity);
+                // The form only captures the loaned quantity, not a separate total —
+                // keep totalUnits at least as large as what's loaned out.
+                const totalUnits = Math.max(asset.totalUnits, loanedUnits);
+                return {
+                    ...asset,
+                    branch: values.branch,
+                    category: values.category,
+                    name: values.name,
+                    loanedUnits,
+                    totalUnits,
+                    availableUnits: totalUnits - loanedUnits,
+                };
+            }),
+        );
+    };
+
+    const handleReturnAsset = (assetId: string) => {
+        setAssets((prev) =>
+            prev.map((asset) =>
+                asset.id === assetId ? { ...asset, availableUnits: asset.availableUnits + asset.loanedUnits, loanedUnits: 0 } : asset,
+            ),
+        );
+    };
+
+    const handleDeleteAsset = (assetId: string) => {
+        setAssets((prev) => prev.filter((asset) => asset.id !== assetId));
+    };
+
+    const columns = useMemo(
+        () => createAssetColumns({ onUpdate: handleUpdateEmployeeLoan, onReturn: handleReturnAsset, onDelete: handleDeleteAsset }),
+        [],
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -41,7 +119,7 @@ export default function Asset() {
 
                     <TabsContent value="company">
                         <DataTable
-                            columns={assetColumns}
+                            columns={columns}
                             data={assets}
                             search={assetSearch}
                             filters={assetFilters}
@@ -56,10 +134,9 @@ export default function Asset() {
                                     >
                                         <Filter className="size-4" />
                                     </button>
-                                    <AddAssetMenu />
+                                    <AddAssetMenu onAddCompanyAsset={handleAddCompanyAsset} onAddEmployeeLoan={handleAddEmployeeLoan} />
                                 </>
                             }
-                            rowActions={() => [{ label: 'Detail', onClick: () => toast('Segera hadir') }]}
                         />
                     </TabsContent>
 
