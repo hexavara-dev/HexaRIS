@@ -12,7 +12,8 @@ import { Search } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PayrollDetailDialog } from '../components/payroll-detail-dialog';
-import { formatCurrency, thp, toPayrollRow, type PayrollRow } from '../lib/payroll-row';
+import { formatCurrency, recomputeRow, thp, toPayrollRow, type RecomputedPayrollRow } from '../lib/payroll-row';
+import { loadAllowances, loadDeductionSettings, loadOvertimeSettings } from '../lib/payroll-settings-storage';
 import { loadDeletedPayrollIds, loadPayrollOverrides, markPayrollDeleted, savePayrollOverride } from '../lib/payroll-storage';
 import { buildPayrollColumns } from './columns';
 
@@ -28,20 +29,31 @@ export default function Index() {
     const [searchValue, setSearchValue] = useState('');
     const [branchFilter, setBranchFilter] = useState(ALL_BRANCHES);
     const [periodFilter, setPeriodFilter] = useState(CURRENT_PERIOD_ID);
-    const [editingRow, setEditingRow] = useState<PayrollRow | null>(null);
+    const [editingRowId, setEditingRowId] = useState<string | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [initialMode, setInitialMode] = useState<'view' | 'edit'>('view');
-    const [deleteTarget, setDeleteTarget] = useState<PayrollRow | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<RecomputedPayrollRow | null>(null);
 
     const employeeById = useMemo(() => new Map(employee.map((e) => [e.id, e])), []);
+
+    const settings = useMemo(
+        () => ({ allowances: loadAllowances(), deductions: loadDeductionSettings(), overtime: loadOvertimeSettings() }),
+        [],
+    );
 
     const allRows = useMemo(
         () =>
             payrollEntry
                 .map((entry) => toPayrollRow({ ...entry, ...overrides[entry.id] }, employeeById))
-                .filter((row) => !deletedIds.includes(row.id)),
-        [overrides, employeeById, deletedIds],
+                .filter((row) => !deletedIds.includes(row.id))
+                .map((row) => recomputeRow(row, settings)),
+        [overrides, employeeById, deletedIds, settings],
     );
+
+    // Derived live from `allRows` by id (rather than kept as its own state snapshot) so it's always
+    // the current recomputed value — the same object the table shows — instead of going stale after
+    // a Simpan that only changes part of the underlying row (see payroll-row.ts's `recomputeRow`).
+    const editingRow = useMemo(() => allRows.find((row) => row.id === editingRowId) ?? null, [allRows, editingRowId]);
 
     const scopedRows = useMemo(
         () => allRows.filter((row) => row.period_id === periodFilter && (branchFilter === ALL_BRANCHES || row.branch_id === branchFilter)),
@@ -66,28 +78,27 @@ export default function Index() {
         [scopedRows],
     );
 
-    const openDetail = useCallback((row: PayrollRow) => {
-        setEditingRow(row);
+    const openDetail = useCallback((row: RecomputedPayrollRow) => {
+        setEditingRowId(row.id);
         setInitialMode('view');
         setDialogOpen(true);
     }, []);
 
-    const openEdit = useCallback((row: PayrollRow) => {
-        setEditingRow(row);
+    const openEdit = useCallback((row: RecomputedPayrollRow) => {
+        setEditingRowId(row.id);
         setInitialMode('edit');
         setDialogOpen(true);
     }, []);
 
-    const onStatusChange = useCallback((row: PayrollRow, status: PayrollRow['status']) => {
+    const onStatusChange = useCallback((row: RecomputedPayrollRow, status: RecomputedPayrollRow['status']) => {
         setOverrides(savePayrollOverride(row.id, { status }));
     }, []);
 
     const onSaved = useCallback((entryId: string, patch: Partial<PayrollEntry>) => {
         setOverrides(savePayrollOverride(entryId, patch));
-        setEditingRow((current) => (current && current.id === entryId ? { ...current, ...patch } : current));
     }, []);
 
-    const onDelete = useCallback((row: PayrollRow) => setDeleteTarget(row), []);
+    const onDelete = useCallback((row: RecomputedPayrollRow) => setDeleteTarget(row), []);
 
     const confirmDelete = () => {
         if (!deleteTarget) return;
@@ -159,7 +170,7 @@ export default function Index() {
                     open={dialogOpen}
                     onOpenChange={(open) => {
                         setDialogOpen(open);
-                        if (!open) setEditingRow(null);
+                        if (!open) setEditingRowId(null);
                     }}
                     row={editingRow}
                     onSaved={onSaved}

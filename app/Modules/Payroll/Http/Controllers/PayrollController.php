@@ -12,4 +12,14 @@ class PayrollController
     {
         return Inertia::render('Payroll::pages/Index');
     }
+
+    public function settings(Request $request): Response
+    {
+        return Inertia::render('Payroll::pages/Settings');
+    }
+
+    public function reimburse(Request $request): Response
+    {
+        return Inertia::render('Payroll::pages/Reimburse');
+    }
 }
