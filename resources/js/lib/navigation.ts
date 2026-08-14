@@ -12,6 +12,7 @@ import navPayrollData from '@/assets/icons/nav-payroll-data.png';
 import navPayrollSettings from '@/assets/icons/nav-payroll-settings.png';
 import navPayroll from '@/assets/icons/nav-payroll.png';
 import navPerformance from '@/assets/icons/nav-performance.png';
+import navReimburse from '@/assets/icons/nav-reimburse.png';
 import navShift from '@/assets/icons/nav-shift.png';
 import navTraining from '@/assets/icons/nav-training.png';
 import { type BreadcrumbItem, type NavItem } from '@/types';
@@ -76,6 +77,7 @@ export const navigation: NavNode[] = [
         children: [
             { title: 'Data Gaji', url: '/payroll/data', iconSrc: navPayrollData, inSidebar: true },
             { title: 'Pengaturan Gaji', url: '/payroll/settings', iconSrc: navPayrollSettings, inSidebar: true },
+            { title: 'Reimburse', url: '/payroll/reimburse', iconSrc: navReimburse, inSidebar: true },
         ],
     },
     { title: 'Rekrutmen', url: '/recruitment', iconSrc: navCalendar, inSidebar: true },

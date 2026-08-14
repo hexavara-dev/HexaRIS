@@ -24,6 +24,8 @@ export interface Column<T> {
     sortable?: boolean;
     align?: 'left' | 'right';
     render?: (row: T) => ReactNode;
+    /** Extra classes on this column's <td> (e.g. a border) — a border needs to sit on the cell's own box, not a nested div, to run edge-to-edge with no per-row gap. */
+    cellClassName?: string;
 }
 
 /** Global free-text search across one or more fields at once, single input. */
@@ -239,7 +241,7 @@ function DataTableView<T extends { id: number | string }>({
                     <TableHeader>
                         <TableRow className={styles.headerRow}>
                             {visibleColumns.map((c) => (
-                                <TableHead key={c.key} className={cn('h-11', c.align === 'right' && 'text-right')}>
+                                <TableHead key={c.key} className={cn('h-11', c.align === 'right' && 'text-right', c.cellClassName)}>
                                     <div className={cn('flex items-center gap-1', c.align === 'right' && 'justify-end')}>
                                         <span className={styles.headerLabel}>{c.label}</span>
                                         {c.sortable && (
@@ -268,7 +270,7 @@ function DataTableView<T extends { id: number | string }>({
                             pageMeta.data.map((row) => (
                                 <TableRow key={row.id} className={styles.row}>
                                     {visibleColumns.map((c) => (
-                                        <TableCell key={c.key} className={cn(c.align === 'right' && 'text-right', styles.cell)}>
+                                        <TableCell key={c.key} className={cn(c.align === 'right' && 'text-right', styles.cell, c.cellClassName)}>
                                             {c.render ? c.render(row) : String(cellValueOf(row, c.key) ?? '')}
                                         </TableCell>
                                     ))}
