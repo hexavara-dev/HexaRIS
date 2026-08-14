@@ -43,6 +43,7 @@ php artisan optimize
 echo "==> Fixing bootstrap/cache and storage permissions"
 chmod -R ug+rwX "${APP_DIR}/bootstrap/cache" "${APP_DIR}/storage"
 chgrp -R www-data "${APP_DIR}/bootstrap/cache" "${APP_DIR}/storage" 2>/dev/null || true
+chgrp www-data "${APP_DIR}/database" 2>/dev/null || true
 
 echo "==> Reloading php-fpm"
 sudo systemctl reload php8.4-fpm
