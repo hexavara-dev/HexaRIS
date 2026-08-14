@@ -17,7 +17,7 @@ export interface PayrollRow extends PayrollEntry {
     branch_name: string;
 }
 
-function positionTitleFor(employeeId: string): string {
+export function positionTitleFor(employeeId: string): string {
     const assignment = employeeAssignment.find((a) => a.employee_id === employeeId && a.is_active);
     if (!assignment) return '-';
     return jobPosition.find((p) => p.id === assignment.job_position_id)?.title ?? '-';
