@@ -1,4 +1,3 @@
-import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { NotificationBell } from '@/components/notification-bell';
 import { Input } from '@/components/ui/input';
@@ -10,6 +9,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Plus, Search } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { PayrollConfirmDialog } from '../components/payroll-confirm-dialog';
 import { deleteReimburseEntry, loadReimburseEntries } from '../lib/reimburse-storage';
 import { ReimburseBuktiDialog } from './reimburse/reimburse-bukti-dialog';
 import { buildReimburseColumns } from './reimburse/reimburse-columns';
@@ -112,7 +112,7 @@ export default function Reimburse() {
 
             <ReimburseBuktiDialog open={buktiTarget !== null} onOpenChange={(open) => !open && setBuktiTarget(null)} entry={buktiTarget} />
 
-            <ConfirmDialog
+            <PayrollConfirmDialog
                 open={deleteTarget !== null}
                 onOpenChange={(open) => !open && setDeleteTarget(null)}
                 onConfirm={confirmDelete}
@@ -120,8 +120,6 @@ export default function Reimburse() {
                 description={'Anda akan menghapus data Reimburse ini secara permanen.\nTindakan ini tidak dapat dibatalkan dan seluruh informasi terkait\nakan hilang.'}
                 confirmLabel="Hapus"
                 cancelLabel="Batal"
-                destructive={false}
-                preventOutsideClose
             />
         </AppLayout>
     );

@@ -1,9 +1,9 @@
-import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable, type SearchConfig } from '@/components/data-table';
 import { type PayrollAllowance } from '@/data/Payroll/payrollAllowance';
 import { Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
+import { PayrollConfirmDialog } from '../../components/payroll-confirm-dialog';
 import { deleteAllowance, loadAllowances, updateAllowance } from '../../lib/payroll-settings-storage';
 import { buildTunjanganColumns } from './tunjangan-columns';
 import { TunjanganFormDialog } from './tunjangan-form-dialog';
@@ -70,7 +70,7 @@ export function TunjanganPanel() {
 
             <TunjanganFormDialog open={formOpen} onOpenChange={setFormOpen} target={formTarget} onSaved={refresh} />
 
-            <ConfirmDialog
+            <PayrollConfirmDialog
                 open={deleteTarget !== null}
                 onOpenChange={(open) => !open && setDeleteTarget(null)}
                 onConfirm={confirmDelete}
@@ -78,8 +78,6 @@ export function TunjanganPanel() {
                 description={'Anda akan menghapus data Tunjangan ini secara permanen.\nTindakan ini tidak dapat dibatalkan dan seluruh informasi terkait\nakan hilang.'}
                 confirmLabel="Hapus"
                 cancelLabel="Batal"
-                destructive={false}
-                preventOutsideClose
             />
         </div>
     );
