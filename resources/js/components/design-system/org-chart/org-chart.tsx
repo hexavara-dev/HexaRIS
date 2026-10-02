@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useRef, useState, type PointerEvent } from 'react';
 
 export interface OrgMember {
     name: string;
@@ -13,7 +13,7 @@ export interface OrgDivision {
 
 export interface OrgDepartment {
     name: string;
-    /** Full-width "Kepala Departemen" card shown directly under the header (used by departments that own divisions). */
+    /** Full-width "Kepala Bagian" card shown directly under the header (used by departments that own divisions). */
     head?: OrgMember;
     /** Stacked member cards shown directly under the header (used by departments without divisions). */
     members?: OrgMember[];
@@ -22,100 +22,112 @@ export interface OrgDepartment {
 }
 
 export interface OrgTree {
+    cabang?: string;
+    cabangOptions?: string[];
     ceo: OrgMember;
     departments: OrgDepartment[];
 }
 
-function initials(name: string) {
-    return name
-        .split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase())
-        .join('');
+function shortDepartmentName(name: string) {
+    return name.replace(/^Dept\.\s*/, '');
 }
 
-function MemberCard({ member }: { member: OrgMember }) {
+function roleLabel(role: string) {
+    if (/^Kepala\s+Divisi/i.test(role)) return 'Kepala Divisi';
+    if (/^Kepala\s+(Departemen|Bagian)/i.test(role)) return 'Kepala Bagian';
+    if (/^Staff/i.test(role)) return 'Staff';
+    return role;
+}
+
+interface NodePeople {
+    lead?: OrgMember;
+    leadLabel?: string;
+    staff: OrgMember[];
+}
+
+function peopleFromMembers(members: OrgMember[] | undefined): NodePeople {
+    const list = members ?? [];
+    if (list.length === 0) return { staff: [] };
+
+    const leadIndex = list.findIndex((member) => /^Kepala\s+(Departemen|Divisi|Bagian)/i.test(member.role));
+    const lead = leadIndex >= 0 ? list[leadIndex] : list[0];
+    const staff = list.filter((_, index) => index !== (leadIndex >= 0 ? leadIndex : 0));
+
+    return { lead, leadLabel: roleLabel(lead.role), staff };
+}
+
+function CompactNode({ title, subtitle, people, active = false }: { title: string; subtitle?: string; people?: NodePeople; active?: boolean }) {
+    const staff = people?.staff ?? [];
+
     return (
-        <div className="flex w-full items-center gap-2 rounded-lg border border-[#E2E8F0] bg-white p-3">
-            <Avatar className="h-8 w-8 shrink-0">
-                <AvatarImage src={member.avatarUrl} alt={member.name} />
-                <AvatarFallback className="text-[10px]">{initials(member.name)}</AvatarFallback>
-            </Avatar>
-            <div className="flex min-w-0 flex-col">
-                <p className="font-poppins truncate text-[10px] font-semibold text-black">{member.name}</p>
-                <p className="truncate text-[10px] text-[#4F4F4F]">{member.role}</p>
-            </div>
+        <div
+            className={[
+                'flex min-h-24 w-[230px] flex-col items-center justify-center rounded-xl border bg-white px-4 py-3 text-center shadow-[0_1px_2px_rgba(15,23,42,0.06)]',
+                active ? 'border-[#1980C0] bg-[#EEF8FF]' : 'border-[#DCE5EF]',
+            ].join(' ')}
+        >
+            <p className="font-poppins max-w-full truncate text-[16px] leading-5 font-semibold text-[#0F172A]">{title}</p>
+
+            {active ? (
+                <>
+                    {subtitle && <p className="mt-1 max-w-full truncate text-[13px] leading-5 text-[#64748B]">{subtitle}</p>}
+                    {people?.lead && <p className="max-w-full truncate text-[14px] leading-5 text-[#334155]">{people.lead.name}</p>}
+                </>
+            ) : (
+                <>
+                    {people?.lead ? (
+                        <>
+                            <p className="mt-1 max-w-full truncate text-[12px] leading-4 text-[#7A7A7A]">{people.leadLabel ?? 'Kepala Bagian'}</p>
+                            <p className="max-w-full truncate text-[14px] leading-5 text-[#4B5563]">{people.lead.name}</p>
+                        </>
+                    ) : (
+                        subtitle && <p className="mt-1 max-w-full truncate text-[13px] leading-5 text-[#64748B]">{subtitle}</p>
+                    )}
+
+                    {staff.length > 0 && (
+                        <div className="mt-0.5 max-w-full">
+                            <p className="text-[12px] leading-4 text-[#7A7A7A]">Staff</p>
+                            <div className="space-y-0.5">
+                                {staff.map((member, index) => (
+                                    <p key={`${member.name}-${member.role}-${index}`} className="truncate text-[14px] leading-5 text-[#4B5563]">
+                                        {index + 1}. {member.name}
+                                    </p>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
         </div>
     );
 }
 
-function DivisionColumn({
-    division,
-    departmentName,
-    onDivisionClick,
-}: {
-    division: OrgDivision;
-    departmentName: string;
-    onDivisionClick?: (division: OrgDivision, departmentName: string) => void;
-}) {
+function DivisionNode({ division }: { division: OrgDivision }) {
+    const people = peopleFromMembers(division.members);
+
     return (
-        <button
-            type="button"
-            onClick={() => onDivisionClick?.(division, departmentName)}
-            className="flex w-[220px] flex-col gap-2 text-left transition-opacity hover:opacity-80"
-        >
-            <div className="w-full rounded bg-[#E9F5FE] p-1.5">
-                <p className="font-poppins text-center text-[11px] font-semibold text-[#1980C0]">{division.name}</p>
-            </div>
-            <div className="flex w-full flex-col gap-2">
-                {division.members.map((member) => (
-                    <MemberCard key={`${member.name}-${member.role}`} member={member} />
-                ))}
-            </div>
-        </button>
+        <div className="relative flex justify-center pt-8 before:absolute before:top-0 before:left-1/2 before:h-8 before:border-l before:border-[#CBD5E1] before:content-['']">
+            <CompactNode title={division.name} subtitle="Divisi" people={people} />
+        </div>
     );
 }
 
-function DepartmentColumn({
-    department,
-    onDivisionClick,
-    onDepartmentClick,
-}: {
-    department: OrgDepartment;
-    onDivisionClick?: (division: OrgDivision, departmentName: string) => void;
-    onDepartmentClick?: (department: OrgDepartment) => void;
-}) {
+function DepartmentColumn({ department }: { department: OrgDepartment }) {
+    const departmentTitle = shortDepartmentName(department.name);
+    const people = department.head
+        ? { lead: department.head, leadLabel: roleLabel(department.head.role), staff: [] }
+        : peopleFromMembers(department.members);
+    const divisions = department.divisions ?? [];
+    const hasChildren = divisions.length > 0;
+
     return (
-        <div className="inline-flex w-fit flex-col items-stretch gap-4">
-            {onDepartmentClick ? (
-                <button
-                    type="button"
-                    onClick={() => onDepartmentClick(department)}
-                    className="w-full rounded-lg border border-[#1980C0] bg-[#EEF8FF] p-3 transition-opacity hover:opacity-80"
-                >
-                    <p className="font-poppins text-center text-sm font-semibold text-[#1E293B]">{department.name}</p>
-                </button>
-            ) : (
-                <div className="w-full rounded-lg border border-[#1980C0] bg-[#EEF8FF] p-3">
-                    <p className="font-poppins text-center text-sm font-semibold text-[#1E293B]">{department.name}</p>
-                </div>
-            )}
+        <div className="inline-flex w-[260px] flex-col items-center">
+            <CompactNode title={departmentTitle} subtitle="Bagian" people={people} />
 
-            {department.head && <MemberCard member={department.head} />}
-
-            {department.members && (
-                <div className="flex w-[220px] flex-col gap-2">
-                    {department.members.map((member) => (
-                        <MemberCard key={`${member.name}-${member.role}`} member={member} />
-                    ))}
-                </div>
-            )}
-
-            {department.divisions && (
-                <div className="flex w-fit gap-5">
-                    {department.divisions.map((division) => (
-                        <DivisionColumn key={division.name} division={division} departmentName={department.name} onDivisionClick={onDivisionClick} />
+            {hasChildren && (
+                <div className="flex flex-col items-center gap-0">
+                    {divisions.map((division) => (
+                        <DivisionNode key={division.name} division={division} />
                     ))}
                 </div>
             )}
@@ -127,38 +139,71 @@ interface OrgChartProps {
     tree: OrgTree;
     /** 1 = 100%. The chart is scaled from the top-center. */
     zoom?: number;
-    onDivisionClick?: (division: OrgDivision, departmentName: string) => void;
-    onDepartmentClick?: (department: OrgDepartment) => void;
 }
 
-export function OrgChart({ tree, zoom = 1, onDivisionClick, onDepartmentClick }: OrgChartProps) {
+export function OrgChart({ tree, zoom = 1 }: OrgChartProps) {
+    const canvasRef = useRef<HTMLDivElement>(null);
+    const dragRef = useRef({ pointerId: -1, x: 0, y: 0, offsetX: 0, offsetY: 0 });
+    const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+    const [isPanning, setIsPanning] = useState(false);
+
+    function startPan(event: PointerEvent<HTMLDivElement>) {
+        if (event.button !== 0 || !canvasRef.current) return;
+
+        dragRef.current = {
+            pointerId: event.pointerId,
+            x: event.clientX,
+            y: event.clientY,
+            offsetX: panOffset.x,
+            offsetY: panOffset.y,
+        };
+        canvasRef.current.setPointerCapture(event.pointerId);
+        setIsPanning(true);
+    }
+
+    function pan(event: PointerEvent<HTMLDivElement>) {
+        if (!isPanning || dragRef.current.pointerId !== event.pointerId) return;
+
+        event.preventDefault();
+        setPanOffset({
+            x: dragRef.current.offsetX + event.clientX - dragRef.current.x,
+            y: dragRef.current.offsetY + event.clientY - dragRef.current.y,
+        });
+    }
+
+    function stopPan(event: PointerEvent<HTMLDivElement>) {
+        if (!canvasRef.current || dragRef.current.pointerId !== event.pointerId) return;
+
+        if (canvasRef.current.hasPointerCapture(event.pointerId)) {
+            canvasRef.current.releasePointerCapture(event.pointerId);
+        }
+        dragRef.current.pointerId = -1;
+        setIsPanning(false);
+    }
+
     return (
-        <div className="w-full overflow-auto">
+        <div
+            ref={canvasRef}
+            className={['h-full w-full touch-none overflow-hidden select-none', isPanning ? 'cursor-grabbing' : 'cursor-grab'].join(' ')}
+            onPointerDown={startPan}
+            onPointerMove={pan}
+            onPointerUp={stopPan}
+            onPointerCancel={stopPan}
+        >
             <div
-                className="flex min-w-max origin-top justify-center px-10 py-10"
-                style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
+                className="flex min-w-max origin-top justify-center px-16 py-8"
+                style={{ transform: `translate3d(${panOffset.x}px, ${panOffset.y}px, 0) scale(${zoom})`, transformOrigin: 'top center' }}
             >
                 <div className="flex flex-col items-center">
-                    {/* CEO node */}
-                    <div className="flex w-[220px] items-center gap-3 rounded-xl border-2 border-[#1980C0] bg-[#E9F5FE] p-4">
-                        <Avatar className="h-9 w-9 shrink-0">
-                            <AvatarImage src={tree.ceo.avatarUrl} alt={tree.ceo.name} />
-                            <AvatarFallback className="text-xs">{initials(tree.ceo.name)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex min-w-0 flex-col gap-0.5">
-                            <p className="font-poppins truncate text-[13px] font-semibold text-[#1E293B]">{tree.ceo.name}</p>
-                            <p className="font-poppins text-[10px] font-semibold tracking-wide text-[#1980C0] uppercase">{tree.ceo.role}</p>
-                        </div>
-                    </div>
+                    <CompactNode title="PT. Abadi Jaya" subtitle={tree.ceo.role} people={{ lead: tree.ceo, staff: [] }} active />
 
-                    {/* Departments row with CSS connector lines drawn via before/after borders. */}
-                    <ul className="relative flex justify-center pt-6 before:absolute before:top-0 before:left-1/2 before:h-6 before:border-l-2 before:border-[#1980C0] before:content-['']">
+                    <ul className="relative flex justify-center gap-16 pt-20 before:absolute before:top-0 before:left-1/2 before:h-10 before:border-l before:border-[#CBD5E1] before:content-[''] after:absolute after:top-10 after:right-[130px] after:left-[130px] after:border-t after:border-[#CBD5E1] after:content-['']">
                         {tree.departments.map((department) => (
                             <li
                                 key={department.name}
-                                className="relative flex flex-col items-center px-3 pt-6 before:absolute before:top-0 before:right-1/2 before:h-6 before:w-1/2 before:border-t-2 before:border-r-2 before:border-[#1980C0] before:content-[''] after:absolute after:top-0 after:left-1/2 after:h-6 after:w-1/2 after:border-t-2 after:border-l-2 after:border-[#1980C0] after:content-[''] first:before:hidden last:after:hidden"
+                                className="relative flex flex-col items-center before:absolute before:top-[-40px] before:left-1/2 before:h-10 before:border-l before:border-[#CBD5E1] before:content-['']"
                             >
-                                <DepartmentColumn department={department} onDivisionClick={onDivisionClick} onDepartmentClick={onDepartmentClick} />
+                                <DepartmentColumn department={department} />
                             </li>
                         ))}
                     </ul>
@@ -178,14 +223,14 @@ export const ORG_CHART_DEMO: OrgTree = {
         {
             name: 'Dept. Human Resource',
             members: [
-                { name: 'Ayu Anindita', role: 'Kepala Departemen HR', avatarUrl: avatarFor('HR Head') },
+                { name: 'Ayu Anindita', role: 'Kepala Bagian HR', avatarUrl: avatarFor('HR Head') },
                 { name: 'Ayu Anindita', role: 'HR General', avatarUrl: avatarFor('HR General') },
                 { name: 'Ayu Anindita', role: 'HR Administrasi', avatarUrl: avatarFor('HR Admin') },
             ],
         },
         {
             name: 'Dept. Information Technology',
-            head: { name: 'M Zainudin', role: 'Kepala Departemen IT', avatarUrl: avatarFor('M Zainudin') },
+            head: { name: 'M Zainudin', role: 'Kepala Bagian IT', avatarUrl: avatarFor('M Zainudin') },
             divisions: [
                 {
                     name: 'Divisi Developer',
@@ -214,7 +259,7 @@ export const ORG_CHART_DEMO: OrgTree = {
         },
         {
             name: 'Dept. Kreatif',
-            head: { name: 'Ayu Anindita', role: 'Kepala Departemen Creative', avatarUrl: avatarFor('Creative Head') },
+            head: { name: 'Ayu Anindita', role: 'Kepala Bagian Creative', avatarUrl: avatarFor('Creative Head') },
             divisions: [
                 {
                     name: 'Design',
@@ -236,14 +281,14 @@ export const ORG_CHART_DEMO: OrgTree = {
         {
             name: 'Dept. Finance',
             members: [
-                { name: 'Ayu Anindita', role: 'Kepala Departemen Finance', avatarUrl: avatarFor('Finance Head') },
+                { name: 'Ayu Anindita', role: 'Kepala Bagian Finance', avatarUrl: avatarFor('Finance Head') },
                 { name: 'Ayu Anindita', role: 'Payroll', avatarUrl: avatarFor('Payroll') },
             ],
         },
         {
             name: 'Dept. Operasional',
             members: [
-                { name: 'Ayu Anindita', role: 'Kepala Departemen Ops', avatarUrl: avatarFor('Ops Head') },
+                { name: 'Ayu Anindita', role: 'Kepala Bagian Ops', avatarUrl: avatarFor('Ops Head') },
                 { name: 'Staff Operasional 2', role: 'Logistics', avatarUrl: avatarFor('Logistics') },
             ],
         },

@@ -27,17 +27,17 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                         <div className="flex items-center gap-2">
                             <div
                                 className={cn(
-                                    'font-poppins flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm tracking-[0.01em]',
+                                    'font-poppins flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[16px] tracking-[0.01em]',
                                     isReached ? 'bg-[#1980C0] text-white' : 'border border-[#808080] text-[#808080]',
                                 )}
                             >
                                 {stepNumber}
                             </div>
-                            <p className={cn('font-poppins text-sm tracking-[0.01em]', isReached ? 'text-[#121212]' : 'text-[#808080]')}>
+                            <p className={cn('font-poppins text-[16px] tracking-[0.01em]', isReached ? 'text-[#121212]' : 'text-[#808080]')}>
                                 {step.label}
                             </p>
                         </div>
-                        {!isLast && <div className={cn('h-px w-[18px]', isDone ? 'bg-[#1980C0]' : 'bg-[#808080]')} />}
+                        {!isLast && <div className={cn('h-px w-7', isDone ? 'bg-[#1980C0]' : 'bg-[#808080]')} />}
                     </div>
                 );
             })}

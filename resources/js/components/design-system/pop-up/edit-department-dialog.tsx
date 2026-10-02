@@ -159,7 +159,7 @@ export function EditDepartmentDialog({ open, onOpenChange, department, siblingDe
             const member: EditableMember = {
                 id: current.divisions.length === 0 ? (current.members[0]?.id ?? newId('member')) : newId('member'),
                 name: person.name,
-                role: `Kepala Departemen ${shortName(current.name)}`,
+                role: `Kepala Bagian ${shortName(current.name)}`,
                 avatarUrl: avatarFor(person.name),
             };
             if (current.divisions.length > 0) {
@@ -414,7 +414,7 @@ export function EditDepartmentDialog({ open, onOpenChange, department, siblingDe
                                 <PersonSelect
                                     value={hasDivisions ? (editable.head?.name ?? '') : (editable.members[0]?.name ?? '')}
                                     onChange={setDepartmentHead}
-                                    placeholder="Pilih Kepala Departemen"
+                                    placeholder="Pilih Kepala Bagian"
                                     taken={takenNames}
                                     getKey={(person) => person.name}
                                     initials={initials}

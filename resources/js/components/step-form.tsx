@@ -44,15 +44,10 @@ export function StepForm({ steps, title, onCancel, onFinish, processing = false,
     const isLast = current === steps.length - 1;
     const canProceed = steps[current].canProceed !== false;
 
-    // Long step content (e.g. a form + a preview panel) can leave the body
-    // scrolled down when the user advances/goes back — reset it so every step
-    // opens at the top instead of wherever the previous step left off.
     useEffect(() => {
         contentRef.current?.scrollTo({ top: 0 });
     }, [current]);
 
-    // Advancing and finishing share the submit handler so Enter behaves the
-    // same as clicking, and so the browser still runs native field validation.
     const submit = (event: FormEvent) => {
         event.preventDefault();
         if (!canProceed) return;
@@ -64,14 +59,14 @@ export function StepForm({ steps, title, onCancel, onFinish, processing = false,
     };
 
     return (
-        <form onSubmit={submit} className="flex max-h-[85vh] flex-col px-4">
+        <form onSubmit={submit} className="grid max-h-[min(940px,calc(100vh-2.5rem))] min-h-[680px] grid-rows-[auto_minmax(0,1fr)_auto] px-5">
             <div className="flex flex-wrap items-center gap-x-8 gap-y-3 pb-5">
-                <DialogTitle className="font-poppins text-lg font-semibold text-[#121212]">{title}</DialogTitle>
+                <DialogTitle className="font-poppins text-[22px] leading-7 font-semibold text-[#121212]">{title}</DialogTitle>
                 <Stepper steps={steps} currentStep={current + 1} />
             </div>
 
             {/* Only the step body scrolls, so header and footer stay put. */}
-            <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto py-5 pr-4 pl-1">
+            <div ref={contentRef} className="min-h-0 overflow-y-auto py-5 pr-4 pl-1">
                 {steps[current].content}
             </div>
 
@@ -80,7 +75,7 @@ export function StepForm({ steps, title, onCancel, onFinish, processing = false,
                     type="button"
                     variant="outline"
                     onClick={isFirst ? onCancel : () => setCurrent((step) => step - 1)}
-                    className="font-poppins h-12 flex-1 cursor-pointer rounded-lg border-[#1980C0] text-base font-semibold text-[#1980C0] hover:bg-[#1980C0]/5 hover:text-[#1980C0]"
+                    className="font-poppins h-12 flex-1 cursor-pointer rounded-lg border-[#1980C0] text-[16px] font-semibold text-[#1980C0] hover:bg-[#1980C0]/5 hover:text-[#1980C0]"
                 >
                     {isFirst ? 'Batal' : 'Sebelumnya'}
                 </Button>
@@ -88,7 +83,7 @@ export function StepForm({ steps, title, onCancel, onFinish, processing = false,
                     type="submit"
                     disabled={processing || !canProceed}
                     className={cn(
-                        'font-poppins h-12 flex-1 cursor-pointer rounded-lg bg-[#1980C0] text-base font-semibold text-white',
+                        'font-poppins h-12 flex-1 cursor-pointer rounded-lg bg-[#1980C0] text-[16px] font-semibold text-white',
                         'hover:bg-[#1668a0]',
                     )}
                 >
