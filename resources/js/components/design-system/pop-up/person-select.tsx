@@ -62,9 +62,9 @@ export function PersonSelect({
     return (
         <div className="flex w-full items-center gap-2">
             {selected && (
-                <Avatar className="size-8 shrink-0">
+                <Avatar className="size-9 shrink-0">
                     <AvatarImage src={avatarFor(selected.name)} alt={selected.name} />
-                    <AvatarFallback className="text-xs">{initials(selected.name)}</AvatarFallback>
+                    <AvatarFallback className="text-[13px]">{initials(selected.name)}</AvatarFallback>
                 </Avatar>
             )}
             <Select
@@ -74,7 +74,7 @@ export function PersonSelect({
                     if (person) onChange(person);
                 }}
             >
-                <SelectTrigger className="h-11 flex-1 rounded-xl focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="h-12 flex-1 rounded-xl text-[15px] focus:ring-0 focus:ring-offset-0">
                     <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
                 <SelectContent>

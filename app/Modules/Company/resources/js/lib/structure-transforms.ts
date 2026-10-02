@@ -17,9 +17,23 @@ export interface StructureGroup {
 export function toStructureGroups(departments: OrgDepartment[]): StructureGroup[] {
     return departments.map((department, index) => {
         const rows: StructureRow[] = [];
+        const divisions = department.divisions ?? [];
+        const members = department.members ?? [];
+
         if (department.head) rows.push({ divisi: department.head.role, nama: department.head.name });
-        department.members?.forEach((member) => rows.push({ divisi: member.role, nama: member.name }));
-        department.divisions?.forEach((division) => division.members.forEach((member) => rows.push({ divisi: member.role, nama: member.name })));
+        members.forEach((member) => rows.push({ divisi: member.role, nama: member.name }));
+        divisions.forEach((division) => {
+            if (division.members.length === 0) {
+                rows.push({ divisi: division.name, nama: '-' });
+                return;
+            }
+
+            division.members.forEach((member) => rows.push({ divisi: member.role, nama: member.name }));
+        });
+
+        if (rows.length === 0) {
+            rows.push({ divisi: 'Bagian', nama: '-' });
+        }
 
         return {
             id: `EM${187 + index}`,

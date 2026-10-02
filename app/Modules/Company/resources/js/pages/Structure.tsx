@@ -1,13 +1,11 @@
 import { Head } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { toast } from 'sonner';
 
 import { OrgStructureEmptyState } from '@/components/design-system/empty-state/org-structure-empty-state';
-import { type OrgDepartment, type OrgDivision, type OrgMember } from '@/components/design-system/org-chart/org-chart';
+import { type OrgDepartment, type OrgTree } from '@/components/design-system/org-chart/org-chart';
 import { CreateStructureDialog } from '@/components/design-system/pop-up/create-structure-dialog';
 import { DepartmentDetailPanel } from '@/components/design-system/pop-up/department-detail-panel';
-import { DivisionDetailPanel } from '@/components/design-system/pop-up/division-detail-panel';
 import { EditDepartmentDialog, shortName } from '@/components/design-system/pop-up/edit-department-dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,7 +14,7 @@ import { type BreadcrumbItem } from '@/types';
 import { OrgChartPanel } from '../components/OrgChartPanel';
 import { StructureTable } from '../components/StructureTable';
 import { useCompanyStructure } from '../hooks/use-company-structure';
-import { departmentPositionStats, departmentToStaff, divisionPositionStats, divisionToStaff, toStructureGroups } from '../lib/structure-transforms';
+import { departmentPositionStats, departmentToStaff, toStructureGroups } from '../lib/structure-transforms';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Struktur Organisasi', href: '/company/structure' }];
 
@@ -26,14 +24,25 @@ const TABS = [
 ] as const;
 
 export default function CompanyStructure() {
-    const { ceo, departments, hasStructure, findDepartmentByLabel, saveDepartment, saveStructure } = useCompanyStructure();
+    const {
+        cabang,
+        cabangOptions,
+        ceo,
+        departments,
+        hasStructure,
+        findDepartmentByLabel,
+        saveDepartment,
+        deleteDepartment,
+        saveStructure,
+        setCabang,
+    } = useCompanyStructure();
     const [activeTab, setActiveTab] = useState<(typeof TABS)[number]['value']>('bagan');
-    const [selectedDivision, setSelectedDivision] = useState<{ division: OrgDivision; departmentName: string } | null>(null);
     const [selectedDepartment, setSelectedDepartment] = useState<OrgDepartment | null>(null);
     const [editingDepartment, setEditingDepartment] = useState<OrgDepartment | null>(null);
     const [creatingStructure, setCreatingStructure] = useState(false);
 
     const structureGroups = useMemo(() => toStructureGroups(departments), [departments]);
+    const hasSavedCabang = hasStructure && cabangOptions.length > 0;
 
     function handleDepartmentSaved(updated: OrgDepartment) {
         saveDepartment(editingDepartment, updated);
@@ -41,7 +50,7 @@ export default function CompanyStructure() {
         setEditingDepartment(null);
     }
 
-    function handleStructureCreated(tree: { ceo: OrgMember; departments: OrgDepartment[] }) {
+    function handleStructureCreated(tree: OrgTree) {
         saveStructure(tree);
         setCreatingStructure(false);
     }
@@ -66,7 +75,7 @@ export default function CompanyStructure() {
 
                     <Button className="h-auto gap-2 rounded-lg px-4 py-2 text-xs" onClick={() => setCreatingStructure(true)}>
                         <Plus className="size-4" />
-                        Atur Struktur
+                        {hasSavedCabang ? 'Atur Ulang Struktur' : 'Atur Struktur'}
                     </Button>
                 </div>
 
@@ -76,35 +85,26 @@ export default function CompanyStructure() {
                     <>
                         <TabsContent value="bagan">
                             <OrgChartPanel
+                                cabang={cabang}
+                                cabangOptions={cabangOptions}
                                 ceo={ceo}
                                 departments={departments}
-                                onDivisionClick={(division, departmentName) => setSelectedDivision({ division, departmentName })}
-                                onDepartmentClick={setSelectedDepartment}
+                                onCabangChange={setCabang}
                             />
                         </TabsContent>
                         <TabsContent value="tabel">
                             <StructureTable
                                 groups={structureGroups}
+                                cabang={cabang}
+                                cabangOptions={cabangOptions}
+                                onCabangChange={setCabang}
                                 onDetail={(label) => setSelectedDepartment(findDepartmentByLabel(label) ?? null)}
-                                onEdit={(label) => setEditingDepartment(findDepartmentByLabel(label) ?? null)}
-                                onDelete={(label) => toast.info(`Hapus ${label} belum tersedia`)}
+                                onDelete={deleteDepartment}
                             />
                         </TabsContent>
                     </>
                 )}
             </Tabs>
-
-            <DivisionDetailPanel
-                open={selectedDivision !== null}
-                onOpenChange={(open) => !open && setSelectedDivision(null)}
-                divisionName={selectedDivision?.division.name ?? ''}
-                headName={selectedDivision?.division.members[0]?.name ?? ''}
-                divisionAvatarUrl={selectedDivision?.division.members[0]?.avatarUrl}
-                positionStats={selectedDivision ? divisionPositionStats(selectedDivision.division) : []}
-                staff={selectedDivision ? divisionToStaff(selectedDivision.division) : []}
-                onEdit={() => toast.info('Edit divisi belum tersedia')}
-                onDelete={() => toast.info('Hapus divisi belum tersedia')}
-            />
 
             <DepartmentDetailPanel
                 open={selectedDepartment !== null}
@@ -119,7 +119,6 @@ export default function CompanyStructure() {
                     setEditingDepartment(selectedDepartment);
                     setSelectedDepartment(null);
                 }}
-                onDelete={() => toast.info('Hapus departemen belum tersedia')}
             />
 
             <EditDepartmentDialog
@@ -136,7 +135,9 @@ export default function CompanyStructure() {
                 open={creatingStructure}
                 onOpenChange={setCreatingStructure}
                 onSave={handleStructureCreated}
-                existingTree={ceo ? { ceo, departments } : null}
+                hasSavedCabang={hasSavedCabang}
+                savedCabangOptions={cabangOptions}
+                savedStructure={hasStructure && ceo ? { cabang, cabangOptions, ceo, departments } : null}
             />
         </AppLayout>
     );
