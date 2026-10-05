@@ -44,7 +44,18 @@ export interface NavNode {
 // modules this nav anticipates and will 404 until those modules are built.
 export const navigation: NavNode[] = [
     { title: 'Dashboard', url: '/dashboard', iconSrc: navDashboard, inSidebar: true },
-    { title: 'Data Karyawan', url: '/employees', iconSrc: navEmployees, inSidebar: true },
+    {
+        title: 'Data Karyawan',
+        url: '/employees',
+        iconSrc: navEmployees,
+        inSidebar: true,
+        children: [
+            { title: 'Daftar Karyawan', url: '/employees', iconSrc: navEmployees, inSidebar: true },
+            { title: 'Karir Karyawan', url: '/employees/career', iconSrc: navEmployees, inSidebar: true },
+            { title: 'Karyawan Resign', url: '/employees/resign', iconSrc: navEmployees, inSidebar: true },
+            { title: 'Kontrak Karyawan', url: '/employees/contracts', iconSrc: navEmployees, inSidebar: true },
+        ],
+    },
     {
         title: 'Perusahaan',
         url: '/company',

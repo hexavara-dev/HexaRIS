@@ -37,4 +37,19 @@ class EmployeeController
     // {
     //     return redirect()->route('employees.index');
     // }
+
+    public function career(Request $request): Response
+    {
+        return Inertia::render('Employee::pages/Career/Index');
+    }
+
+    public function resign(Request $request): Response
+    {
+        return Inertia::render('Employee::pages/Resign/Index');
+    }
+
+    public function contracts(Request $request): Response
+    {
+        return Inertia::render('Employee::pages/Contract/Index');
+    }
 }
