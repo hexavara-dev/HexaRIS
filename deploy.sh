@@ -40,8 +40,9 @@ php artisan optimize
 # server (www-data) must also be able to write them. The deploy user is a
 # member of the www-data group (set up manually on the server), so this needs no sudo.
 # Guarded so a not-yet-configured group doesn't abort the deploy.
-echo "==> Fixing bootstrap/cache and storage permissions"
+echo "==> Fixing bootstrap/cache, storage, and database permissions"
 chmod -R ug+rwX "${APP_DIR}/bootstrap/cache" "${APP_DIR}/storage"
+chmod ug+rwX "${APP_DIR}/database"
 chgrp -R www-data "${APP_DIR}/bootstrap/cache" "${APP_DIR}/storage" 2>/dev/null || true
 chgrp www-data "${APP_DIR}/database" 2>/dev/null || true
 
