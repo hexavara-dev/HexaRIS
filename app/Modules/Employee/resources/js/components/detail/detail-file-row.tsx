@@ -16,12 +16,19 @@ export function DetailFileRow({ label, file }: DetailFileRowProps) {
 
     return (
         <div className="flex items-center justify-between gap-4 py-1">
-            <p className="font-poppins text-sm text-[#353535]">
-                <span className="text-[#8F8F8F]">{label}</span> : {uploaded ? uploaded.name : '—'}
-            </p>
+            <div className="flex min-w-0 items-start font-poppins text-sm">
+                <span className="w-40 shrink-0 text-[#6B6B6B]">{label}</span>
+                <span className="mr-2 text-[#6B6B6B]">:</span>
+                <span className="truncate font-medium text-[#121212]">{uploaded ? uploaded.name : '—'}</span>
+            </div>
             {uploaded ? (
                 <>
-                    <button type="button" onClick={() => setOpen(true)} aria-label={`Lihat ${uploaded.name}`} className="shrink-0 cursor-pointer text-[#4F4F4F]">
+                    <button
+                        type="button"
+                        onClick={() => setOpen(true)}
+                        aria-label={`Lihat ${uploaded.name}`}
+                        className="shrink-0 cursor-pointer text-[#4F4F4F] hover:text-[#1980C0]"
+                    >
                         <Eye className="h-4 w-4" />
                     </button>
                     <FilePreviewDialog open={open} onOpenChange={setOpen} name={uploaded.name} type={file?.type ?? ''} previewUrl={previewUrl} />

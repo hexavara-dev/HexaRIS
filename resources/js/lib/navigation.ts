@@ -6,6 +6,7 @@ import navCompany from '@/assets/icons/nav-company.png';
 import navDashboard from '@/assets/icons/nav-dashboard.png';
 import navDocumentCenter from '@/assets/icons/nav-document-center.png';
 import navEmployees from '@/assets/icons/nav-employees.png';
+import navManagementEmployee from '@/assets/icons/nav-management-employee.png';
 import navMasterData from '@/assets/icons/nav-master-data.png';
 import navOrgStructure from '@/assets/icons/nav-org-structure.png';
 import navPayrollData from '@/assets/icons/nav-payroll-data.png';
@@ -45,12 +46,12 @@ export interface NavNode {
 export const navigation: NavNode[] = [
     { title: 'Dashboard', url: '/dashboard', iconSrc: navDashboard, inSidebar: true },
     {
-        title: 'Data Karyawan',
+        title: 'Manajemen Karyawan',
         url: '/employees',
-        iconSrc: navEmployees,
+        iconSrc: navManagementEmployee,
         inSidebar: true,
         children: [
-            { title: 'Daftar Karyawan', url: '/employees', iconSrc: navEmployees, inSidebar: true },
+            { title: 'Data Karyawan', url: '/employees/data', iconSrc: navEmployees, inSidebar: true },
             { title: 'Karir Karyawan', url: '/employees/career', iconSrc: navEmployees, inSidebar: true },
             { title: 'Karyawan Resign', url: '/employees/resign', iconSrc: navEmployees, inSidebar: true },
             { title: 'Kontrak Karyawan', url: '/employees/contracts', iconSrc: navEmployees, inSidebar: true },
@@ -157,7 +158,18 @@ export function trailFor(url: string): NavNode[] {
 
 /** Breadcrumb trail for the given URL. Empty when the page isn't registered. */
 export function breadcrumbsFor(url: string): BreadcrumbItem[] {
-    return trailFor(url).map((node) => ({ title: node.title, href: node.url }));
+    const normalizedUrl = normalize(url);
+
+    const employeePages = ['/employees/data', '/employees/career', '/employees/resign', '/employees/contracts'];
+
+    if (employeePages.some((page) => segmentsMatch(page, normalizedUrl))) {
+        return [];
+    }
+
+    return trailFor(url).map((node) => ({
+        title: node.title,
+        href: node.url,
+    }));
 }
 
 /** Browser tab title for the given URL. Undefined when the page isn't registered. */

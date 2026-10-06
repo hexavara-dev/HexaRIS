@@ -1,8 +1,9 @@
-import { Eye, EyeOff, FileText, FolderClosed, Trash2, XCircle } from 'lucide-react';
+import { Eye, EyeOff, FileText, Trash2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { type ChangeEvent, type ReactNode, useEffect, useState } from 'react';
 
+import iconUploadFile from '@/assets/icons/icon-upload-file.png';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 import InputError from '@/components/input-error';
@@ -17,6 +18,7 @@ export function FormField({
     error,
     hint,
     required,
+    dense,
     children,
 }: {
     label: string;
@@ -24,11 +26,13 @@ export function FormField({
     error?: string;
     hint?: string;
     required?: boolean;
+    /** Tighter label and label-to-control gap for dialogs where fields stack two-per-row (the Tambah Karyawan wizard). */
+    dense?: boolean;
     children: ReactNode;
 }) {
     return (
-        <div className="space-y-2.5">
-            <Label htmlFor={htmlFor} className="font-poppins text-base font-semibold text-[#121212]">
+        <div className={dense ? 'space-y-1.5' : 'space-y-2.5'}>
+            <Label htmlFor={htmlFor} className={cn('font-poppins font-semibold text-[#121212]', dense ? 'text-sm' : 'text-base')}>
                 {label} <RequiredMark required={required} />
             </Label>
             {children}
@@ -38,8 +42,14 @@ export function FormField({
     );
 }
 
-const fieldInputClassName =
-    'h-auto w-full rounded-2xl border-[#ACACAC] px-4 py-4 font-poppins text-sm placeholder:text-[#ACACAC] disabled:bg-[#E7E7E7] disabled:text-[#8F8F8F] disabled:opacity-100';
+const fieldInputBaseClassName =
+    'h-auto w-full border-[#ACACAC] px-4 font-poppins text-sm placeholder:text-[#ACACAC] disabled:bg-[#E7E7E7] disabled:text-[#8F8F8F] disabled:opacity-100';
+
+// The default box — tall and heavily rounded, right for standalone forms.
+const fieldInputClassName = `${fieldInputBaseClassName} rounded-2xl py-4`;
+
+/** Same box two notches tighter (rounded-xl, py-2) for dialogs where fields stack two-per-row, e.g. the Tambah Karyawan wizard — the tall default reads oversized there. */
+export const compactFieldInputClassName = `${fieldInputBaseClassName} rounded-xl py-2`;
 
 // Canonical error/required-marker red, shared by input borders, the required
 // asterisk, and error messages so all three read as the same "error" signal.
@@ -63,6 +73,8 @@ interface TextFieldProps {
     disabled?: boolean;
     /** Overrides the default (tall, heavily-rounded) input box — e.g. a flatter `rounded-lg py-2` box to match a page's own established convention. */
     inputClassName?: string;
+    /** Shrinks the label and label-to-input gap — see FormField's `dense`. */
+    dense?: boolean;
 }
 
 export function TextField({
@@ -77,9 +89,10 @@ export function TextField({
     placeholder,
     disabled,
     inputClassName,
+    dense,
 }: TextFieldProps) {
     return (
-        <FormField label={label} htmlFor={htmlFor} error={error} hint={hint} required={required}>
+        <FormField label={label} htmlFor={htmlFor} error={error} hint={hint} required={required} dense={dense}>
             <Input
                 id={htmlFor}
                 type={type}
@@ -139,6 +152,8 @@ interface SelectFieldProps {
     disabled?: boolean;
     /** Overrides the default (tall, heavily-rounded) trigger box — e.g. a flatter `rounded-lg py-2` box to match a page's own established convention. */
     inputClassName?: string;
+    /** Shrinks the label and label-to-trigger gap — see FormField's `dense`. */
+    dense?: boolean;
 }
 
 export function SelectField({
@@ -153,9 +168,10 @@ export function SelectField({
     options,
     disabled,
     inputClassName,
+    dense,
 }: SelectFieldProps) {
     return (
-        <FormField label={label} htmlFor={htmlFor} error={error} hint={hint} required={required}>
+        <FormField label={label} htmlFor={htmlFor} error={error} hint={hint} required={required} dense={dense}>
             <Select value={value} onValueChange={onValueChange} disabled={disabled}>
                 <SelectTrigger id={htmlFor} className={cn(inputClassName ?? fieldInputClassName, 'justify-between', error && errorBorderClassName)}>
                     <SelectValue placeholder={placeholder} />
@@ -310,7 +326,10 @@ interface FileUploadFieldProps {
     onSelect: (file: File | null) => void;
     onRemove: () => void;
     accept?: string;
-    helperText?: string;
+    /** Teks di dropzone — boleh string biasa atau JSX (mis. dengan <br /> dan span berwarna). */
+    helperText?: ReactNode;
+    /** Shrinks the label and label-to-dropzone gap — see FormField's `dense`. */
+    dense?: boolean;
 }
 
 export function FileUploadField({
@@ -321,7 +340,16 @@ export function FileUploadField({
     onSelect,
     onRemove,
     accept,
-    helperText = 'Seret file ke sini atau klik untuk mengunggah, atau telusuri.',
+    helperText = (
+        <>
+            Seret file ke sini atau klik untuk mengunggah,
+            <br />
+            atau <span className="text-[#41B4F2]">telusuri</span>.
+            <br />
+            <span className="font-normal text-[#808080]">Maksimal 2 MB.</span>
+        </>
+    ),
+    dense,
 }: FileUploadFieldProps) {
     const inputId = `file-${label.replace(/\s+/g, '-').toLowerCase()}`;
     const uploaded = toUploadedFile(file);
@@ -337,8 +365,8 @@ export function FileUploadField({
     };
 
     return (
-        <div className="flex w-full flex-col items-start gap-2.5">
-            <p className="font-poppins text-base font-semibold text-[#121212]">
+        <div className={dense ? 'flex w-full flex-col items-start gap-1.5' : 'flex w-full flex-col items-start gap-2.5'}>
+            <p className={cn('font-poppins font-semibold text-[#121212]', dense ? 'text-sm' : 'text-base')}>
                 {label} <RequiredMark required={required} />
             </p>
 
@@ -378,7 +406,7 @@ export function FileUploadField({
                         error && errorBorderClassName,
                     )}
                 >
-                    <FolderClosed className="h-8 w-8 text-[#8F8F8F]" />
+                    <img src={iconUploadFile} alt="" className="h-8 w-10" />
                     <span className="font-poppins text-center text-xs font-semibold text-[#121212]">{helperText}</span>
                     <input
                         id={inputId}
@@ -405,6 +433,14 @@ interface ImageUploadFieldProps {
 export function ImageUploadField({ label, imageUrl, onSelect, onRemove }: ImageUploadFieldProps) {
     const inputId = `image-${label.replace(/\s+/g, '-').toLowerCase()}`;
 
+    const handleSelect = (selected: File | null) => {
+        if (selected && selected.size > MAX_STORED_FILE_BYTES) {
+            toast.error(`${selected.name} melebihi 2MB — pilih file yang lebih kecil.`);
+            return;
+        }
+        onSelect(selected);
+    };
+
     return (
         <div className="flex w-full flex-col items-start gap-2">
             <p className="font-poppins text-sm font-semibold tracking-[0.01em] text-[#1B1B1B]">{label}</p>
@@ -414,7 +450,7 @@ export function ImageUploadField({ label, imageUrl, onSelect, onRemove }: ImageU
                     <div className="relative">
                         <img src={imageUrl} className="h-[83px] w-[88px] rounded object-cover" alt={label} />
                         <button type="button" onClick={onRemove} className="absolute -top-2 -right-2 rounded-full bg-white" aria-label="Hapus foto">
-                            <XCircle className="h-6 w-6 fill-[#E84A39] text-white" />
+                            <XCircle className="h-5 w-5 fill-[#E84A39] text-white" />
                         </button>
                     </div>
                 ) : null}
@@ -426,8 +462,9 @@ export function ImageUploadField({ label, imageUrl, onSelect, onRemove }: ImageU
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(event: ChangeEvent<HTMLInputElement>) => onSelect(event.target.files?.[0] ?? null)}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => handleSelect(event.target.files?.[0] ?? null)}
                 />
+                <p className="font-poppins text-[11px] text-[#808080]">Maksimal 2 MB.</p>
             </div>
         </div>
     );

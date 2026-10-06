@@ -1,13 +1,14 @@
-import { SelectField, TextField, type SelectFieldOption } from '@/components/form/form-field';
 import { province } from '@/data/Region/province';
 import { regency } from '@/data/Region/regency';
 import { useMemo } from 'react';
 import { type EmployeeFormData, type FieldErrors } from '../../types/employee-form';
 import { DocumentUploads } from './document-uploads';
+import { SelectField, TextField, type SelectFieldOption } from './wizard-fields';
 
+/** Values mirror Employee.gender ('L' | 'P'). */
 export const genderOptions: SelectFieldOption[] = [
-    { value: 'L', label: 'Laki-laki' },
-    { value: 'P', label: 'Perempuan' },
+    { value: 'L', label: 'L' },
+    { value: 'P', label: 'P' },
 ];
 
 // Mirrors the Religion union in @/data/Employee/employee.
@@ -31,7 +32,10 @@ export function maritalStatusLabel(isMarried: boolean) {
     return isMarried ? 'Menikah' : 'Belum Menikah';
 }
 
-const provinceOptions: SelectFieldOption[] = province.map((p) => ({ value: p.id, label: p.name }));
+const provinceOptions: SelectFieldOption[] = province.map((p) => ({
+    value: p.id,
+    label: p.name,
+}));
 
 interface PersonalStepProps {
     data: EmployeeFormData;
@@ -41,7 +45,13 @@ interface PersonalStepProps {
 
 export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
     const regencyOptions = useMemo<SelectFieldOption[]>(
-        () => regency.filter((r) => r.province_id === data.province_id).map((r) => ({ value: r.id, label: r.name })),
+        () =>
+            regency
+                .filter((r) => r.province_id === data.province_id)
+                .map((r) => ({
+                    value: r.id,
+                    label: r.name,
+                })),
         [data.province_id],
     );
 
@@ -51,7 +61,8 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
     };
 
     return (
-        <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+        <div className="grid grid-cols-1 gap-x-5 gap-y-2.5 md:grid-cols-2">
+            {/* Nama */}
             <TextField
                 label="Full Nama"
                 htmlFor="full_name"
@@ -61,6 +72,8 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
                 error={errors.full_name}
                 placeholder="Nama sesuai KTP"
             />
+
+            {/* Nomor WA */}
             <TextField
                 label="Nomor WA"
                 htmlFor="phone_number"
@@ -72,6 +85,7 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
                 placeholder="08xxxxxxxxxx"
             />
 
+            {/* Jenis Kelamin */}
             <SelectField
                 label="Jenis Kelamin"
                 htmlFor="gender"
@@ -82,6 +96,8 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
                 error={errors.gender}
                 placeholder="Pilih jenis kelamin"
             />
+
+            {/* Agama */}
             <SelectField
                 label="Agama"
                 htmlFor="religion"
@@ -93,6 +109,7 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
                 placeholder="Pilih agama"
             />
 
+            {/* Tanggal Lahir */}
             <TextField
                 label="Tgl Lahir"
                 htmlFor="birth_date"
@@ -103,32 +120,7 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
                 error={errors.birth_date}
             />
 
-            {/* Two selects sharing one grid cell — the nesting case, and it is
-                just a nested grid. No wizard feature required. */}
-            <div className="grid grid-cols-2 gap-6">
-                <SelectField
-                    label="Provinsi"
-                    htmlFor="province_id"
-                    required
-                    options={provinceOptions}
-                    value={data.province_id}
-                    onValueChange={selectProvince}
-                    error={errors.province_id}
-                    placeholder="Pilih provinsi"
-                />
-                <SelectField
-                    label="Kab/kota"
-                    htmlFor="regency_id"
-                    required
-                    options={regencyOptions}
-                    value={data.regency_id}
-                    onValueChange={(v) => setData('regency_id', v)}
-                    error={errors.regency_id}
-                    placeholder={data.province_id ? 'Pilih kab/kota' : 'Pilih provinsi dulu'}
-                    disabled={!data.province_id}
-                />
-            </div>
-
+            {/* Status Pernikahan */}
             <SelectField
                 label="Status"
                 htmlFor="is_married"
@@ -139,17 +131,49 @@ export function PersonalStep({ data, setData, errors }: PersonalStepProps) {
                 error={errors.is_married}
                 placeholder="Pilih status"
             />
-            <TextField
-                label="Alamat Lengkap"
-                htmlFor="address"
+
+            {/* Provinsi */}
+            <SelectField
+                label="Provinsi"
+                htmlFor="province_id"
                 required
-                value={data.address}
-                onChange={(v) => setData('address', v)}
-                error={errors.address}
-                placeholder="Jl. ..."
+                options={provinceOptions}
+                value={data.province_id}
+                onValueChange={selectProvince}
+                error={errors.province_id}
+                placeholder="Pilih provinsi"
             />
 
-            <DocumentUploads data={data} setData={setData} errors={errors} />
+            {/* Kabupaten/Kota */}
+            <SelectField
+                label="Kab/kota"
+                htmlFor="regency_id"
+                required
+                options={regencyOptions}
+                value={data.regency_id}
+                onValueChange={(v) => setData('regency_id', v)}
+                error={errors.regency_id}
+                placeholder={data.province_id ? 'Pilih kab/kota' : 'Pilih provinsi dulu'}
+                disabled={!data.province_id}
+            />
+
+            {/* Alamat */}
+            <div className="md:col-span-2">
+                <TextField
+                    label="Alamat Lengkap"
+                    htmlFor="address"
+                    required
+                    value={data.address}
+                    onChange={(v) => setData('address', v)}
+                    error={errors.address}
+                    placeholder="Jl. ..."
+                />
+            </div>
+
+            {/* Dokumen */}
+            <div className="md:col-span-2">
+                <DocumentUploads data={data} setData={setData} errors={errors} />
+            </div>
         </div>
     );
 }

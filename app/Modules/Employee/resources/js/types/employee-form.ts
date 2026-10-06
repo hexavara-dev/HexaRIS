@@ -99,25 +99,27 @@ export type EmployeeFormData = {
     contract: File | StoredFile | null;
     education: EducationEntry;
     work_experiences: WorkExperience[];
-    /** Optional — free-text branch name (no dedicated branch/location module yet). */
+    /** Required. Free-text branch name — `'none'` is the "Tidak Ada Cabang" pick, see branchOptions. */
     branch: string;
-    /** References OrganizationUnit.id (unit_type 'DEPARTMENT') in @/data/Organization/organization. */
+    /** Organisasi — optional. References OrganizationUnit.id (unit_type 'DEPARTMENT') in @/data/Organization/organization. */
     department_id: string;
-    /** References OrganizationUnit.id (unit_type 'DIVISION'), scoped to department_id via parent_id. */
+    /** Posisi Jabatan — optional. One of the fixed `positionOptions` titles (Kepala Bagian / Supervisor / Senior Staff / Manager / Staff), stored directly rather than as an OrganizationUnit id. */
     division_id: string;
     /** Fixed set (Manajer/Direksi/Senior/Junior) picked directly — not derived from a job position. */
     job_level: string;
     /** Mirrors ContractType in @/data/Employee/employmentContract. */
     contract_type: string;
+    /** Review cadence for Permanent (PKWTT) contracts only — one of contractEvaluationOptions, cleared for every other contract type. */
+    contract_evaluation: string;
     join_date: string;
     bank_name: string;
     bank_account_holder: string;
     bank_account_number: string;
     basic_salary: string;
-    /** Optional — mirrors EmployeeInsurance where type === 'health'. Digits only. */
-    bpjs_health_number: string;
-    /** Optional — mirrors EmployeeInsurance where type === 'employment'. Digits only. */
-    bpjs_employment_number: string;
+    /** One of `allowanceOptions` (BPJS / Tunjangan ...) — what is paid besides gaji pokok. */
+    allowance: string;
+    /** Value for the picked Tunjangan — a BPJS policy number or a rupiah amount, see allowanceValueField. */
+    allowance_value: string;
 };
 
 export const initialEmployeeFormData: EmployeeFormData = {
@@ -140,11 +142,12 @@ export const initialEmployeeFormData: EmployeeFormData = {
     division_id: '',
     job_level: '',
     contract_type: '',
+    contract_evaluation: '',
     join_date: '',
     bank_name: '',
     bank_account_holder: '',
     bank_account_number: '',
     basic_salary: '',
-    bpjs_health_number: '',
-    bpjs_employment_number: '',
+    allowance: '',
+    allowance_value: '',
 };

@@ -10,7 +10,7 @@ class EmployeeController
 {
     public function index(Request $request): Response
     {
-        return Inertia::render('Employee::pages/Index');
+        return Inertia::render('Employee::pages/Data/Index');
     }
 
     // public function create(): Response
@@ -37,6 +37,11 @@ class EmployeeController
     // {
     //     return redirect()->route('employees.index');
     // }
+
+    public function data(Request $request): Response
+    {
+        return Inertia::render('Employee::pages/Data/Index');
+    }
 
     public function career(Request $request): Response
     {

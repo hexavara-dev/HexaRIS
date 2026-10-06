@@ -1,6 +1,7 @@
-import { FileUploadField, SelectField, TextField, type SelectFieldOption } from '@/components/form/form-field';
+import { FileUploadField, type SelectFieldOption } from '@/components/form/form-field';
 import { Trash2 } from 'lucide-react';
 import { type WorkExperience } from '../../types/employee-form';
+import { SelectField, TextField } from './wizard-fields';
 
 export const employmentTypeOptions: SelectFieldOption[] = [
     { value: 'full_time', label: 'Full-time' },
@@ -47,7 +48,7 @@ export function ExperienceEntry({ index, experience, onChange, onRemove, removab
     const fieldId = (name: string) => `${name}-${index}`;
 
     return (
-        <div className="relative grid grid-cols-2 gap-x-6 gap-y-5 border-b border-[#E7E7E7] pb-5 last:border-b-0 last:pb-0">
+        <div className="relative grid grid-cols-2 gap-x-5 gap-y-2.5 border-b border-[#E7E7E7] pb-3.5 last:border-b-0 last:pb-0">
             {removable && (
                 <>
                     <p className="font-poppins col-span-2 text-sm font-semibold text-[#121212]">Pengalaman {index + 1}</p>
@@ -141,6 +142,7 @@ export function ExperienceEntry({ index, experience, onChange, onRemove, removab
             <div className="col-span-2">
                 <FileUploadField
                     label="Surat Referensi/Pengalaman Kerja (Opsional)"
+                    dense
                     accept="image/*,.pdf"
                     file={experience.reference_letter}
                     onSelect={(f) => set('reference_letter', f)}

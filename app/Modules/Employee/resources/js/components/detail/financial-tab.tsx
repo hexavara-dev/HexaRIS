@@ -1,6 +1,6 @@
 import { labelFor } from '../../lib/format-employee-form';
-import { bankOptions } from '../steps/financial-step';
 import { type EmployeeFormData } from '../../types/employee-form';
+import { allowanceOptions, allowanceValueField, bankOptions } from '../steps/financial-step';
 import { DetailField } from './detail-field';
 
 function formatCurrency(value: string): string {
@@ -16,8 +16,8 @@ export function FinancialTab({ data }: { data: EmployeeFormData }) {
             <DetailField label="Nama Pemilik Rekening" value={data.bank_account_holder} />
             <DetailField label="No Rekening" value={data.bank_account_number} />
             <DetailField label="Gaji Pokok" value={formatCurrency(data.basic_salary)} />
-            <DetailField label="Nomor BPJS Kesehatan" value={data.bpjs_health_number} />
-            <DetailField label="Nomor BPJS Ketenagakerjaan" value={data.bpjs_employment_number} />
+            <DetailField label="Tunjangan" value={labelFor(allowanceOptions, data.allowance)} />
+            <DetailField label={allowanceValueField(data.allowance).label} value={data.allowance_value} />
         </div>
     );
 }

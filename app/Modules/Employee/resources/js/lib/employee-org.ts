@@ -14,7 +14,7 @@ export function assignedOrgUnit(employeeId: string): OrganizationUnit | null {
  * division id. A DIVISION's parent is the department; anything that isn't a
  * DEPARTMENT itself (COMPANY, DIRECTORATE, SECTION, ...) walks up parent_id
  * until it finds one, since only DEPARTMENT-level ids are valid values for
- * the wizard's Departemen field.
+ * the wizard's Organisasi field.
  */
 export function resolveOrgUnit(organizationUnitId: string): { departmentId: string; divisionId: string } {
     const unit = organization.find((u) => u.id === organizationUnitId);

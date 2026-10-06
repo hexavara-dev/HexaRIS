@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { FloatingAssistantButton } from '@/components/floating-assistant-button';
 import { Toaster } from '@/components/toaster';
 import { useFlash } from '@/hooks/use-flash';
 import { usePendingToast } from '@/hooks/use-pending-toast';
@@ -53,6 +54,8 @@ export default function AppLayout({ children, tabTitle, breadcrumbs, headerActio
             <AppLayoutTemplate breadcrumbs={derivedBreadcrumbs} headerActions={headerActions} headerTitle={headerTitle} {...props}>
                 {children}
             </AppLayoutTemplate>
+            {/* Rendered by the layout, not per page, so the assistant follows the user everywhere. */}
+            <FloatingAssistantButton />
             <Toaster />
         </>
     );
