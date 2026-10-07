@@ -29,7 +29,7 @@ export function ExperienceStep({ data, setData, errors }: ExperienceStepProps) {
     }
 
     return (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
             {data.work_experiences.map((experience, index) => (
                 <ExperienceEntry
                     key={index}
@@ -53,7 +53,7 @@ export function ExperienceStep({ data, setData, errors }: ExperienceStepProps) {
                 type="button"
                 variant="outline"
                 onClick={addExperience}
-                className="h-12 rounded-lg border-[#1980C0] text-base font-semibold text-[#1980C0] hover:bg-[#1980C0]/5 hover:text-[#1980C0]"
+                className="h-11 rounded-lg border-[#1980C0] text-sm font-semibold text-[#1980C0] hover:bg-[#1980C0]/5 hover:text-[#1980C0]"
             >
                 <Plus className="size-4" />
                 Tambah Pengalaman

@@ -17,12 +17,13 @@ const DOCUMENTS: { key: DocumentKey; label: string; required?: boolean }[] = [
 
 export function DocumentUploads({ data, setData, errors }: DocumentUploadsProps) {
     return (
-        <div className="col-span-2 space-y-5">
+        <div className="col-span-2 space-y-2.5">
             {DOCUMENTS.map((doc) => (
                 <FileUploadField
                     key={doc.key}
                     label={doc.label}
                     required={doc.required}
+                    dense
                     accept="image/*,.pdf"
                     file={data[doc.key]}
                     onSelect={(f) => setData(doc.key, f)}

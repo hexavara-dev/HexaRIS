@@ -184,13 +184,16 @@ function hydrateFromErd(employee: Employee): { data: EmployeeFormData; fileFlags
         division_id: divisionId,
         job_level: '',
         contract_type: contract?.contract_type ?? '',
+        // No ERD equivalent for the PKWTT review cadence — left for the user to pick again.
+        contract_evaluation: '',
         join_date: employee.join_date,
         bank_name: bankAccount ? bankValueFromName(bankAccount.bank_name) : '',
         bank_account_holder: bankAccount?.account_holder_name ?? '',
         bank_account_number: bankAccount?.account_number ?? '',
         basic_salary: compensation ? String(compensation.base_salary) : '',
-        bpjs_health_number: healthInsurance?.policy_number ?? '',
-        bpjs_employment_number: employmentInsurance?.policy_number ?? '',
+        // A policy number on file can only have come from the BPJS pick.
+        allowance: healthInsurance || employmentInsurance ? 'bpjs' : '',
+        allowance_value: healthInsurance?.policy_number ?? employmentInsurance?.policy_number ?? '',
     };
 
     const fileFlags: FileFieldFlags = {

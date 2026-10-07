@@ -28,12 +28,12 @@ function departmentName(employeeId: string): string {
     return organization.find((u) => u.id === departmentId)?.name ?? '-';
 }
 
-/** Same fallback as departmentName, for division_id. */
+/** Same fallback as departmentName, for division_id. The wizard stores a fixed position title ("Staff", ...), so an unmatched value is the title itself, not a miss. */
 function divisionName(employeeId: string): string {
     if (assignedOrgUnit(employeeId)) return divisionNameFromErd(employeeId);
     const divisionId = peekFormOverlay(employeeId)?.data.division_id;
     if (!divisionId) return '-';
-    return organization.find((u) => u.id === divisionId)?.name ?? '-';
+    return organization.find((u) => u.id === divisionId)?.name ?? divisionId;
 }
 
 export function buildEmployeeColumns(

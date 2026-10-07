@@ -21,7 +21,9 @@ export function Toaster() {
                     // Kept identical in dark mode on purpose — this success toast is meant to always
                     // read as the same light-green card (per design reference), not adapt per theme.
                     success: '!border-[#A3E87E] !bg-[#F4FFE9] !text-black [&_[data-icon]]:text-[#46B52B]',
-                    error: '!border-destructive/50 !bg-destructive/10 !text-destructive [&_[data-icon]]:text-destructive',
+                    // Solid fill on purpose: the previous `/10` alpha made the card read as a
+                    // translucent wash over the page instead of a toast.
+                    error: '!border-[#EF4938] !bg-[#FFF1F0] !text-[#D92D20] [&_[data-icon]]:text-[#D92D20]',
                 },
             }}
         />

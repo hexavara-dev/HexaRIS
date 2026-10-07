@@ -6,8 +6,10 @@ interface DetailFieldProps {
 /** The "Label : value" read-only row every Detail tab is built from. */
 export function DetailField({ label, value }: DetailFieldProps) {
     return (
-        <p className="font-poppins text-sm text-[#353535]">
-            <span className="text-[#8F8F8F]">{label}</span> : {value || '—'}
-        </p>
+        <div className="flex items-start font-poppins text-sm">
+            <span className="w-40 shrink-0 text-[#6B6B6B]">{label}</span>
+            <span className="mr-2 text-[#6B6B6B]">:</span>
+            <span className="font-medium break-words text-[#121212]">{value || '—'}</span>
+        </div>
     );
 }

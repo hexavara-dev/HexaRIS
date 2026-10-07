@@ -16,7 +16,7 @@ Route::middleware('auth')->group(function () {
     //     ->name('employees.update')->middleware('can:employees.update');
     // Route::delete('employees/{employee}', [EmployeeController::class, 'destroy'])
     //     ->name('employees.destroy')->middleware('can:employees.delete');
-
+    Route::get('employees/data', [EmployeeController::class, 'data'])->name('employees.data.index')->middleware('can:employees.viewAny');
     Route::get('employees/career', [EmployeeController::class, 'career'])->name('employees.career.index')->middleware('can:employees.viewAny');
     Route::get('employees/resign', [EmployeeController::class, 'resign'])->name('employees.resign.index')->middleware('can:employees.viewAny');
     Route::get('employees/contracts', [EmployeeController::class, 'contracts'])->name('employees.contracts.index')->middleware('can:employees.viewAny');

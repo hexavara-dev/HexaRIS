@@ -1,5 +1,6 @@
-import { FileUploadField, SelectField, TextField, type SelectFieldOption } from '@/components/form/form-field';
+import { FileUploadField, type SelectFieldOption } from '@/components/form/form-field';
 import { type EducationEntry, type EmployeeFormData, type FieldErrors } from '../../types/employee-form';
+import { SelectField, TextField } from './wizard-fields';
 
 export const educationLevelOptions: SelectFieldOption[] = [
     { value: 'tidak_sekolah', label: 'Tdk Sekolah' },
@@ -24,7 +25,7 @@ export function EducationStep({ data, setData, errors }: EducationStepProps) {
     }
 
     return (
-        <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+        <div className="grid grid-cols-2 gap-x-5 gap-y-3">
             <SelectField
                 label="Pendidikan Terakhir"
                 htmlFor="level"
@@ -87,6 +88,7 @@ export function EducationStep({ data, setData, errors }: EducationStepProps) {
                 <FileUploadField
                     label="Upload Ijazah/Transkrip"
                     required
+                    dense
                     accept="image/*,.pdf"
                     file={data.education.certificate}
                     onSelect={(f) => set('certificate', f)}

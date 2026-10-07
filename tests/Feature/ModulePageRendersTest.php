@@ -25,3 +25,11 @@ it('renders a namespaced module page without a Vite manifest 500', function () {
     $this->actingAs($admin)->get('/iam/roles')->assertOk();
     $this->actingAs($admin)->get('/audit')->assertOk();
 });
+
+it('renders the employee list and data subpages', function () {
+    Role::findOrCreate('super-admin', 'web');
+    $admin = User::factory()->create()->assignRole('super-admin');
+
+    $this->actingAs($admin)->get('/employees')->assertOk();
+    $this->actingAs($admin)->get('/employees/data')->assertOk();
+});

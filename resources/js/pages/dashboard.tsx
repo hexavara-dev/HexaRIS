@@ -9,7 +9,6 @@ import { TopPerformanceCardDemo } from '@/components/design-system/card/performa
 import { RecruitmentPipelineCardDemo } from '@/components/design-system/card/rekrutment';
 import { AttendanceStatusSummary } from '@/components/design-system/card/status-kehadiran';
 import { WeeklyShiftScheduleDemo } from '@/components/design-system/jadwal-shift/jadwal-shift';
-import { FloatingAssistantButton } from '@/components/floating-assistant-button';
 import { NotificationBell } from '@/components/notification-bell';
 import { PeriodDropdown } from '@/components/period-dropdown';
 import AppLayout from '@/layouts/app-layout';
@@ -213,8 +212,6 @@ export default function Dashboard() {
                     <RecruitmentPipelineCardDemo />
                 </div>
             </div>
-
-            <FloatingAssistantButton />
         </AppLayout>
     );
 }

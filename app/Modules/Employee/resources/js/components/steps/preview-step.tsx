@@ -1,28 +1,32 @@
 import { FileTypeIcon, toUploadedFile, useFilePreviewUrl, type StoredFile } from '@/components/form/form-field';
+import { regency } from '@/data/Region/regency';
+import { cn } from '@/lib/utils';
 import { type ReactNode } from 'react';
 import { formatDate, labelFor, orgUnitName } from '../../lib/format-employee-form';
-import { type EmployeeFormData } from '../../types/employee-form';
+import { isEmptyWorkExperience, type EmployeeFormData } from '../../types/employee-form';
 import { educationLevelOptions } from './education-step';
 import { employmentTypeOptions, workLocationOptions } from './experience-entry';
-import { bankOptions } from './financial-step';
+import { allowanceOptions, allowanceValueField, bankOptions } from './financial-step';
 import { genderOptions, maritalStatusLabel, religionOptions } from './personal-step';
-import { branchOptions, contractOptions, jobLevelOptions } from './provision-step';
+import { branchOptions, contractEvaluationOptions, contractOptions, jobLevelOptions, positionOptions } from './provision-step';
 
-function SummarySection({ title, children }: { title: string; children: ReactNode }) {
+/** One bordered card per section, matching the design's stacked summary panels. */
+function SummarySection({ title, columns = 2, children }: { title: string; columns?: 2 | 3; children: ReactNode }) {
     return (
-        <div className="flex flex-col gap-3 border-b border-[#E7E7E7] pb-5 last:border-b-0 last:pb-0">
-            <p className="font-poppins text-sm font-semibold text-[#121212]">{title}</p>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-3">{children}</div>
-        </div>
+        <section className="rounded-lg border border-[#E7E7E7] bg-white px-4 py-3">
+            <p className="font-poppins mb-1.5 text-sm font-semibold text-[#121212]">{title}</p>
+            <div className={cn('grid gap-x-6 gap-y-1', columns === 3 ? 'grid-cols-3' : 'grid-cols-2')}>{children}</div>
+        </section>
     );
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
+/** "Label : value" on one line — the read-only pairing used across every section. */
+function SummaryPair({ label, value }: { label: string; value: string }) {
     return (
-        <div className="flex flex-col gap-0.5">
-            <p className="font-poppins text-xs text-[#8F8F8F]">{label}</p>
-            <p className="font-poppins text-sm text-[#121212]">{value || '—'}</p>
-        </div>
+        <p className="font-poppins text-sm text-[#353535]">
+            <span className="text-[#8F8F8F]">{label} : </span>
+            <span className="font-medium text-[#121212]">{value || '—'}</span>
+        </p>
     );
 }
 
@@ -36,16 +40,13 @@ function DocumentRow({ label, file }: { label: string; file: File | StoredFile |
             href={previewUrl ?? undefined}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`Lihat ${uploaded.name}`}
-            className="flex w-full items-center gap-4 rounded-lg border border-[#E7E7E7] bg-white px-4 py-2 hover:border-[#1980C0]"
+            aria-label={`Lihat ${label}: ${uploaded.name}`}
+            className="flex w-full items-center gap-3 rounded-lg border border-[#E7E7E7] bg-white px-3 py-2 hover:border-[#1980C0]"
         >
-            <FileTypeIcon name={uploaded.name} className="h-8 w-8" />
+            <FileTypeIcon name={uploaded.name} className="h-7 w-7" />
             <div className="flex min-w-0 flex-1 flex-col items-start">
-                <p className="font-poppins text-sm text-[#353535]">{label}</p>
-                <p className="font-poppins w-full truncate text-xs text-[#808080]">
-                    {uploaded.name}
-                    {uploaded.size ? ` · ${uploaded.size}` : ''}
-                </p>
+                <p className="font-poppins w-full truncate text-sm text-[#353535]">{uploaded.name}</p>
+                <p className="font-poppins text-xs text-[#808080]">{uploaded.size ?? label}</p>
             </div>
         </a>
     );
@@ -56,62 +57,69 @@ interface PreviewStepProps {
 }
 
 export function PreviewStep({ data }: PreviewStepProps) {
+    const cityName = regency.find((region) => region.id === data.regency_id)?.name ?? '';
+
     return (
-        <div className="flex flex-col gap-5">
-            <SummarySection title="Data Personal">
-                <SummaryRow label="Nama Lengkap" value={data.full_name} />
-                <SummaryRow label="No Telp" value={data.phone_number} />
-                <SummaryRow label="Jenis Kelamin" value={labelFor(genderOptions, data.gender)} />
-                <SummaryRow label="Tgl Lahir" value={formatDate(data.birth_date)} />
-                <SummaryRow label="Agama" value={labelFor(religionOptions, data.religion)} />
-                <SummaryRow label="Status Pernikahan" value={maritalStatusLabel(data.is_married)} />
-                <div className="col-span-2">
-                    <SummaryRow label="Alamat Lengkap" value={data.address} />
-                </div>
+        <div className="flex flex-col gap-2.5">
+            <SummarySection title="Data Personal" columns={3}>
+                <SummaryPair label="Nama Lengkap" value={data.full_name} />
+                <SummaryPair label="Status" value={maritalStatusLabel(data.is_married)} />
+                <SummaryPair label="Kab/Kota" value={cityName} />
+                <SummaryPair label="Jenis Kelamin" value={labelFor(genderOptions, data.gender)} />
+                <SummaryPair label="Nomor WA" value={data.phone_number} />
+                <SummaryPair label="Alamat Lengkap" value={data.address} />
+                <SummaryPair label="Tgl Lahir" value={formatDate(data.birth_date)} />
+                <SummaryPair label="Agama" value={labelFor(religionOptions, data.religion)} />
             </SummarySection>
 
-            <SummarySection title="Data Pendidikan">
-                <SummaryRow label="Pendidikan Terakhir" value={labelFor(educationLevelOptions, data.education.level)} />
-                <SummaryRow label="Nama Institusi" value={data.education.institution} />
-                <SummaryRow label="Mulai" value={formatDate(data.education.start_date)} />
-                <SummaryRow label="Jurusan" value={data.education.major} />
-                <SummaryRow label="Lulus" value={formatDate(data.education.end_date)} />
-                <SummaryRow label="Nilai Akhir" value={data.education.final_score} />
+            <SummarySection title="Data Pendidikan" columns={3}>
+                <SummaryPair label="Pendidikan Terakhir" value={labelFor(educationLevelOptions, data.education.level)} />
+                <SummaryPair label="Nama Institusi" value={data.education.institution} />
+                <SummaryPair label="Jurusan" value={data.education.major} />
+                <SummaryPair label="Waktu Mulai" value={formatDate(data.education.start_date)} />
+                <SummaryPair label="Waktu Lulus" value={formatDate(data.education.end_date)} />
+                <SummaryPair label="Nilai Akhir" value={data.education.final_score} />
             </SummarySection>
 
-            {data.work_experiences.map((experience, index) => (
-                <SummarySection key={index} title={data.work_experiences.length > 1 ? `Data Pengalaman ${index + 1}` : 'Data Pengalaman'}>
-                    <SummaryRow label="Nama Perusahaan" value={experience.company_name} />
-                    <SummaryRow label="Type Pekerjaan" value={labelFor(employmentTypeOptions, experience.employment_type)} />
-                    <SummaryRow label="Jabatan/Posisi" value={experience.position} />
-                    <SummaryRow label="Mulai" value={formatDate(experience.start_date)} />
-                    <SummaryRow label="Selesai" value={formatDate(experience.end_date)} />
-                    <SummaryRow label="Lokasi Kerja" value={labelFor(workLocationOptions, experience.work_location)} />
-                    <div className="col-span-2">
-                        <SummaryRow label="Deskripsi" value={experience.description} />
-                    </div>
-                </SummarySection>
-            ))}
+            {data.work_experiences
+                .filter((experience) => !isEmptyWorkExperience(experience))
+                .map((experience, index, visible) => (
+                    <SummarySection key={index} title={visible.length > 1 ? `Data Pengalaman ${index + 1}` : 'Data Pengalaman'} columns={3}>
+                        <SummaryPair label="Nama Perusahaan" value={experience.company_name} />
+                        <SummaryPair label="Type Pekerjaan" value={labelFor(employmentTypeOptions, experience.employment_type)} />
+                        <SummaryPair label="Gaji Terakhir" value={experience.last_salary} />
+                        <SummaryPair label="Jabatan/Posisi" value={experience.position} />
+                        <SummaryPair label="Waktu Mulai" value={formatDate(experience.start_date)} />
+                        <SummaryPair label="Deskripsi" value={experience.description} />
+                        <SummaryPair label="Lokasi Kerja" value={labelFor(workLocationOptions, experience.work_location)} />
+                        <SummaryPair label="Waktu Selesai" value={formatDate(experience.end_date)} />
+                    </SummarySection>
+                ))}
 
-            <SummarySection title="Data Ketentuan">
-                <SummaryRow label="Cabang" value={labelFor(branchOptions, data.branch)} />
-                <SummaryRow label="Level" value={labelFor(jobLevelOptions, data.job_level)} />
-                <SummaryRow label="Departemen" value={orgUnitName(data.department_id)} />
-                <SummaryRow label="Kontrak" value={labelFor(contractOptions, data.contract_type)} />
-                <SummaryRow label="Divisi" value={orgUnitName(data.division_id)} />
-                <SummaryRow label="Tgl Gabung" value={formatDate(data.join_date)} />
+            <SummarySection title="Data Ketentuan" columns={3}>
+                <SummaryPair label="Cabang" value={labelFor(branchOptions, data.branch)} />
+                <SummaryPair label="Organisasi" value={orgUnitName(data.department_id)} />
+                <SummaryPair label="Posisi Jabatan" value={labelFor(positionOptions, data.division_id)} />
+                <SummaryPair label="Level" value={labelFor(jobLevelOptions, data.job_level)} />
+                <SummaryPair label="Kontrak" value={labelFor(contractOptions, data.contract_type)} />
+                <SummaryPair label="Tgl Gabung" value={formatDate(data.join_date)} />
+                {data.contract_type === 'permanent' && (
+                    <SummaryPair label="Evaluasi Kontrak" value={labelFor(contractEvaluationOptions, data.contract_evaluation)} />
+                )}
             </SummarySection>
 
-            <SummarySection title="Data Gaji & Bank">
-                <SummaryRow label="Bank" value={labelFor(bankOptions, data.bank_name)} />
-                <SummaryRow label="Gaji Pokok" value={data.basic_salary} />
-                <SummaryRow label="Atas Nama Bank" value={data.bank_account_holder} />
-                <SummaryRow label="No Rekening" value={data.bank_account_number} />
-                <SummaryRow label="Nomor BPJS Kesehatan" value={data.bpjs_health_number} />
-                <SummaryRow label="Nomor BPJS Ketenagakerjaan" value={data.bpjs_employment_number} />
+            <SummarySection title="Data Gaji & Bank" columns={3}>
+                <SummaryPair label="Bank" value={labelFor(bankOptions, data.bank_name)} />
+                <SummaryPair label="Atas Nama Bank" value={data.bank_account_holder} />
+                <SummaryPair label="No Rekening" value={data.bank_account_number} />
+                <SummaryPair label="Gaji Pokok" value={data.basic_salary} />
+                <SummaryPair label="Tunjangan" value={labelFor(allowanceOptions, data.allowance)} />
+                {data.allowance && <SummaryPair label={allowanceValueField(data.allowance).label} value={data.allowance_value} />}
             </SummarySection>
 
-            <div className="flex flex-col gap-3">
+            <div className="border-t border-[#E7E7E7]" />
+
+            <div className="flex flex-col gap-2.5">
                 <p className="font-poppins text-sm font-semibold text-[#121212]">Dokumen Pendukung</p>
                 <div className="flex flex-col gap-2">
                     <DocumentRow label="KTP" file={data.ktp} />
