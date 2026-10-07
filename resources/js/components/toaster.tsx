@@ -12,7 +12,7 @@ export function Toaster() {
             toastOptions={{
                 unstyled: true,
                 classNames: {
-                    toast: 'relative flex w-fit max-w-[43rem] items-center gap-2.5 rounded-2xl border bg-popover p-4 pr-9 font-poppins text-popover-foreground shadow-lg',
+                    toast: 'relative flex w-[min(92vw,28rem)] max-w-[43rem] items-center gap-2.5 rounded-2xl border bg-popover p-4 pr-9 font-poppins text-popover-foreground shadow-lg',
                     content: 'flex flex-col gap-0.5',
                     title: 'text-base font-semibold leading-tight',
                     description: 'text-xs leading-snug text-muted-foreground',
