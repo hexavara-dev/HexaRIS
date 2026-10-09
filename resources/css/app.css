@@ -219,3 +219,15 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Wide tables scroll horizontally. The native scrollbar is hidden — it barely
+   shows on touch devices, so the table looked cut off — and TableHScrollBar
+   below the table card is the visible, draggable affordance instead. */
+.table-scroll {
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll::-webkit-scrollbar {
+    display: none;
+}

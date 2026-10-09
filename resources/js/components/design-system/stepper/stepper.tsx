@@ -21,7 +21,7 @@ interface StepperProps {
  */
 export function Stepper({ steps, currentStep }: StepperProps) {
     return (
-        <div className="flex w-full min-w-0 items-center gap-2">
+        <div className="flex w-full min-w-0 items-center gap-1.5 sm:gap-2">
             {steps.map((step, index) => {
                 const stepNumber = index + 1;
                 const isDone = stepNumber < currentStep;
@@ -31,10 +31,10 @@ export function Stepper({ steps, currentStep }: StepperProps) {
 
                 return (
                     <Fragment key={step.label}>
-                        <div className="flex shrink-0 items-center gap-2">
+                        <div className="flex shrink-0 items-center gap-1.5">
                             <div
                                 className={cn(
-                                    'font-poppins flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[16px] tracking-[0.01em]',
+                                    'font-poppins flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[14px] tracking-[0.01em]',
                                     isReached ? 'bg-[#1980C0] text-white' : 'bg-[#9CA3AF] text-white',
                                 )}
                             >
@@ -42,7 +42,7 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                             </div>
                             <p
                                 className={cn(
-                                    'font-poppins text-[16px] tracking-[0.01em] whitespace-nowrap',
+                                    'font-poppins hidden text-[14px] tracking-[0.01em] whitespace-nowrap sm:block',
                                     isReached ? 'text-[#121212]' : 'text-[#808080]',
                                 )}
                             >

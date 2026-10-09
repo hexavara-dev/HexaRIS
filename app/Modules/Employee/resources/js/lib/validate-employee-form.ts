@@ -102,9 +102,9 @@ const experience: StepValidator = (data) => {
 const provision: StepValidator = (data) => {
     const errors: FieldErrors = {};
 
-    // Organisasi & Posisi Jabatan are optional by design ("(Opsional)"),
-    // so neither department_id nor its division_id is validated here.
-    requireText(errors, 'branch', data.branch);
+    // Cabang is optional ("Cabang(Opsional)"); Departemen & Divisi are wajib.
+    requireText(errors, 'department_id', data.department_id);
+    requireText(errors, 'division_id', data.division_id);
     requireText(errors, 'contract_type', data.contract_type);
     // Evaluasi Kontrak only exists for Permanent (PKWTT) — see ProvisionStep.
     if (data.contract_type === 'permanent') requireText(errors, 'contract_evaluation', data.contract_evaluation);

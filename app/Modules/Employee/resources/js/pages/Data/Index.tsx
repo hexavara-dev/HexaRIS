@@ -18,6 +18,7 @@ import {
 import {
     useCallback,
     useMemo,
+    useRef,
     useState,
 } from 'react';
 
@@ -44,6 +45,8 @@ import {
 import { DetailDialog } from '../../components/detail/detail-dialog';
 
 import { EmployeeFormDialog } from '../../components/employee-form-dialog';
+
+import { TableHScrollBar } from '@/components/table-h-scrollbar';
 
 import { displayEmployeeId, withWizardDisplayFields } from '../../lib/employee-display';
 
@@ -210,6 +213,9 @@ export default function Index() {
     // ========================================================
     // TABLE STATE
     // ========================================================
+
+    // Horizontal-scroll container of the table; TableHScrollBar under the card mirrors it.
+    const tableRef = useRef<HTMLDivElement>(null);
 
     const [
         search,
@@ -1071,14 +1077,19 @@ export default function Index() {
                         formData,
                     );
 
-                setLocalEmployees(
-                    employees,
-                );
-
+                // Overlay must land in localStorage BEFORE setLocalEmployees
+                // re-renders the table: the Cabang/Departemen/Divisi columns
+                // read it synchronously per row, and once this async write
+                // finishes nothing re-renders again — the row would show "-"
+                // until a manual page refresh.
                 await saveFormOverlay(
                     created.id,
                     formData,
                     fileFlags,
+                );
+
+                setLocalEmployees(
+                    employees,
                 );
 
             },
@@ -1093,6 +1104,15 @@ export default function Index() {
                 formData: EmployeeFormData,
                 fileFlags: FileFieldFlags,
             ) => {
+
+                // Same ordering rule as handleCreate: persist the overlay
+                // first so the re-render triggered below reads fresh
+                // Cabang/Departemen/Divisi values on its very first paint.
+                await saveFormOverlay(
+                    target.id,
+                    formData,
+                    fileFlags,
+                );
 
                 const isLocal =
                     localEmployees.some(
@@ -1155,12 +1175,6 @@ export default function Index() {
 
                 }
 
-                await saveFormOverlay(
-                    target.id,
-                    formData,
-                    fileFlags,
-                );
-
             },
             [
                 localEmployees,
@@ -1186,7 +1200,7 @@ export default function Index() {
                     CONTENT
                 ================================================== */}
 
-                <div className="space-y-5 p-6">
+                <div className="space-y-5 p-4 sm:p-6">
 
 
                     {/* ==================================================
@@ -1372,7 +1386,7 @@ export default function Index() {
 
                             <div className="rounded-xl border bg-white p-5">
 
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
 
                                     <h2 className="text-[17px] font-semibold text-[#111827]">
                                         Karyawan Pertumbuhan Karyawan
@@ -1429,17 +1443,17 @@ export default function Index() {
                                                 />
                                             ))}
 
-                                            <div className="absolute inset-0 flex items-end justify-around px-8">
+                                            <div className="absolute inset-0 flex items-end justify-around px-2 sm:px-8">
 
                                                 {monthlyGrowth.map((item, index) => (
                                                     <div
                                                         key={GROWTH_MONTH_LABELS[index]}
-                                                        className="flex h-full items-end gap-1.5"
+                                                        className="flex h-full min-w-0 flex-1 items-end justify-center gap-1 sm:gap-1.5"
                                                     >
 
                                                         <div
                                                             title={`Karyawan resign: ${item.resignEmployees}`}
-                                                            className="w-6 rounded-t-md bg-[#EF4938]"
+                                                            className="flex-1 rounded-t-md bg-[#EF4938] sm:w-4 sm:flex-none md:w-6"
                                                             style={{
                                                                 height: `${item.resignEmployees}%`,
                                                             }}
@@ -1447,7 +1461,7 @@ export default function Index() {
 
                                                         <div
                                                             title={`Karyawan baru: ${item.newEmployees}`}
-                                                            className="w-6 rounded-t-md bg-[#3DB52A]"
+                                                            className="flex-1 rounded-t-md bg-[#3DB52A] sm:w-4 sm:flex-none md:w-6"
                                                             style={{
                                                                 height: `${item.newEmployees}%`,
                                                             }}
@@ -1465,7 +1479,7 @@ export default function Index() {
                                             {monthlyGrowth.map((item, index) => (
                                                 <span
                                                     key={GROWTH_MONTH_LABELS[index]}
-                                                    className="flex-1 text-center text-xs text-[#6B7280]"
+                                                    className="flex-1 text-center text-[10px] text-[#6B7280] sm:text-xs"
                                                 >
                                                     {GROWTH_MONTH_LABELS[index]}
                                                 </span>
@@ -1478,7 +1492,7 @@ export default function Index() {
                                 </div>
 
 
-                                <div className="mt-6 flex gap-6 text-sm">
+                                <div className="mt-6 flex flex-wrap gap-4 text-sm sm:gap-6">
 
                                     <div className="flex items-center gap-2">
 
@@ -1515,7 +1529,7 @@ export default function Index() {
 
                     <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
 
-                        <div className="flex flex-1 gap-3">
+                        <div className="flex flex-1 flex-wrap items-center gap-3">
 
     {/* BRANCH */}
 
@@ -1564,7 +1578,7 @@ export default function Index() {
 
     {/* SEARCH */}
 
-    <div className="relative w-full max-w-[260px]">
+    <div className="relative w-full sm:max-w-[260px]">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#111827]" />
 
         <input
@@ -1582,7 +1596,7 @@ export default function Index() {
                         </div>
 
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
 
                             {/* FILTER */}
 
@@ -1609,7 +1623,7 @@ export default function Index() {
                                         true,
                                     )
                                 }
-                                className="flex h-11 items-center gap-2 rounded-xl border border-[#1980C0] bg-white px-4 text-sm font-medium text-[#1980C0] transition hover:bg-[#1980C0]/5"
+                                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-[#1980C0] bg-white px-4 text-sm font-medium text-[#1980C0] transition hover:bg-[#1980C0]/5 sm:flex-none"
                             >
                                 <Archive className="h-4 w-4" />
                                 Arsip
@@ -1623,7 +1637,7 @@ export default function Index() {
                                 onClick={
                                     openCreate
                                 }
-                                className="h-11 rounded-xl bg-[#1980C0] px-5 text-sm font-semibold hover:bg-[#1673AD]"
+                                className="h-11 flex-1 rounded-xl bg-[#1980C0] px-5 text-sm font-semibold hover:bg-[#1673AD] sm:flex-none"
                             >
                                 <Plus className="mr-2 h-4 w-4" />
                                 Karyawan
@@ -1668,9 +1682,13 @@ export default function Index() {
                         TABLE
                     ================================================== */}
 
+                    <p className="text-xs text-[#9CA3AF] sm:hidden">
+                        Geser tabel ke samping untuk melihat kolom lainnya →
+                    </p>
+
                     <div className="overflow-visible rounded-xl border border-[#E5E7EB] bg-white">
 
-                        <div className="overflow-x-auto">
+                        <div ref={tableRef} className="table-scroll overflow-x-auto">
 
                             <table className="w-full min-w-[1050px] border-collapse">
 
@@ -1695,11 +1713,11 @@ export default function Index() {
                                         </th>
 
                                         <th className="px-5 py-4 text-left text-sm font-medium text-[#374151]">
-                                            Organisasi
+                                            Departemen
                                         </th>
 
                                         <th className="px-5 py-4 text-left text-sm font-medium text-[#374151]">
-                                            Posisi Jabatan
+                                            Divisi
                                         </th>
 
                                         <th className="px-5 py-4 text-left text-sm font-medium text-[#374151]">
@@ -1926,6 +1944,10 @@ export default function Index() {
 
                         </div>
 
+                        <div className="px-4 pt-1 pb-3">
+                            <TableHScrollBar targetRef={tableRef} />
+                        </div>
+
                     </div>
 
 
@@ -1933,7 +1955,7 @@ export default function Index() {
                         PAGINATION
                     ================================================== */}
 
-                    <div className="flex w-full items-center justify-between gap-4">
+                    <div className="flex w-full flex-wrap items-center justify-between gap-4">
 
                         {/* ==================================================
                             KIRI:
@@ -1945,7 +1967,7 @@ export default function Index() {
 
                             {/* NOMOR HALAMAN */}
 
-                            <div className="flex items-center gap-1">
+                            <div className="flex flex-wrap items-center gap-1">
 
                                 {paginationItems.map(
                                     (
@@ -2001,7 +2023,7 @@ export default function Index() {
 
                             {/* TEXT JUMLAH DATA */}
 
-                            <div className="whitespace-nowrap text-sm text-[#6B7280]">
+                            <div className="text-sm text-[#6B7280]">
 
                                 Menampilkan{' '}
 
