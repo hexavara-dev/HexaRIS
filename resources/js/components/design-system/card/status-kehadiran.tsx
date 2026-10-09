@@ -9,11 +9,14 @@ interface AttendanceStatusSummaryProps {
 
 export function AttendanceStatusSummary({ stats }: AttendanceStatusSummaryProps) {
     return (
-        <div className="flex w-full items-start gap-4">
+        <div className="grid w-full grid-cols-1 gap-3 min-[360px]:grid-cols-2 lg:grid-cols-3">
             {stats.map((stat) => (
-                <div key={stat.label} className="flex w-full items-center justify-between rounded-lg border border-[#E7E7E7] bg-[#FAFBFD] px-4 py-2">
-                    <p className="font-poppins w-fit text-[10px] text-[#4F4F4F]">{stat.label}</p>
-                    <p className="font-poppins w-fit text-xs font-semibold text-[#030616]">{stat.value}</p>
+                <div
+                    key={stat.label}
+                    className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-[#E7E7E7] bg-[#FAFBFD] px-4 py-2"
+                >
+                    <p className="font-poppins min-w-0 text-[10px] text-[#4F4F4F]">{stat.label}</p>
+                    <p className="font-poppins shrink-0 text-xs font-semibold text-[#030616]">{stat.value}</p>
                 </div>
             ))}
         </div>
