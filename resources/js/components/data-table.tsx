@@ -86,6 +86,7 @@ interface DataTableViewProps<T extends { id: number | string }> {
     visibility: boolean;
     actions?: ReactNode;
     rowActions?: (row: T) => RowAction[];
+    renderMobileRow?: (row: T) => ReactNode;
     variant: Variant;
     pageMeta: Paginated<T>;
     sort: string | null;
@@ -104,6 +105,7 @@ function DataTableView<T extends { id: number | string }>({
     visibility,
     actions,
     rowActions,
+    renderMobileRow,
     variant,
     pageMeta,
     sort,
@@ -162,15 +164,15 @@ function DataTableView<T extends { id: number | string }>({
     return (
         <div className="space-y-3">
             {showToolbar && (
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                     {search && (
-                        <div className="relative">
+                        <div className="relative w-full sm:w-auto">
                             <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
                             <Input
                                 value={searchValue}
                                 onChange={(e) => onSearchChange(e.target.value)}
                                 placeholder={search.placeholder ?? 'Search…'}
-                                className="h-9 w-[220px] pl-8"
+                                className="h-11 w-full pl-8 sm:h-9 sm:w-[220px]"
                             />
                         </div>
                     )}
@@ -183,7 +185,7 @@ function DataTableView<T extends { id: number | string }>({
                                 value={filterValues[f.key] || ALL_OPTION}
                                 onValueChange={(value) => onFilterChange(f.key, value === ALL_OPTION ? '' : value)}
                             >
-                                <SelectTrigger className="h-9 w-[180px]">
+                                <SelectTrigger className="h-11 w-full sm:h-9 sm:w-[180px]">
                                     <SelectValue placeholder={f.label} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -201,11 +203,11 @@ function DataTableView<T extends { id: number | string }>({
                                 value={filterValues[f.key] ?? ''}
                                 onChange={(e) => onFilterChange(f.key, e.target.value)}
                                 placeholder={`Cari ${f.label.toLowerCase()}…`}
-                                className="h-9 w-[220px]"
+                                className="h-11 w-full sm:h-9 sm:w-[220px]"
                             />
                         ),
                     )}
-                    <div className="ml-auto flex items-center gap-2">
+                    <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
                         {visibility && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -236,7 +238,16 @@ function DataTableView<T extends { id: number | string }>({
                     </div>
                 </div>
             )}
-            <div className={styles.container}>
+            {renderMobileRow && (
+                <div className="space-y-2 xl:hidden">
+                    {pageMeta.data.length === 0 ? (
+                        <EmptyState icon={Inbox} title="No results" description="Nothing matches the current filters." />
+                    ) : (
+                        pageMeta.data.map((row) => <div key={row.id}>{renderMobileRow(row)}</div>)
+                    )}
+                </div>
+            )}
+            <div className={cn(styles.container, renderMobileRow && 'hidden xl:block')}>
                 <Table>
                     <TableHeader>
                         <TableRow className={styles.headerRow}>
@@ -315,6 +326,8 @@ interface BaseProps<T extends { id: number | string }> {
      * Return an empty array to give a specific row no menu at all.
      */
     rowActions?: (row: T) => RowAction[];
+    /** Optional compact representation used below the `xl` breakpoint instead of a horizontally scrolling table. */
+    renderMobileRow?: (row: T) => ReactNode;
 }
 
 interface ClientProps<T extends { id: number | string }> extends BaseProps<T> {
@@ -322,6 +335,7 @@ interface ClientProps<T extends { id: number | string }> extends BaseProps<T> {
     data: T[];
     search?: SearchConfig;
     filters?: FilterConfig[];
+    initialFilters?: ColumnFilters;
     perPage?: number;
 }
 
@@ -346,6 +360,7 @@ function ServerDataTable<T extends { id: number | string }>({
     visibility = false,
     actions,
     rowActions,
+    renderMobileRow,
 }: ServerProps<T>) {
     const onPageChange = (page: number) => {
         const params = Object.fromEntries(new URLSearchParams(window.location.search)) as unknown as RequestPayload;
@@ -368,6 +383,7 @@ function ServerDataTable<T extends { id: number | string }>({
             visibility={visibility}
             actions={actions}
             rowActions={rowActions}
+            renderMobileRow={renderMobileRow}
             variant={variant}
             pageMeta={data}
             sort={null}
@@ -384,15 +400,17 @@ function ClientDataTable<T extends { id: number | string }>({
     data,
     search,
     filters: filterConfig = [],
+    initialFilters,
     visibility = false,
     actions,
     rowActions,
+    renderMobileRow,
     variant = 'design-system',
     perPage = 10,
 }: ClientProps<T>) {
     const [sort, setSort] = useState<string | null>(null);
     const [searchValue, setSearchValue] = useState('');
-    const [filterValues, setFilterValues] = useState<ColumnFilters>({});
+    const [filterValues, setFilterValues] = useState<ColumnFilters>(() => initialFilters ?? {});
     const [page, setPage] = useState(1);
 
     const searched = useMemo(() => {
@@ -469,6 +487,7 @@ function ClientDataTable<T extends { id: number | string }>({
             visibility={visibility}
             actions={actions}
             rowActions={rowActions}
+            renderMobileRow={renderMobileRow}
             variant={variant}
             pageMeta={pageMeta}
             sort={sort}
