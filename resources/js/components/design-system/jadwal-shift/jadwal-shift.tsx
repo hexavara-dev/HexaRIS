@@ -91,9 +91,9 @@ export function WeeklyShiftSchedule({
     const employees = isFiltered ? [] : (employeeVariants[activeDayIndex] ?? employeeVariants[0]);
 
     return (
-        <div className="flex w-full flex-col items-start overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-[0px_1px_3px_0px_rgba(15,23,42,0.02)]">
+        <div className="flex w-full max-w-full flex-col items-start overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-[0px_1px_3px_0px_rgba(15,23,42,0.02)]">
             {/* Toolbar: week navigation + filters */}
-            <div className="flex w-full items-center justify-between border-b border-[#E2E8F0] p-5">
+            <div className="flex w-full flex-col gap-4 border-b border-[#E2E8F0] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                 <div className="flex w-fit items-center gap-3">
                     <button
                         type="button"
@@ -117,10 +117,10 @@ export function WeeklyShiftSchedule({
                     </div>
                 </div>
 
-                <div className="flex w-fit items-start gap-3">
+                <div className="grid w-full grid-cols-1 gap-3 sm:w-fit sm:grid-cols-2">
                     <DropdownMenu>
-                        <DropdownMenuTrigger className="flex h-full w-[175px] items-center justify-between rounded-lg border border-[#E7E7E7] px-3 py-2 outline-none">
-                            <p className="w-fit text-xs text-black">Cabang: {selectedBranch}</p>
+                        <DropdownMenuTrigger className="flex h-full w-full items-center justify-between rounded-lg border border-[#E7E7E7] px-3 py-2 outline-none sm:w-[175px]">
+                            <p className="min-w-0 truncate text-xs text-black">Cabang: {selectedBranch}</p>
                             <ChevronDown className="size-4 shrink-0 text-[#4F4F4F]" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -132,10 +132,8 @@ export function WeeklyShiftSchedule({
                         </DropdownMenuContent>
                     </DropdownMenu>
                     <DropdownMenu>
-                        <DropdownMenuTrigger className="flex w-[180px] items-center justify-between rounded-lg border border-[#E2E8F0] px-3 py-2 outline-none">
-                            <p className="line-clamp-1 w-fit overflow-hidden text-xs leading-[1.4em] text-ellipsis text-[#111827]">
-                                {selectedDepartment}
-                            </p>
+                        <DropdownMenuTrigger className="flex w-full items-center justify-between rounded-lg border border-[#E2E8F0] px-3 py-2 outline-none sm:w-[180px]">
+                            <p className="min-w-0 truncate text-xs leading-[1.4em] text-[#111827]">{selectedDepartment}</p>
                             <ChevronDown className="size-3.5 shrink-0 text-[#6B7280]" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -149,57 +147,63 @@ export function WeeklyShiftSchedule({
                 </div>
             </div>
 
-            {/* Day-of-week header */}
-            <div className="grid h-[60px] w-full grid-cols-[220px_repeat(7,minmax(0,1fr))] items-center gap-2 border-b border-[#E2E8F0] px-2">
-                <div className="flex flex-col items-start justify-center pl-3">
-                    <p className="w-fit text-[11px] font-medium text-[#6B7280]">Nama Karyawan</p>
-                </div>
-                {days.map((day, index) => (
-                    <button
-                        type="button"
-                        key={day.label}
-                        onClick={() => setActiveDayIndex(index)}
-                        className={`flex h-full w-full flex-col items-center justify-center gap-0.5 text-nowrap ${
-                            index === activeDayIndex ? 'border-b-2 border-b-[#1066E0] bg-[#EFF6FF]' : ''
-                        }`}
-                    >
-                        <p className={`w-fit text-[11px] ${index === activeDayIndex ? 'font-bold text-[#1066E0]' : 'font-medium text-[#6B7280]'}`}>
-                            {day.label}
-                        </p>
-                        <p className={`w-fit text-[10px] ${index === activeDayIndex ? 'text-[#1066E0]' : 'text-[#9CA3AF]'}`}>{day.date}</p>
-                    </button>
-                ))}
-            </div>
-
-            {/* Employee rows */}
-            {isFiltered ? (
-                <p className="w-full py-6 text-center text-sm text-[#94A3B8]">Tidak ada data untuk pilihan ini.</p>
-            ) : (
-                employees.map((employee) => (
-                    <div
-                        key={employee.name}
-                        className="grid h-20 w-full grid-cols-[220px_repeat(7,minmax(0,1fr))] items-stretch gap-2 border-b border-[#E2E8F0] px-2 py-2"
-                    >
-                        <div className="flex min-w-0 items-center gap-3">
-                            <Avatar className="size-8 shrink-0">
-                                <AvatarImage src={employee.avatarUrl} alt={employee.name} />
-                                <AvatarFallback className="text-xs">{initials(employee.name)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex min-w-0 flex-col items-start gap-0.5">
-                                <p className="w-full truncate text-sm font-semibold text-[#111827]">{employee.name}</p>
-                                <p className="w-full truncate text-xs leading-[1.4em] text-[#6B7280]">{employee.role}</p>
-                            </div>
+            <div className="w-full overflow-x-auto">
+                <div className="min-w-[760px]">
+                    {/* Day-of-week header */}
+                    <div className="grid h-[60px] w-full grid-cols-[180px_repeat(7,minmax(72px,1fr))] items-center gap-2 border-b border-[#E2E8F0] px-2 sm:grid-cols-[220px_repeat(7,minmax(0,1fr))]">
+                        <div className="flex flex-col items-start justify-center pl-3">
+                            <p className="w-fit text-[11px] font-medium text-[#6B7280]">Nama Karyawan</p>
                         </div>
-                        {employee.shifts.map((shift, index) => (
-                            <ShiftCell key={index} shift={shift} />
+                        {days.map((day, index) => (
+                            <button
+                                type="button"
+                                key={day.label}
+                                onClick={() => setActiveDayIndex(index)}
+                                className={`flex h-full w-full flex-col items-center justify-center gap-0.5 text-nowrap ${
+                                    index === activeDayIndex ? 'border-b-2 border-b-[#1066E0] bg-[#EFF6FF]' : ''
+                                }`}
+                            >
+                                <p
+                                    className={`w-fit text-[11px] ${index === activeDayIndex ? 'font-bold text-[#1066E0]' : 'font-medium text-[#6B7280]'}`}
+                                >
+                                    {day.label}
+                                </p>
+                                <p className={`w-fit text-[10px] ${index === activeDayIndex ? 'text-[#1066E0]' : 'text-[#9CA3AF]'}`}>{day.date}</p>
+                            </button>
                         ))}
                     </div>
-                ))
-            )}
+
+                    {/* Employee rows */}
+                    {isFiltered ? (
+                        <p className="w-full py-6 text-center text-sm text-[#94A3B8]">Tidak ada data untuk pilihan ini.</p>
+                    ) : (
+                        employees.map((employee) => (
+                            <div
+                                key={employee.name}
+                                className="grid h-20 w-full grid-cols-[180px_repeat(7,minmax(72px,1fr))] items-stretch gap-2 border-b border-[#E2E8F0] px-2 py-2 sm:grid-cols-[220px_repeat(7,minmax(0,1fr))]"
+                            >
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <Avatar className="size-8 shrink-0">
+                                        <AvatarImage src={employee.avatarUrl} alt={employee.name} />
+                                        <AvatarFallback className="text-xs">{initials(employee.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex min-w-0 flex-col items-start gap-0.5">
+                                        <p className="w-full truncate text-sm font-semibold text-[#111827]">{employee.name}</p>
+                                        <p className="w-full truncate text-xs leading-[1.4em] text-[#6B7280]">{employee.role}</p>
+                                    </div>
+                                </div>
+                                {employee.shifts.map((shift, index) => (
+                                    <ShiftCell key={index} shift={shift} />
+                                ))}
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
 
             {/* Legend */}
             <div className="flex w-full items-center gap-6 p-4">
-                <div className="flex w-fit items-start gap-4">
+                <div className="flex w-full flex-wrap items-start gap-4">
                     {(Object.keys(SHIFT_STYLES) as Array<keyof typeof SHIFT_STYLES>).map((key) => (
                         <div key={key} className="flex w-fit items-center gap-1.5">
                             <div className="size-2 rounded-sm" style={{ backgroundColor: SHIFT_STYLES[key].text }} />

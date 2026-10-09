@@ -47,16 +47,18 @@ function approveRequest() {
 
 function ApprovalRow({ request, avatarSize = 'size-8' }: { request: ApprovalRequest; avatarSize?: string }) {
     return (
-        <div className="flex w-full items-center gap-3 py-3">
-            <Avatar className={`${avatarSize} shrink-0`}>
-                <AvatarImage src={request.avatarUrl} alt={request.name} />
-                <AvatarFallback className="text-xs">{initials(request.name)}</AvatarFallback>
-            </Avatar>
-            <div className="flex w-full flex-col items-start gap-0.5">
-                <p className="w-full text-sm font-medium text-[#0F172A]">{request.name}</p>
-                <p className="w-full text-xs text-[#475569]">{request.description}</p>
+        <div className="flex w-full flex-col gap-3 py-3 min-[380px]:flex-row min-[380px]:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+                <Avatar className={`${avatarSize} shrink-0`}>
+                    <AvatarImage src={request.avatarUrl} alt={request.name} />
+                    <AvatarFallback className="text-xs">{initials(request.name)}</AvatarFallback>
+                </Avatar>
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+                    <p className="w-full text-sm font-medium break-words text-[#0F172A]">{request.name}</p>
+                    <p className="w-full text-xs break-words text-[#475569]">{request.description}</p>
+                </div>
             </div>
-            <Button size="sm" className="h-auto w-fit shrink-0 rounded-lg px-3 py-1.5 text-xs" onClick={approveRequest}>
+            <Button size="sm" className="h-auto w-full shrink-0 rounded-lg px-3 py-1.5 text-xs min-[380px]:w-fit" onClick={approveRequest}>
                 Approve
             </Button>
         </div>
@@ -70,11 +72,11 @@ export function ApprovalRequestList({ title, counts, viewAllLabel, viewAllCount,
     const filteredRequests = allRequests.filter((request) => request.category === activeCategory);
 
     return (
-        <div className="flex w-full flex-col items-start gap-2 rounded-xl border border-[#E2E8F0] bg-white p-5">
-            <div className="flex w-full items-center justify-between border-b border-b-[#E2E8F0] pb-4">
-                <div className="flex flex-col items-start gap-1">
-                    <p className="font-poppins w-fit text-base font-semibold text-[#0F172A]">{title}</p>
-                    <div className="flex items-center gap-3 py-1">
+        <div className="flex w-full min-w-0 flex-col items-start gap-2 rounded-xl border border-[#E2E8F0] bg-white p-4 sm:p-5">
+            <div className="flex w-full flex-col gap-3 border-b border-b-[#E2E8F0] pb-4 min-[430px]:flex-row min-[430px]:items-center min-[430px]:justify-between">
+                <div className="flex min-w-0 flex-col items-start gap-1">
+                    <p className="font-poppins w-full text-base font-semibold break-words text-[#0F172A]">{title}</p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-1">
                         {counts.map((count, index) => (
                             <span key={count.key} className="flex items-center gap-3">
                                 {index > 0 && <span className="h-[11px] w-px bg-[#E7E7E7]" />}
@@ -85,7 +87,7 @@ export function ApprovalRequestList({ title, counts, viewAllLabel, viewAllCount,
                         ))}
                     </div>
                 </div>
-                <button type="button" className="w-fit text-xs font-medium text-[#0D9488]" onClick={() => setViewAllOpen(true)}>
+                <button type="button" className="w-fit shrink-0 text-left text-xs font-medium text-[#0D9488]" onClick={() => setViewAllOpen(true)}>
                     {viewAllLabel} ({viewAllCount}) →
                 </button>
             </div>

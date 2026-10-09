@@ -93,9 +93,10 @@ export function FloatingAssistantButton() {
                     setMinimized(false);
                     setView('chat');
                 }}
-                className="fixed right-6 bottom-24 z-40 flex w-56 items-center justify-start rounded-xl bg-white px-6 py-4 text-sm font-bold text-nowrap text-[#0F172A] shadow-[0px_4px_16px_0px_rgba(15,23,42,0.12)] transition hover:shadow-[0px_6px_20px_0px_rgba(15,23,42,0.18)]"
+                className="fixed right-3 bottom-3 z-40 flex size-12 items-center justify-center rounded-full bg-white p-0 text-sm font-bold text-[#0F172A] shadow-[0px_4px_16px_0px_rgba(15,23,42,0.12)] transition hover:shadow-[0px_6px_20px_0px_rgba(15,23,42,0.18)] sm:right-6 sm:bottom-6"
             >
-                HRIS Assistant
+                <MessageSquarePlus className="size-5" aria-hidden="true" />
+                <span className="sr-only">HRIS Assistant</span>
             </button>
         );
     }
@@ -105,7 +106,7 @@ export function FloatingAssistantButton() {
     return (
         <aside
             aria-label="HRIS Assistant"
-            className="fixed top-6 right-6 bottom-24 z-40 flex w-[min(380px,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0px_12px_40px_0px_rgba(15,23,42,0.18)]"
+            className="fixed inset-x-3 top-3 bottom-3 z-40 flex w-auto flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0px_12px_40px_0px_rgba(15,23,42,0.18)] sm:top-6 sm:right-6 sm:bottom-24 sm:left-auto sm:w-[min(380px,calc(100vw-3rem))]"
         >
             {/* HEADER */}
             <header className="flex h-14 shrink-0 items-center justify-between px-5">
@@ -261,9 +262,9 @@ export function FloatingAssistantButton() {
                                 <img src={iconHalloHris} alt="" className="size-6 shrink-0 object-contain" />
 
                                 <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-md bg-[#F3F4F6] px-4 py-3.5">
-                                    <span className="size-1.5 animate-bounce rounded-full bg-[#9CA3AF] [animation-delay:0ms]" />
-                                    <span className="size-1.5 animate-bounce rounded-full bg-[#9CA3AF] [animation-delay:150ms]" />
-                                    <span className="size-1.5 animate-bounce rounded-full bg-[#9CA3AF] [animation-delay:300ms]" />
+                                    <span className="size-1.5 animate-pulse rounded-full bg-[#9CA3AF] [animation-delay:0ms]" />
+                                    <span className="size-1.5 animate-pulse rounded-full bg-[#9CA3AF] [animation-delay:150ms]" />
+                                    <span className="size-1.5 animate-pulse rounded-full bg-[#9CA3AF] [animation-delay:300ms]" />
                                 </div>
                             </div>
                         )}

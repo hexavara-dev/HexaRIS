@@ -137,9 +137,9 @@ export default function Dashboard() {
 
     return (
         <AppLayout headerTitle="Dashboard" headerActions={<NotificationBell count={5} />}>
-            <div className="flex h-full flex-1 flex-col gap-6 px-6 pt-4 pb-6">
-                <div className="flex w-full items-center justify-between">
-                    <div className="flex flex-col items-start gap-1">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-6 px-3 pt-4 pb-6 sm:px-6">
+                <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 flex-col items-start gap-1">
                         <p className="font-poppins text-lg font-semibold text-[#0F172A]">
                             Selamat {greeting} {auth.user.name}
                         </p>
@@ -148,7 +148,7 @@ export default function Dashboard() {
                     <PeriodDropdown periods={PERIODS} value={selectedPeriod} onValueChange={setSelectedPeriod} />
                 </div>
 
-                <div className="grid w-full grid-cols-2 gap-5">
+                <div className="grid w-full grid-cols-1 gap-5 xl:grid-cols-2">
                     <OverviewCard
                         title="DATA KARYAWAN"
                         stats={[
@@ -167,8 +167,8 @@ export default function Dashboard() {
                     />
                 </div>
 
-                <div className="grid w-full grid-cols-2 items-stretch gap-5">
-                    <div className="flex h-full w-full flex-col items-start gap-5 rounded-xl border border-[#E2E8F0] p-5">
+                <div className="grid w-full grid-cols-1 items-stretch gap-5 xl:grid-cols-2">
+                    <div className="flex h-full w-full min-w-0 flex-col items-start gap-5 rounded-xl border border-[#E2E8F0] p-4 sm:p-5">
                         <p className="font-poppins text-sm font-semibold text-black">ABSENSI</p>
                         <div className="flex w-full flex-col gap-4">
                             <AttendanceStatusSummary
@@ -204,7 +204,7 @@ export default function Dashboard() {
 
                 <WeeklyShiftScheduleDemo />
 
-                <div className="grid w-full grid-cols-2 items-start gap-5">
+                <div className="grid w-full grid-cols-1 items-start gap-5 xl:grid-cols-2">
                     <div className="flex w-full flex-col gap-5">
                         <TrainingSummaryCardDemo />
                         <PayrollSummaryCardDemo />
