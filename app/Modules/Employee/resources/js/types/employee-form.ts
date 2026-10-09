@@ -99,11 +99,11 @@ export type EmployeeFormData = {
     contract: File | StoredFile | null;
     education: EducationEntry;
     work_experiences: WorkExperience[];
-    /** Required. Free-text branch name — `'none'` is the "Tidak Ada Cabang" pick, see branchOptions. */
+    /** Optional — leave empty to skip, or pick `'none'` for "Tidak Ada Cabang", see branchOptions. */
     branch: string;
-    /** Organisasi — optional. References OrganizationUnit.id (unit_type 'DEPARTMENT') in @/data/Organization/organization. */
+    /** Organisasi — required. References OrganizationUnit.id (unit_type 'DEPARTMENT') in @/data/Organization/organization. */
     department_id: string;
-    /** Posisi Jabatan — optional. One of the fixed `positionOptions` titles (Kepala Bagian / Supervisor / Senior Staff / Manager / Staff), stored directly rather than as an OrganizationUnit id. */
+    /** Posisi Jabatan — required. One of the fixed `positionOptions` titles (Kepala Bagian / Supervisor / Senior Staff / Manager / Staff), stored directly rather than as an OrganizationUnit id. */
     division_id: string;
     /** Fixed set (Manajer/Direksi/Senior/Junior) picked directly — not derived from a job position. */
     job_level: string;

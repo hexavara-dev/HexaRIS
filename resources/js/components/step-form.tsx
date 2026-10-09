@@ -80,13 +80,14 @@ export function StepForm({
     };
 
     return (
-        <form onSubmit={submit} className={cn('grid grid-rows-[auto_minmax(0,1fr)_auto] px-5', maxHeightClassName)}>
+        <form onSubmit={submit} className={cn('grid min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] px-5', maxHeightClassName)}>
             {/* Title and stepper share one row; the stepper only drops to its
                 own line when the pair cannot fit, in which case it still
-                renders as a single row of its own. */}
-            <div className={cn('flex flex-wrap items-center gap-x-8 gap-y-2', compact ? 'pb-2' : 'pb-3')}>
+                renders as a single row of its own — scrolling sideways when
+                even that row is wider than the dialog (small screens). */}
+            <div className={cn('flex flex-wrap items-center gap-x-6 gap-y-2', compact ? 'pb-2' : 'pb-3')}>
                 <DialogTitle className="font-poppins shrink-0 text-[19px] leading-6 font-semibold text-[#121212]">{title}</DialogTitle>
-                <div className="min-w-0 flex-auto shrink-0">
+                <div className="min-w-0 flex-auto overflow-x-auto">
                     <Stepper steps={steps} currentStep={current + 1} />
                 </div>
             </div>
@@ -101,7 +102,7 @@ export function StepForm({
                     type="button"
                     variant="outline"
                     onClick={isFirst ? onCancel : () => setCurrent((step) => step - 1)}
-                    className="font-poppins h-11 flex-1 cursor-pointer rounded-lg border-[#1980C0] text-sm font-semibold text-[#1980C0] hover:bg-[#1980C0]/5 hover:text-[#1980C0]"
+                    className="font-poppins h-11 min-w-0 flex-1 cursor-pointer rounded-lg border-[#1980C0] px-5 text-sm font-semibold text-[#1980C0] hover:bg-[#1980C0]/5 hover:text-[#1980C0] sm:px-20"
                 >
                     {isFirst ? 'Batal' : 'Sebelumnya'}
                 </Button>
@@ -109,7 +110,7 @@ export function StepForm({
                     type="submit"
                     disabled={processing || !canProceed}
                     className={cn(
-                        'font-poppins h-11 flex-1 cursor-pointer rounded-lg bg-[#1980C0] text-sm font-semibold text-white',
+                        'font-poppins h-11 min-w-0 flex-1 cursor-pointer rounded-lg bg-[#1980C0] px-5 text-sm font-semibold text-white sm:px-20',
                         'hover:bg-[#1668a0]',
                     )}
                 >

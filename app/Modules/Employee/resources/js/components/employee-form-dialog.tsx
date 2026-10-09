@@ -2,7 +2,7 @@ import { StepForm, type Step } from '@/components/step-form';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { type Employee } from '@/data/Employee/employee';
 import { useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { hydrateEmployeeFormData } from '../lib/employee-form-overlay';
 import { validateEmployeeForm, validateEmployeeFormStep } from '../lib/validate-employee-form';
@@ -77,10 +77,26 @@ export function EmployeeFormDialog({ open, employee, onClose, onCreate, onUpdate
         onClose();
     };
 
+    /**
+     * Latest form data, written synchronously by updateField. Steps that set two
+     * fields in one handler (provinsi → regency reset, contract type → evaluation
+     * reset, allowance → allowance value) call updateField twice in the same tick;
+     * without this ref the second call would rebuild `next` from this render's
+     * stale `data` and revert the first write (e.g. picking a province left
+     * province_id empty and Kab/kota disabled).
+     */
+    const dataRef = useRef<EmployeeFormData>(initialEmployeeFormData);
+
+    // Keep the ref aligned with writes that don't go through updateField (reset, hydrate).
+    useEffect(() => {
+        dataRef.current = data;
+    }, [data]);
+
     /** Live per-field validation: once a step has been attempted, every change re-runs it. */
     const updateField = <K extends keyof EmployeeFormData>(key: K, value: EmployeeFormData[K]) => {
-        const next = { ...data, [key]: value } as EmployeeFormData;
+        const next = { ...dataRef.current, [key]: value } as EmployeeFormData;
 
+        dataRef.current = next;
         setData(next);
 
         if (attemptedUpTo >= 0) {
@@ -167,7 +183,7 @@ export function EmployeeFormDialog({ open, employee, onClose, onCreate, onUpdate
             validate: () => validateUpTo(4),
         },
         {
-            label: 'Pratinjau',
+            label: 'Preview',
             content: <PreviewStep data={data} />,
         },
     ];

@@ -19,13 +19,17 @@ interface StepperProps {
  * connectors flex instead, so a 6-step wizard fits the dialog width without
  * wrapping. Steps that are not reached yet read as gray (filled circle +
  * muted label) so the blue pill marks exactly where the user is.
+ *
+ * On small screens the non-compact variant shrinks the circles and drops the
+ * labels below `sm`, so the row never overflows the dialog (the StepForm
+ * wrapper can still scroll it sideways if it does).
  */
 export function Stepper({ steps, currentStep, compact = false }: StepperProps) {
     const currentLabel = steps[currentStep - 1]?.label;
 
     return (
         <div className="flex w-full min-w-0 flex-col gap-1.5">
-            <div className={cn('flex w-full min-w-0 items-center', compact ? 'gap-1.5' : 'gap-2')}>
+            <div className={cn('flex w-full min-w-0 items-center', compact ? 'gap-1.5' : 'gap-1.5 sm:gap-2')}>
                 {steps.map((step, index) => {
                     const stepNumber = index + 1;
                     const isDone = stepNumber < currentStep;
@@ -35,11 +39,11 @@ export function Stepper({ steps, currentStep, compact = false }: StepperProps) {
 
                     return (
                         <Fragment key={step.label}>
-                            <div className={cn('flex shrink-0 items-center', compact ? 'gap-1.5' : 'gap-2')}>
+                            <div className={cn('flex shrink-0 items-center', compact ? 'gap-1.5' : 'gap-1.5 sm:gap-2')}>
                                 <div
                                     className={cn(
                                         'font-poppins flex shrink-0 items-center justify-center rounded-full tracking-[0.01em]',
-                                        compact ? 'size-5 text-[10px]' : 'size-8 text-[16px]',
+                                        compact ? 'size-5 text-[10px]' : 'size-7 text-[14px] sm:size-8 sm:text-[16px]',
                                         isReached ? 'bg-[#1980C0] text-white' : 'bg-[#9CA3AF] text-white',
                                     )}
                                 >
@@ -48,7 +52,7 @@ export function Stepper({ steps, currentStep, compact = false }: StepperProps) {
                                 <p
                                     className={cn(
                                         'font-poppins tracking-[0.01em] whitespace-nowrap',
-                                        compact ? 'hidden text-[11px] min-[480px]:block' : 'text-[16px]',
+                                        compact ? 'hidden text-[11px] min-[480px]:block' : 'hidden text-[14px] sm:block sm:text-[16px]',
                                         isReached ? 'text-[#121212]' : 'text-[#808080]',
                                     )}
                                 >

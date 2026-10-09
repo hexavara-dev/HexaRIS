@@ -72,9 +72,8 @@ export function ProvisionStep({ data, setData, errors }: ProvisionStepProps) {
     return (
         <div className="grid grid-cols-2 gap-x-5 gap-y-3">
             <SelectField
-                label="Cabang"
+                label="Cabang(Opsional)"
                 htmlFor="branch"
-                required
                 options={branchOptions}
                 value={data.branch}
                 onValueChange={(v) => setData('branch', v)}
@@ -92,8 +91,9 @@ export function ProvisionStep({ data, setData, errors }: ProvisionStepProps) {
             />
 
             <SelectField
-                label="Organisasi (Opsional)"
+                label="Departemen"
                 htmlFor="department_id"
+                required
                 options={departmentOptions}
                 value={data.department_id}
                 onValueChange={selectDepartment}
@@ -112,8 +112,9 @@ export function ProvisionStep({ data, setData, errors }: ProvisionStepProps) {
             />
 
             <SelectField
-                label="Posisi Jabatan (Opsional)"
+                label="Divisi"
                 htmlFor="division_id"
+                required
                 options={positionOptions}
                 value={data.division_id}
                 onValueChange={(v) => setData('division_id', v)}
