@@ -8,7 +8,11 @@ interface Props {
     title?: string;
     description?: string;
     confirmLabel?: string;
+    cancelLabel?: string;
     destructive?: boolean;
+    showCloseButton?: boolean;
+    contentClassName?: string;
+    actionsClassName?: string;
 }
 
 export function ConfirmDialog({
@@ -18,21 +22,26 @@ export function ConfirmDialog({
     title = 'Are you sure?',
     description,
     confirmLabel = 'Confirm',
+    cancelLabel = 'Cancel',
     destructive = true,
+    showCloseButton = true,
+    contentClassName,
+    actionsClassName,
 }: Props) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent showCloseButton={showCloseButton} className={contentClassName}>
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     {description && <DialogDescription>{description}</DialogDescription>}
                 </DialogHeader>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancel
+                <DialogFooter className={actionsClassName}>
+                    <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
+                        {cancelLabel}
                     </Button>
                     <Button
                         variant={destructive ? 'destructive' : 'default'}
+                        className="w-full"
                         onClick={() => {
                             onConfirm();
                             onOpenChange(false);
