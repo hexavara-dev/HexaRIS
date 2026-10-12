@@ -25,7 +25,7 @@ export function Stepper({ steps, currentStep, compact = false }: StepperProps) {
 
     return (
         <div className="flex w-full min-w-0 flex-col gap-1.5">
-            <div className={cn('flex w-full min-w-0 items-center', compact ? 'gap-1.5' : 'gap-2')}>
+            <div className={cn('flex w-full min-w-0 items-center', compact ? 'justify-end gap-1.5' : 'gap-2')}>
                 {steps.map((step, index) => {
                     const stepNumber = index + 1;
                     const isDone = stepNumber < currentStep;
@@ -39,7 +39,7 @@ export function Stepper({ steps, currentStep, compact = false }: StepperProps) {
                                 <div
                                     className={cn(
                                         'font-poppins flex shrink-0 items-center justify-center rounded-full tracking-[0.01em]',
-                                        compact ? 'size-5 text-[10px]' : 'size-8 text-[16px]',
+                                        compact ? 'text-micro size-5' : 'size-8 text-base',
                                         isReached ? 'bg-[#1980C0] text-white' : 'bg-[#9CA3AF] text-white',
                                     )}
                                 >
@@ -48,20 +48,22 @@ export function Stepper({ steps, currentStep, compact = false }: StepperProps) {
                                 <p
                                     className={cn(
                                         'font-poppins tracking-[0.01em] whitespace-nowrap',
-                                        compact ? 'hidden text-[11px] min-[480px]:block' : 'text-[16px]',
+                                        compact ? 'text-caption hidden min-[480px]:block' : 'text-base',
                                         isReached ? 'text-[#121212]' : 'text-[#808080]',
                                     )}
                                 >
                                     {step.label}
                                 </p>
                             </div>
-                            {!isLast && <div className={cn('h-px min-w-2 flex-1', isDone ? 'bg-[#1980C0]' : 'bg-[#808080]')} />}
+                            {!isLast && (
+                                <div className={cn('h-px min-w-2 flex-1', compact && 'max-w-14', isDone ? 'bg-[#1980C0]' : 'bg-[#808080]')} />
+                            )}
                         </Fragment>
                     );
                 })}
             </div>
             {compact && currentLabel && (
-                <p className="font-poppins text-[11px] text-[#667085] min-[480px]:hidden">
+                <p className="font-poppins text-caption text-[#667085] min-[480px]:hidden">
                     Langkah {currentStep} dari {steps.length}: <span className="font-semibold text-[#121212]">{currentLabel}</span>
                 </p>
             )}

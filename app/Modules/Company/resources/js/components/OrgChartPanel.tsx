@@ -3,9 +3,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Minus, Plus } from 'lucide-react';
 import { useState } from 'react';
 
-const ZOOM_MIN = 0.5;
+const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 1.5;
-const ZOOM_STEP = 0.1;
+const ZOOM_STEP = 0.25;
 
 interface OrgChartPanelProps {
     cabang: string;
@@ -20,7 +20,7 @@ export function OrgChartPanel({ cabang, cabangOptions, ceo, departments, onCaban
     const [zoom, setZoom] = useState(1);
 
     function zoomBy(delta: number) {
-        setZoom((current) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round((current + delta) * 10) / 10)));
+        setZoom((current) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round((current + delta) * 100) / 100)));
     }
 
     return (
@@ -62,7 +62,7 @@ export function OrgChartPanel({ cabang, cabangOptions, ceo, departments, onCaban
                 </div>
             </div>
 
-            <div className="min-h-0 flex-1 bg-[#F8FAFC]">
+            <div className="relative min-h-0 flex-1 bg-[#F8FAFC]">
                 <OrgChart tree={{ cabang, cabangOptions, ceo, departments }} zoom={zoom} />
             </div>
 

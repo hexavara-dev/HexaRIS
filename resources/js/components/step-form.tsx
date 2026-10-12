@@ -81,18 +81,14 @@ export function StepForm({
 
     return (
         <form onSubmit={submit} className={cn('grid grid-rows-[auto_minmax(0,1fr)_auto] px-5', maxHeightClassName)}>
-            {/* Title and stepper share one row; the stepper only drops to its
-                own line when the pair cannot fit, in which case it still
-                renders as a single row of its own. */}
             <div className={cn('flex flex-wrap items-center gap-x-8 gap-y-2', compact ? 'pb-2' : 'pb-3')}>
-                <DialogTitle className="font-poppins shrink-0 text-[19px] leading-6 font-semibold text-[#121212]">{title}</DialogTitle>
-                <div className="min-w-0 flex-auto shrink-0">
-                    <Stepper steps={steps} currentStep={current + 1} />
+                <DialogTitle className="font-poppins text-dialog-title shrink-0 font-semibold text-[#121212]">{title}</DialogTitle>
+                <div className="min-w-0 flex-1">
+                    <Stepper steps={steps} currentStep={current + 1} compact={compact} />
                 </div>
             </div>
 
-            {/* Only the step body scrolls, so header and footer stay put. */}
-            <div ref={contentRef} className={cn('min-h-0 overflow-y-auto pr-4 pl-1', compact ? 'py-2' : 'py-4')}>
+            <div ref={contentRef} className={cn('min-h-0 overflow-y-auto pr-4 pl-1', compact ? 'py-4' : 'py-4')}>
                 {steps[current].content}
             </div>
 

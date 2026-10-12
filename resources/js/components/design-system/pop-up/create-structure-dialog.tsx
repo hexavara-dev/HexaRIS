@@ -89,15 +89,17 @@ export function CreateStructureDialog({
         <>
             <Dialog open={open} onOpenChange={(next) => !next && resetAndClose()}>
                 <DialogContent
-                    className="flex max-h-[calc(100vh-1.5rem)] w-[min(1320px,calc(100vw-1.5rem))] max-w-none flex-col gap-0 overflow-hidden"
+                    className="flex h-[700px] max-h-[calc(100svh-2rem)] w-[calc(100vw-2rem)] max-w-[1080px] flex-col gap-0 overflow-hidden sm:w-[calc(100vw-2rem)] sm:max-w-[1080px]"
                     onInteractOutside={(event) => event.preventDefault()}
                 >
                     <StepForm
                         steps={steps}
                         title={draft.isReconfiguring ? 'Atur Ulang Struktur Organisasi Perusahaan' : 'Struktur Organisasi Perusahaan'}
                         finishLabel={draft.isUpdatingSavedStructure ? 'Perbarui' : 'Simpan'}
+                        maxHeightClassName="h-full"
                         onCancel={resetAndClose}
                         onFinish={handleSave}
+                        compact
                     />
                 </DialogContent>
             </Dialog>

@@ -1,3 +1,4 @@
+import { buildOrgDivisionHierarchy, type OrgDivisionHierarchyNode } from '@/components/design-system/org-chart/division-hierarchy';
 import { type OrgDepartment, type OrgDivision, type OrgMember, type OrgTree } from '@/components/design-system/org-chart/org-chart';
 import { type NewDepartmentDraft } from '@/components/design-system/pop-up/add-department-dialog';
 import { type PersonOption } from '@/components/design-system/pop-up/people-picker';
@@ -103,39 +104,13 @@ function draftDivisionFromMembers(name: string, members: OrgMember[]): DraftDivi
 }
 
 function draftDivisionsFromTree(divisions: OrgDivision[]): DraftDivision[] {
-    const roots: DraftDivision[] = [];
-
-    function findOrCreate(parentDivisions: DraftDivision[], name: string) {
-        const existing = parentDivisions.find((division) => division.name === name);
-        if (existing) return existing;
-
-        const created = draftDivisionFromMembers(name, []);
-        parentDivisions.push(created);
-        return created;
+    function toDraft(division: OrgDivisionHierarchyNode): DraftDivision {
+        const draft = draftDivisionFromMembers(division.name, division.members);
+        draft.divisions = division.children.map(toDraft);
+        return draft;
     }
 
-    divisions.forEach((division) => {
-        const path = division.name
-            .split('/')
-            .map((part) => part.trim())
-            .filter(Boolean);
-        const fallbackPath = path.length > 0 ? path : [division.name];
-        let siblings = roots;
-        let current: DraftDivision | undefined;
-
-        for (const name of fallbackPath) {
-            current = findOrCreate(siblings, name);
-            siblings = current.divisions;
-        }
-
-        if (current) {
-            const hydrated = draftDivisionFromMembers(current.name, division.members);
-            current.headPersonId = hydrated.headPersonId;
-            current.staff = hydrated.staff;
-        }
-    });
-
-    return roots;
+    return buildOrgDivisionHierarchy(divisions).map(toDraft);
 }
 
 export function draftDepartmentsFromTree(departments: OrgDepartment[]): DraftDepartment[] {
