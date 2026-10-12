@@ -43,7 +43,7 @@ export function Stepper({ steps, currentStep, compact = false }: StepperProps) {
                                 <div
                                     className={cn(
                                         'font-poppins flex shrink-0 items-center justify-center rounded-full tracking-[0.01em]',
-                                        compact ? 'size-5 text-[10px]' : 'size-7 text-[14px] sm:size-8 sm:text-[16px]',
+                                        compact ? 'size-6 text-[11px]' : 'size-7 text-[14px] sm:size-8 sm:text-[16px]',
                                         isReached ? 'bg-[#1980C0] text-white' : 'bg-[#9CA3AF] text-white',
                                     )}
                                 >
