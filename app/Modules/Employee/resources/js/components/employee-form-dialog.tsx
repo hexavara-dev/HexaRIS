@@ -183,7 +183,7 @@ export function EmployeeFormDialog({ open, employee, onClose, onCreate, onUpdate
             validate: () => validateUpTo(4),
         },
         {
-            label: 'Preview',
+            label: 'Pratinjau',
             content: <PreviewStep data={data} />,
         },
     ];
@@ -196,7 +196,7 @@ export function EmployeeFormDialog({ open, employee, onClose, onCreate, onUpdate
             }}
         >
             <DialogContent
-                className="flex max-w-6xl flex-col gap-0 py-3"
+                className="flex max-w-6xl flex-col gap-0 overflow-hidden py-3"
                 aria-describedby={undefined}
                 onInteractOutside={(event) => event.preventDefault()}
             >
@@ -206,7 +206,7 @@ export function EmployeeFormDialog({ open, employee, onClose, onCreate, onUpdate
                     finishLabel={employee ? 'Perbarui' : 'Simpan'}
                     processing={processing || saving}
                     compact
-                    maxHeightClassName="max-h-[min(840px,calc(100vh-2.5rem))]"
+                    maxHeightClassName="max-h-[min(840px,calc(100svh-3.5rem))]"
                     onCancel={close}
                     onFinish={finish}
                 />

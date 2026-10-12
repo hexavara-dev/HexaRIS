@@ -87,8 +87,8 @@ export function StepForm({
                 even that row is wider than the dialog (small screens). */}
             <div className={cn('flex flex-wrap items-center gap-x-6 gap-y-2', compact ? 'pb-2' : 'pb-3')}>
                 <DialogTitle className="font-poppins shrink-0 text-[19px] leading-6 font-semibold text-[#121212]">{title}</DialogTitle>
-                <div className="min-w-0 flex-auto overflow-x-auto">
-                    <Stepper steps={steps} currentStep={current + 1} />
+                <div className="min-w-0 flex-auto overflow-x-auto py-0.5">
+                    <Stepper steps={steps} currentStep={current + 1} compact={compact} />
                 </div>
             </div>
 
