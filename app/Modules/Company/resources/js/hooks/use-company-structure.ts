@@ -1,9 +1,8 @@
-import { type OrgDepartment, type OrgMember, type OrgTree } from '@/components/design-system/org-chart/org-chart';
-import { useEffect, useState } from 'react';
+import { type OrgDepartment, type OrgDivision, type OrgMember, type OrgTree } from '@/components/design-system/org-chart/org-chart';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const STORAGE_KEY = 'hexaris.company-structure';
-const STORAGE_TTL_MS = 24 * 60 * 60 * 1000;
 const STORAGE_SCHEMA_VERSION = 3;
 const DEFAULT_CABANG = 'Jakarta';
 
@@ -33,32 +32,97 @@ function structureCabangOptions(cabang: string): string[] {
     return [cabang];
 }
 
-function loadStoredStructure(): StoredStructure {
-    if (typeof window === 'undefined') return emptyStructure();
+function asRecord(value: unknown): Record<string, unknown> | null {
+    return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+function normalizeMember(value: unknown): OrgMember | null {
+    const member = asRecord(value);
+    if (!member || typeof member.name !== 'string' || typeof member.role !== 'string') return null;
+
+    return {
+        name: member.name,
+        role: member.role,
+        ...(typeof member.avatarUrl === 'string' ? { avatarUrl: member.avatarUrl } : {}),
+    };
+}
+
+function normalizeMembers(value: unknown): OrgMember[] {
+    return Array.isArray(value) ? value.map(normalizeMember).filter((member): member is OrgMember => member !== null) : [];
+}
+
+/** Converts both the current flat path format and older explicitly nested division records. */
+function normalizeDivisions(value: unknown, parentPath = ''): OrgDivision[] {
+    if (!Array.isArray(value)) return [];
+
+    return value.flatMap((candidate) => {
+        const division = asRecord(candidate);
+        if (!division || typeof division.name !== 'string' || !division.name.trim()) return [];
+
+        const name = division.name.trim();
+        const path = parentPath ? `${parentPath} / ${name}` : name;
+        const head = normalizeMember(division.head);
+        const members = normalizeMembers(division.members);
+        const normalizedMembers =
+            head && !members.some((member) => member.name === head.name && member.role === head.role) ? [head, ...members] : members;
+        const nested = Array.isArray(division.divisions) ? division.divisions : division.children;
+
+        return [{ name: path, members: normalizedMembers }, ...normalizeDivisions(nested, path)];
+    });
+}
+
+function normalizeDepartments(value: unknown): OrgDepartment[] {
+    if (!Array.isArray(value)) return [];
+
+    return value.flatMap((candidate) => {
+        const department = asRecord(candidate);
+        if (!department || typeof department.name !== 'string' || !department.name.trim()) return [];
+
+        const head = normalizeMember(department.head);
+        const members = normalizeMembers(department.members);
+        const divisions = normalizeDivisions(department.divisions);
+
+        return [
+            {
+                name: department.name.trim(),
+                ...(head ? { head } : {}),
+                ...(members.length > 0 ? { members } : {}),
+                ...(divisions && divisions.length > 0 ? { divisions } : {}),
+            },
+        ];
+    });
+}
+
+export function parseStoredStructure(raw: string | null): StoredStructure {
+    if (!raw) return emptyStructure();
+
     try {
-        const raw = window.localStorage.getItem(STORAGE_KEY);
-        if (!raw) return emptyStructure();
-
         const parsed = JSON.parse(raw) as Partial<StoredStructure>;
-        if (typeof parsed.savedAt !== 'number' || Date.now() - parsed.savedAt > STORAGE_TTL_MS) {
-            return emptyStructure();
-        }
+        if (typeof parsed.schemaVersion === 'number' && parsed.schemaVersion > STORAGE_SCHEMA_VERSION) return emptyStructure();
 
-        if (parsed.schemaVersion !== STORAGE_SCHEMA_VERSION || parsed.configured !== true) {
-            return emptyStructure();
-        }
+        const ceo = normalizeMember(parsed.ceo);
+        const departments = normalizeDepartments(parsed.departments);
+        const cabang = typeof parsed.cabang === 'string' && parsed.cabang.trim() ? parsed.cabang.trim() : DEFAULT_CABANG;
 
-        const ceo = parsed.ceo ?? null;
-        const departments = parsed.departments ?? [];
-        const cabang = typeof parsed.cabang === 'string' && parsed.cabang.trim() ? parsed.cabang : DEFAULT_CABANG;
-        const cabangOptions = structureCabangOptions(cabang);
-
-        return ceo !== null && departments.length > 0
-            ? { cabang, cabangOptions, ceo, departments, savedAt: parsed.savedAt, configured: true, schemaVersion: STORAGE_SCHEMA_VERSION }
+        return ceo && departments.length > 0
+            ? {
+                  cabang,
+                  cabangOptions: structureCabangOptions(cabang),
+                  ceo,
+                  departments,
+                  savedAt: typeof parsed.savedAt === 'number' ? parsed.savedAt : Date.now(),
+                  configured: true,
+                  schemaVersion: STORAGE_SCHEMA_VERSION,
+              }
             : emptyStructure();
     } catch {
         return emptyStructure();
     }
+}
+
+function loadStoredStructure(): StoredStructure {
+    if (typeof window === 'undefined') return emptyStructure();
+    return parseStoredStructure(window.localStorage.getItem(STORAGE_KEY));
 }
 
 /**
@@ -73,10 +137,13 @@ export function useCompanyStructure() {
 
     const hasStructure = ceo !== null && departments.length > 0;
     const cabangOptions = structureCabangOptions(cabang);
+    const hasPersistedStructure = useRef(hasStructure);
 
     useEffect(() => {
         if (!hasStructure) {
-            window.localStorage.removeItem(STORAGE_KEY);
+            // Do not erase an unreadable/legacy record merely because the page
+            // mounted empty. Only clear after a structure existed in this session.
+            if (hasPersistedStructure.current) window.localStorage.removeItem(STORAGE_KEY);
             return;
         }
 
@@ -90,6 +157,7 @@ export function useCompanyStructure() {
             schemaVersion: STORAGE_SCHEMA_VERSION,
         };
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+        hasPersistedStructure.current = true;
     }, [cabang, ceo, departments, hasStructure]);
 
     function findDepartmentByLabel(label: string) {

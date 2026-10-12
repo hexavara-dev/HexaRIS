@@ -59,13 +59,15 @@ export function Stepper({ steps, currentStep, compact = false }: StepperProps) {
                                     {step.label}
                                 </p>
                             </div>
-                            {!isLast && <div className={cn('h-px min-w-2 flex-1', isDone ? 'bg-[#1980C0]' : 'bg-[#808080]')} />}
+                            {!isLast && (
+                                <div className={cn('h-px min-w-2 flex-1', compact && 'max-w-14', isDone ? 'bg-[#1980C0]' : 'bg-[#808080]')} />
+                            )}
                         </Fragment>
                     );
                 })}
             </div>
             {compact && currentLabel && (
-                <p className="font-poppins text-[11px] text-[#667085] min-[480px]:hidden">
+                <p className="font-poppins text-caption text-[#667085] min-[480px]:hidden">
                     Langkah {currentStep} dari {steps.length}: <span className="font-semibold text-[#121212]">{currentLabel}</span>
                 </p>
             )}

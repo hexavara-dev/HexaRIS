@@ -92,8 +92,7 @@ export function StepForm({
                 </div>
             </div>
 
-            {/* Only the step body scrolls, so header and footer stay put. */}
-            <div ref={contentRef} className={cn('min-h-0 overflow-y-auto pr-4 pl-1', compact ? 'py-2' : 'py-4')}>
+            <div ref={contentRef} className={cn('min-h-0 overflow-y-auto pr-4 pl-1', compact ? 'py-4' : 'py-4')}>
                 {steps[current].content}
             </div>
 

@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent } from 'react';
+import { buildOrgDivisionHierarchy, type OrgDivisionHierarchyNode } from './division-hierarchy';
 
 export interface OrgMember {
     name: string;
@@ -102,12 +103,52 @@ function CompactNode({ title, subtitle, people, active = false }: { title: strin
     );
 }
 
-function DivisionNode({ division }: { division: OrgDivision }) {
+function DivisionNode({ division }: { division: OrgDivisionHierarchyNode }) {
     const people = peopleFromMembers(division.members);
 
     return (
-        <div className="relative flex justify-center pt-8 before:absolute before:top-0 before:left-1/2 before:h-8 before:border-l before:border-[#CBD5E1] before:content-['']">
+        <div className="flex w-max flex-col items-center">
             <CompactNode title={division.name} subtitle="Divisi" people={people} />
+            {division.children.length > 0 && <DivisionChildren divisions={division.children} />}
+        </div>
+    );
+}
+
+function DivisionChildren({ divisions }: { divisions: OrgDivisionHierarchyNode[] }) {
+    const hasSiblings = divisions.length > 1;
+
+    return (
+        <div
+            className={[
+                'relative flex justify-center',
+                hasSiblings
+                    ? "before:absolute before:top-0 before:left-1/2 before:h-4 before:border-l before:border-[#CBD5E1] before:content-['']"
+                    : '',
+            ].join(' ')}
+        >
+            {divisions.map((division, index) => {
+                const isFirst = index === 0;
+                const isLast = index === divisions.length - 1;
+
+                return (
+                    <div key={division.name} className="relative px-4 pt-8">
+                        {hasSiblings && (
+                            <span
+                                aria-hidden="true"
+                                className={[
+                                    'absolute top-4 border-t border-[#CBD5E1]',
+                                    isFirst ? 'right-0 left-1/2' : isLast ? 'right-1/2 left-0' : 'inset-x-0',
+                                ].join(' ')}
+                            />
+                        )}
+                        <span
+                            aria-hidden="true"
+                            className={['absolute left-1/2 border-l border-[#CBD5E1]', hasSiblings ? 'top-4 h-4' : 'top-0 h-8'].join(' ')}
+                        />
+                        <DivisionNode division={division} />
+                    </div>
+                );
+            })}
         </div>
     );
 }
@@ -117,20 +158,14 @@ function DepartmentColumn({ department }: { department: OrgDepartment }) {
     const people = department.head
         ? { lead: department.head, leadLabel: roleLabel(department.head.role), staff: [] }
         : peopleFromMembers(department.members);
-    const divisions = department.divisions ?? [];
+    const divisions = buildOrgDivisionHierarchy(department.divisions ?? []);
     const hasChildren = divisions.length > 0;
 
     return (
-        <div className="inline-flex w-[260px] flex-col items-center">
+        <div className="inline-flex w-max min-w-[260px] flex-col items-center">
             <CompactNode title={departmentTitle} subtitle="Bagian" people={people} />
 
-            {hasChildren && (
-                <div className="flex flex-col items-center gap-0">
-                    {divisions.map((division) => (
-                        <DivisionNode key={division.name} division={division} />
-                    ))}
-                </div>
-            )}
+            {hasChildren && <DivisionChildren divisions={divisions} />}
         </div>
     );
 }
@@ -146,6 +181,7 @@ export function OrgChart({ tree, zoom = 1 }: OrgChartProps) {
     const dragRef = useRef({ pointerId: -1, x: 0, y: 0, offsetX: 0, offsetY: 0 });
     const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
     const [isPanning, setIsPanning] = useState(false);
+    const hasDepartmentSiblings = tree.departments.length > 1;
 
     function startPan(event: PointerEvent<HTMLDivElement>) {
         if (event.button !== 0 || !canvasRef.current) return;
@@ -184,28 +220,56 @@ export function OrgChart({ tree, zoom = 1 }: OrgChartProps) {
     return (
         <div
             ref={canvasRef}
-            className={['h-full w-full touch-none overflow-hidden select-none', isPanning ? 'cursor-grabbing' : 'cursor-grab'].join(' ')}
+            className={['absolute inset-0 touch-none overflow-hidden select-none', isPanning ? 'cursor-grabbing' : 'cursor-grab'].join(' ')}
             onPointerDown={startPan}
             onPointerMove={pan}
             onPointerUp={stopPan}
             onPointerCancel={stopPan}
         >
             <div
-                className="flex min-w-max origin-top justify-center px-16 py-8"
-                style={{ transform: `translate3d(${panOffset.x}px, ${panOffset.y}px, 0) scale(${zoom})`, transformOrigin: 'top center' }}
+                className="absolute top-0 left-1/2 flex w-max origin-top justify-center px-16 py-8"
+                style={{
+                    transform: `translate3d(calc(-50% + ${panOffset.x}px), ${panOffset.y}px, 0) scale(${zoom})`,
+                    transformOrigin: 'top center',
+                }}
             >
                 <div className="flex flex-col items-center">
                     <CompactNode title="PT. Abadi Jaya" subtitle={tree.ceo.role} people={{ lead: tree.ceo, staff: [] }} active />
 
-                    <ul className="relative flex justify-center gap-16 pt-20 before:absolute before:top-0 before:left-1/2 before:h-10 before:border-l before:border-[#CBD5E1] before:content-[''] after:absolute after:top-10 after:right-[130px] after:left-[130px] after:border-t after:border-[#CBD5E1] after:content-['']">
-                        {tree.departments.map((department) => (
-                            <li
-                                key={department.name}
-                                className="relative flex flex-col items-center before:absolute before:top-[-40px] before:left-1/2 before:h-10 before:border-l before:border-[#CBD5E1] before:content-['']"
-                            >
-                                <DepartmentColumn department={department} />
-                            </li>
-                        ))}
+                    <ul
+                        className={[
+                            'relative flex justify-center',
+                            hasDepartmentSiblings
+                                ? "before:absolute before:top-0 before:left-1/2 before:h-10 before:border-l before:border-[#CBD5E1] before:content-['']"
+                                : '',
+                        ].join(' ')}
+                    >
+                        {tree.departments.map((department, index) => {
+                            const isFirst = index === 0;
+                            const isLast = index === tree.departments.length - 1;
+
+                            return (
+                                <li key={department.name} className="relative flex flex-col items-center px-8 pt-20">
+                                    {hasDepartmentSiblings && (
+                                        <span
+                                            aria-hidden="true"
+                                            className={[
+                                                'absolute top-10 border-t border-[#CBD5E1]',
+                                                isFirst ? 'right-0 left-1/2' : isLast ? 'right-1/2 left-0' : 'inset-x-0',
+                                            ].join(' ')}
+                                        />
+                                    )}
+                                    <span
+                                        aria-hidden="true"
+                                        className={[
+                                            'absolute left-1/2 border-l border-[#CBD5E1]',
+                                            hasDepartmentSiblings ? 'top-10 h-10' : 'top-0 h-20',
+                                        ].join(' ')}
+                                    />
+                                    <DepartmentColumn department={department} />
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
             </div>
