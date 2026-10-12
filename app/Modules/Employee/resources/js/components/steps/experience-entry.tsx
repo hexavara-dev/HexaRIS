@@ -1,6 +1,7 @@
 import { FileUploadField, type SelectFieldOption } from '@/components/form/form-field';
 import { Trash2 } from 'lucide-react';
 import { type WorkExperience } from '../../types/employee-form';
+import { formatRupiah } from './financial-step';
 import { SelectField, TextField } from './wizard-fields';
 
 export const employmentTypeOptions: SelectFieldOption[] = [
@@ -84,13 +85,13 @@ export function ExperienceEntry({ index, experience, onChange, onRemove, removab
             />
 
             <TextField
-                label="Jabatan/Posisi"
+                label="Nama Institusi"
                 htmlFor={fieldId('position')}
                 required
                 value={experience.position}
                 onChange={(v) => set('position', v)}
                 error={errors.position}
-                placeholder="Masukkan jabatan/posisi"
+                placeholder="Masukkan Nama Institusi"
             />
             <TextField
                 label="Mulai"
@@ -134,9 +135,9 @@ export function ExperienceEntry({ index, experience, onChange, onRemove, removab
                 label="Gaji Terakhir (Opsional)"
                 htmlFor={fieldId('last_salary')}
                 value={experience.last_salary}
-                onChange={(v) => set('last_salary', v)}
+                onChange={(v) => set('last_salary', formatRupiah(v))}
                 error={errors.last_salary}
-                placeholder="Rp. 0"
+                placeholder="Masukkan Gaji Terakhir"
             />
 
             <div className="col-span-2">

@@ -31,7 +31,12 @@ interface ResignDialogFrameProps {
 function ResignDialogFrame({ open, onOpenChange, title, description, children, footer }: ResignDialogFrameProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-3xl" onInteractOutside={(event) => event.preventDefault()}>
+            <DialogContent
+                className="gap-0 overflow-hidden p-0 sm:max-w-3xl"
+                onInteractOutside={(event) => event.preventDefault()}
+                // Cegah Radix auto-focus ke input pertama (focus ring + text selection di field tanggal/textarea).
+                onOpenAutoFocus={(event) => event.preventDefault()}
+            >
                 <DialogHeader className="border-b border-[#E5E7EB] px-6 py-4 text-left">
                     <DialogTitle className="font-poppins pr-8 text-[19px] font-semibold leading-6 text-[#121212]">{title}</DialogTitle>
                     <DialogDescription className="sr-only">{description}</DialogDescription>

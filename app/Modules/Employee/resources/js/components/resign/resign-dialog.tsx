@@ -67,7 +67,7 @@ export function ResignDialog({ open, onOpenChange, employees, onSubmit }: Resign
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="gap-0 overflow-hidden p-0 sm:max-w-xl"
+                className="grid-cols-[minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-xl"
                 onInteractOutside={(event) => event.preventDefault()}
             >
                 <DialogHeader className="border-b border-[#E5E7EB] px-6 py-4 text-left">
@@ -132,7 +132,7 @@ export function ResignDialog({ open, onOpenChange, employees, onSubmit }: Resign
                         type="button"
                         variant="outline"
                         onClick={() => onOpenChange(false)}
-                        className="h-11 flex-1 rounded-xl border border-[#1980C0] text-sm font-semibold text-[#1980C0] hover:bg-[#1980C0]/5"
+                        className="h-11 min-w-0 flex-1 rounded-xl border border-[#1980C0] px-5 text-sm font-semibold text-[#1980C0] hover:bg-[#1980C0]/5 sm:px-20"
                     >
                         Batal
                     </Button>
@@ -140,7 +140,7 @@ export function ResignDialog({ open, onOpenChange, employees, onSubmit }: Resign
                     <Button
                         type="button"
                         onClick={submit}
-                        className="h-11 flex-1 rounded-xl bg-[#1980C0] text-sm font-semibold hover:bg-[#1673AD]"
+                        className="h-11 min-w-0 flex-1 rounded-xl bg-[#1980C0] px-5 text-sm font-semibold hover:bg-[#1673AD] sm:px-20"
                     >
                         Simpan
                     </Button>

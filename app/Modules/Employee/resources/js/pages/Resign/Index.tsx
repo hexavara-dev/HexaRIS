@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 
 import { ChevronDown, ChevronLeft, ChevronRight, MoreVertical, Plus, Search } from 'lucide-react';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { toast } from 'sonner';
 
@@ -23,6 +23,8 @@ import {
 } from '../../components/resign/resign-decision-dialogs';
 
 import { ResignDialog, type ResignFormInput } from '../../components/resign/resign-dialog';
+
+import { TableHScrollBar } from '@/components/table-h-scrollbar';
 
 import { displayEmployeeId, withWizardDisplayFields, type WizardDisplayFields } from '../../lib/employee-display';
 
@@ -227,10 +229,13 @@ export default function Index() {
     // RENDER
     // ========================================================
 
+    // Horizontal-scroll container of the table; TableHScrollBar under the table mirrors it.
+    const tableRef = useRef<HTMLDivElement>(null);
+
     return (
         <AppLayout headerTitle="Resign" headerActions={<NotificationBell count={5} />}>
             <div className="min-h-screen bg-white">
-                <div className="space-y-5 p-6">
+                <div className="space-y-5 p-4 sm:p-6">
 
 
                     {/* ==================================================
@@ -265,7 +270,7 @@ export default function Index() {
 
                     <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
 
-                        <div className="flex flex-1 gap-3">
+                        <div className="flex flex-1 flex-wrap items-center gap-3">
 
     {/* BRANCH */}
 
@@ -314,7 +319,7 @@ export default function Index() {
 
     {/* SEARCH */}
 
-    <div className="relative w-full max-w-[260px]">
+    <div className="relative w-full sm:max-w-[260px]">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#111827]" />
 
         <input
@@ -349,8 +354,12 @@ export default function Index() {
                         TABLE
                     ================================================== */}
 
+                    <p className="text-xs text-[#9CA3AF] sm:hidden">
+                        Geser tabel ke samping untuk melihat kolom lainnya →
+                    </p>
+
                     <div className="overflow-visible rounded-xl border border-[#E5E7EB] bg-white">
-                        <div className="overflow-x-auto">
+                        <div ref={tableRef} className="table-scroll overflow-x-auto">
                             <table className="w-full min-w-[1100px] border-collapse">
                                 <thead>
                                     <tr className="border-b border-[#E5E7EB] bg-[#FCFCFC]">
@@ -462,6 +471,10 @@ export default function Index() {
                                 </tbody>
                             </table>
                         </div>
+
+                        <div className="px-4 pt-1 pb-3">
+                            <TableHScrollBar targetRef={tableRef} />
+                        </div>
                     </div>
 
 
@@ -469,7 +482,7 @@ export default function Index() {
                         PAGINATION (di luar kartu tabel, sesuai desain)
                     ================================================== */}
 
-                    <div className="flex w-full items-center justify-between gap-4">
+                    <div className="flex w-full flex-wrap items-center justify-between gap-4">
 
                         {/* Nomor halaman di kiri, teks jumlah data di bawahnya. */}
                         <div className="flex min-w-0 flex-col items-start gap-2">
@@ -490,7 +503,7 @@ export default function Index() {
                                 ))}
                             </div>
 
-                            <div className="whitespace-nowrap text-sm text-[#6B7280]">
+                            <div className="text-sm text-[#6B7280]">
                                 Menampilkan{' '}
                                 <span className="font-medium text-[#374151]">
                                     {filteredRecords.length === 0 ? 0 : (safePage - 1) * ROWS_PER_PAGE + 1}

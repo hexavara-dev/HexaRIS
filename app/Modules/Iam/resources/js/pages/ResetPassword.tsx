@@ -100,13 +100,13 @@ export default function ResetPassword() {
                 </div>
             </main>
 
-            <footer className="text-muted-foreground flex items-center justify-between px-6 py-4 text-xs">
-                <div className="flex gap-6">
+            <footer className="text-muted-foreground flex flex-col items-center justify-center gap-3 px-6 py-4 text-center text-xs sm:flex-row sm:justify-between">
+                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
                     <span>Advertising</span>
                     <span>Business</span>
                     <span>How Search works</span>
                 </div>
-                <div className="flex gap-6">
+                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
                     <span>Privacy</span>
                     <span>Terms</span>
                     <span>Settings</span>
