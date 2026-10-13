@@ -9,6 +9,16 @@ class CompanyStructureController
 {
     public function index(): Response
     {
-        return Inertia::render('Company::pages/Structure');
+        return Inertia::render('Company::pages/Structure/Index');
+    }
+
+    public function create(): Response
+    {
+        return Inertia::render('Company::pages/Structure/Create');
+    }
+
+    public function edit(): Response
+    {
+        return Inertia::render('Company::pages/Structure/Edit');
     }
 }
