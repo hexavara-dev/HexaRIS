@@ -1,20 +1,20 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { OrgStructureEmptyState } from '@/components/design-system/empty-state/org-structure-empty-state';
-import { type OrgDepartment, type OrgTree } from '@/components/design-system/org-chart/org-chart';
-import { CreateStructureDialog } from '@/components/design-system/pop-up/create-structure-dialog';
+import { type OrgDepartment } from '@/components/design-system/org-chart/org-chart';
 import { DepartmentDetailPanel } from '@/components/design-system/pop-up/department-detail-panel';
 import { EditDepartmentDialog, shortName } from '@/components/design-system/pop-up/edit-department-dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { OrgChartPanel } from '../components/OrgChartPanel';
-import { StructureTable } from '../components/StructureTable';
-import { useCompanyStructure } from '../hooks/use-company-structure';
-import { departmentPositionStats, departmentToStaff, toStructureGroups } from '../lib/structure-transforms';
+import { useCompanyStructure } from '../../hooks/use-company-structure';
+import { departmentPositionStats, departmentToStaff, toStructureGroups } from '../../lib/structure-transforms';
+import { OrgChartPanel } from '../../components/OrgChartPanel';
+import { StructureTable } from '../../components/StructureTable';
+
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Struktur Organisasi', href: '/company/structure' }];
 
@@ -33,13 +33,11 @@ export default function CompanyStructure() {
         findDepartmentByLabel,
         saveDepartment,
         deleteDepartment,
-        saveStructure,
         setCabang,
     } = useCompanyStructure();
     const [activeTab, setActiveTab] = useState<(typeof TABS)[number]['value']>('bagan');
     const [selectedDepartment, setSelectedDepartment] = useState<OrgDepartment | null>(null);
     const [editingDepartment, setEditingDepartment] = useState<OrgDepartment | null>(null);
-    const [creatingStructure, setCreatingStructure] = useState(false);
 
     const structureGroups = useMemo(() => toStructureGroups(departments), [departments]);
     const hasSavedCabang = hasStructure && cabangOptions.length > 0;
@@ -48,11 +46,6 @@ export default function CompanyStructure() {
         saveDepartment(editingDepartment, updated);
         setSelectedDepartment(null);
         setEditingDepartment(null);
-    }
-
-    function handleStructureCreated(tree: OrgTree) {
-        saveStructure(tree);
-        setCreatingStructure(false);
     }
 
     return (
@@ -73,7 +66,9 @@ export default function CompanyStructure() {
                         ))}
                     </TabsList>
 
-                    <Button className="h-auto gap-2 rounded-lg px-4 py-2 text-xs" onClick={() => setCreatingStructure(true)}>
+                    <Button className="h-auto gap-2 rounded-lg px-4 py-2 text-xs"
+                        onClick={() => router.visit('/company/structure/create')}
+                    >
                         <Plus className="size-4" />
                         {hasSavedCabang ? 'Atur Ulang Struktur' : 'Atur Struktur'}
                     </Button>
@@ -129,15 +124,6 @@ export default function CompanyStructure() {
                     .filter((sibling) => sibling.name !== editingDepartment?.name)
                     .map((sibling) => shortName(sibling.name))}
                 onSave={handleDepartmentSaved}
-            />
-
-            <CreateStructureDialog
-                open={creatingStructure}
-                onOpenChange={setCreatingStructure}
-                onSave={handleStructureCreated}
-                hasSavedCabang={hasSavedCabang}
-                savedCabangOptions={cabangOptions}
-                savedStructure={hasStructure && ceo ? { cabang, cabangOptions, ceo, departments } : null}
             />
         </AppLayout>
     );

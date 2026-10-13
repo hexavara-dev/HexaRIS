@@ -100,6 +100,7 @@ export function CreateStructureDialog({
                         onCancel={resetAndClose}
                         onFinish={handleSave}
                         compact
+                        asPage
                     />
                 </DialogContent>
             </Dialog>
