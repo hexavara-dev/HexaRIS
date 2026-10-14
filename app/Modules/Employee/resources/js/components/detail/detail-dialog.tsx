@@ -1,7 +1,10 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { DialogTitle } from '@/components/ui/dialog';
 import { type Employee } from '@/data/Employee/employee';
 import { useMemo, useState } from 'react';
+
 import { hydrateEmployeeFormData } from '../../lib/employee-form-overlay';
 import { positionTitle } from '../../lib/employee-org';
 import { type ResignRecord } from '../../pages/Resign/resign-dummy';
@@ -28,77 +31,98 @@ function initials(name: string): string {
 
 interface DetailDialogProps {
     employee: Employee;
-    /** The employee's resign request, when one exists — shows the pink pengajuan card under the profile. */
     resign?: ResignRecord | null;
-    /** Wired to the card's Approve button; only rendered while the request is still awaiting approval. */
     onApprove?: () => void;
 }
 
 export function DetailDialog({ employee, resign, onApprove }: DetailDialogProps) {
     const [active, setActive] = useState(0);
     const { data } = useMemo(() => hydrateEmployeeFormData(employee), [employee]);
-    const position = positionTitle(employee.id) ?? jobLevelOptions.find((option) => option.value === data.job_level)?.label ?? '-';
 
-    // A resign row sitting at Non Aktif has already been approved; anything else is still (or back to) active.
+    const position = positionTitle(employee.id) ?? jobLevelOptions.find((option) => option.value === data.job_level)?.label ?? '-';
     const isActive = resign ? resign.status !== 'Non Aktif' : employee.is_active;
+    const canApprove = resign?.status === 'Menunggu' && !!onApprove;
+
+    const employeeIdentity = (
+        <div className="flex min-w-0 items-center gap-2.5">
+            <Avatar className="size-11 shrink-0">
+                {employee.profile_picture_path && (
+                    <AvatarImage src={employee.profile_picture_path} alt={employee.full_name} className="object-cover" />
+                )}
+                <AvatarFallback className="font-poppins bg-[#1980C0] text-sm font-semibold text-white">
+                    {initials(employee.full_name)}
+                </AvatarFallback>
+            </Avatar>
+
+            <div className="min-w-0">
+                <p className="font-poppins truncate text-sm font-semibold text-[#121212]">{employee.full_name}</p>
+                <p className="font-poppins text-xs text-[#353535]">{position}</p>
+            </div>
+        </div>
+    );
 
     return (
-        <div className="flex max-h-[80vh] w-full min-w-0 flex-col">
-            {/* Judul dialog + garis pemisah */}
-            <div className="shrink-0 border-b border-[#E5E5E5] px-6 py-4 pr-14">
-                <DialogTitle className="font-poppins text-xl font-semibold text-[#121212]">Detail Karyawan</DialogTitle>
+        <div className="flex max-h-[90vh] w-full min-w-0 flex-col">
+            {/* Dialog Header */}
+            <div className="shrink-0 border-b border-[#E5E5E5] px-5 py-3 pr-12">
+                <DialogTitle className="font-poppins text-lg font-semibold text-[#121212]">Detail Karyawan</DialogTitle>
             </div>
 
-            {/* Body scrollable */}
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto px-6 py-5">
-                {/* Header profil */}
-                <div className="flex shrink-0 items-center gap-3">
-                    <Avatar className="h-14 w-14">
-                        {employee.profile_picture_path && (
-                            <AvatarImage src={employee.profile_picture_path} alt={employee.full_name} className="object-cover" />
-                        )}
-                        <AvatarFallback className="font-poppins bg-[#1980C0] text-base font-semibold text-white">
-                            {initials(employee.full_name)}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                        <p className="font-poppins text-base leading-tight font-bold text-[#121212]">{employee.full_name}</p>
-                        <p className="font-poppins text-sm text-[#353535]">{position}</p>
+            {/* Dialog Content */}
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto px-4 py-4">
+                {resign ? (
+                    /* Resign Request Card */
+                    <div className="shrink-0 rounded-xl border border-[#FF928C] bg-[#FFE9E7] p-3 sm:p-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                            {employeeIdentity}
+
+                            {canApprove && (
+                                <Button type="button" onClick={onApprove} className="h-9 rounded-lg bg-[#1980C0] px-5 text-xs font-semibold text-white hover:bg-[#1673AD]">
+                                    Approve
+                                </Button>
+                            )}
+
+                            <span className={`ml-auto shrink-0 text-xs font-medium ${isActive ? 'text-[#39B52A]' : 'text-[#EF4938]'}`}>
+                                {isActive ? 'Aktif' : 'Non Aktif'}
+                            </span>
+                        </div>
+
+                        {/* Resign Information */}
+                        <div className="mt-3 rounded-lg border border-[#FF8178] bg-white p-3">
+                            <div className="[&>*]:!m-0 [&>*]:!rounded-none [&>*]:!border-0 [&>*]:!bg-transparent [&>*]:!p-0 [&>*]:!shadow-none">
+                                <ResignCard record={resign} showIdentity={false} />
+                            </div>
+                        </div>
                     </div>
+                ) : (
+                    /* Regular Employee Profile */
+                    <div className="flex shrink-0 items-center justify-between gap-3">
+                        {employeeIdentity}
 
-                    <span
-                        className={`ml-auto inline-flex shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium ${
-                            isActive ? 'border-[#45C33A] text-[#39B52A]' : 'border-[#EF4938] text-[#EF4938]'
-                        }`}
-                    >
-                        {isActive ? 'Aktif' : 'Non Aktif'}
-                    </span>
-                </div>
-
-                {/* Ringkasan pengajuan resign */}
-                {resign && (
-                    <div className="shrink-0">
-                        <ResignCard
-                            record={resign}
-                            showIdentity={false}
-                            onApprove={resign.status === 'Menunggu' ? onApprove : undefined}
-                        />
+                        <span className={`shrink-0 text-xs font-medium ${isActive ? 'text-[#39B52A]' : 'text-[#EF4938]'}`}>
+                            {isActive ? 'Aktif' : 'Non Aktif'}
+                        </span>
                     </div>
                 )}
 
-                {/* Tab bar */}
-                <div className="min-w-0 shrink-0">
+                {/* Navigation Tabs */}
+                <div className="min-w-0 shrink-0 overflow-x-auto">
                     <TabBar tabs={TABS} active={active} onChange={setActive} />
                 </div>
 
-                {/* Card konten */}
-                <div className="min-w-0 shrink-0 rounded-xl border border-[#E5E5E5] bg-white p-5 shadow-sm">
-                    {active === 0 && <PersonalTab employee={employee} data={data} />}
-                    {active === 1 && <EducationTab data={data} />}
-                    {active === 2 && <ExperienceTab data={data} />}
-                    {active === 3 && <ProvisionTab data={data} />}
-                    {active === 4 && <FinancialTab data={data} />}
-                    {active === 5 && <DocumentsTab data={data} />}
+                {/* Tab Contents */}
+                <div className="min-w-0 shrink-0">
+                    {active === 0 ? (
+                        <PersonalTab employee={employee} data={data} />
+                    ) : (
+                        <div className="rounded-xl border border-[#E5E5E5] bg-white p-4">
+                            {active === 1 && <EducationTab data={data} />}
+                            {active === 2 && <ExperienceTab data={data} />}
+                            {active === 3 && <ProvisionTab data={data} />}
+                            {active === 4 && <FinancialTab data={data} />}
+                            {active === 5 && <DocumentsTab data={data} />}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
