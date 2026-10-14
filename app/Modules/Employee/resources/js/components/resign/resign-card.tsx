@@ -26,7 +26,7 @@ interface ResignCardProps {
  */
 export function ResignCard({ record, showIdentity = true, onApprove }: ResignCardProps) {
     return (
-        <div className="rounded-2xl border border-[#F0A0A0] bg-[linear-gradient(115deg,#FDECEC_0%,#FBDEDE_50%,#F8CFCF_100%)] px-5 py-4">
+        <div className="rounded-2xl border px-5 py-4">
             {showIdentity && (
                 <div className="flex items-center gap-3">
                     <Avatar className="h-14 w-14">

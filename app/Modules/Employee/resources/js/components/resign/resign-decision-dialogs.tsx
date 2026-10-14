@@ -18,6 +18,7 @@ export const RESIGN_STATUS_STYLES: Record<ResignRecord['status'], string> = {
     'Non Aktif': 'border-[#EF4938] text-[#EF4938]',
 };
 
+
 interface ResignDialogFrameProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -25,30 +26,36 @@ interface ResignDialogFrameProps {
     description: string;
     children?: ReactNode;
     footer?: ReactNode;
+    compact?: boolean;
 }
 
-/** Header/content/footer shell — mirrors the "+ Resign" popup so every resign dialog reads as one family. */
-function ResignDialogFrame({ open, onOpenChange, title, description, children, footer }: ResignDialogFrameProps) {
+function ResignDialogFrame({ open, onOpenChange, title, description, children, footer, compact = false }: ResignDialogFrameProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="gap-0 overflow-hidden p-0 sm:max-w-3xl"
+                className={`flex max-h-[90vh] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-xl p-0 ${compact ? 'sm:max-w-[520px]' : 'sm:max-w-3xl'}`}
                 onInteractOutside={(event) => event.preventDefault()}
-                // Cegah Radix auto-focus ke input pertama (focus ring + text selection di field tanggal/textarea).
                 onOpenAutoFocus={(event) => event.preventDefault()}
             >
-                <DialogHeader className="border-b border-[#E5E7EB] px-6 py-4 text-left">
-                    <DialogTitle className="font-poppins pr-8 text-[19px] font-semibold leading-6 text-[#121212]">{title}</DialogTitle>
+                <DialogHeader className="shrink-0 border-b border-[#E5E7EB] px-5 py-3 text-left">
+                    <DialogTitle className="font-poppins pr-8 text-base font-semibold text-[#121212]">{title}</DialogTitle>
                     <DialogDescription className="sr-only">{description}</DialogDescription>
                 </DialogHeader>
 
-                <div className="flex flex-col gap-4 px-6 py-4">{children}</div>
+                <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-4 py-4">
+                    {children}
+                </div>
 
-                {footer && <div className="flex gap-3 border-t border-[#E5E7EB] px-6 py-4">{footer}</div>}
+                {footer && (
+                    <div className="flex shrink-0 gap-3 border-t border-[#E5E7EB] px-4 py-3">
+                        {footer}
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     );
 }
+
 
 function BatalButton({ onClick }: { onClick: () => void }) {
     return (
@@ -70,15 +77,10 @@ interface ApproveResignDialogProps {
     onApprove: (record: ResignRecord, accDate: string) => void;
 }
 
-/**
- * "Approve Resign Karyawan" — reviews the pengajuan card and captures the
- * mandatory Tanggal ACC Resign/Cut Off before the row flips to Non Aktif.
- */
 export function ApproveResignDialog({ open, onOpenChange, record, onApprove }: ApproveResignDialogProps) {
     const [accDate, setAccDate] = useState('');
     const [error, setError] = useState(false);
 
-    // Fresh form for every record.
     useEffect(() => {
         if (open) {
             setAccDate('');
@@ -98,21 +100,17 @@ export function ApproveResignDialog({ open, onOpenChange, record, onApprove }: A
         onApprove(record, accDate);
     };
 
+    const footer = (
+        <>
+            <BatalButton onClick={() => onOpenChange(false)} />
+            <Button type="button" onClick={submit} className="h-11 flex-1 rounded-xl bg-[#1980C0] text-sm font-semibold text-white hover:bg-[#1673AD]">
+                Simpan
+            </Button>
+        </>
+    );
+
     return (
-        <ResignDialogFrame
-            open={open}
-            onOpenChange={onOpenChange}
-            title="Approve Resign Karyawan"
-            description="Konfirmasi persetujuan resign karyawan"
-            footer={
-                <>
-                    <BatalButton onClick={() => onOpenChange(false)} />
-                    <Button type="button" onClick={submit} className="h-11 flex-1 rounded-xl bg-[#1980C0] text-sm font-semibold hover:bg-[#1673AD]">
-                        Simpan
-                    </Button>
-                </>
-            }
-        >
+        <ResignDialogFrame open={open} onOpenChange={onOpenChange} title="Approve Resign Karyawan" description="Konfirmasi persetujuan resign karyawan" compact footer={footer}>
             {record && <ResignCard record={record} />}
 
             <TextField
@@ -130,6 +128,7 @@ export function ApproveResignDialog({ open, onOpenChange, record, onApprove }: A
         </ResignDialogFrame>
     );
 }
+
 
 interface RejectResignDialogProps {
     open: boolean;
@@ -221,10 +220,7 @@ interface DetailResignDialogProps {
 export function DetailResignDialog({ open, onOpenChange, record, employee, onApprove }: DetailResignDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent
-                className="w-full grid-cols-[minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-3xl"
-                onInteractOutside={(event) => event.preventDefault()}
-            >
+            <DialogContent className="grid w-[calc(100%-2rem)] grid-cols-[minmax(0,1fr)] gap-0 overflow-hidden rounded-xl p-0 sm:max-w-[640px]" onInteractOutside={(event) => event.preventDefault()}>
                 <DialogDescription className="sr-only">Detail data karyawan {employee?.full_name}</DialogDescription>
 
                 {employee && record && <DetailDialog employee={employee} resign={record} onApprove={onApprove} />}
@@ -232,6 +228,7 @@ export function DetailResignDialog({ open, onOpenChange, record, employee, onApp
         </Dialog>
     );
 }
+
 
 interface DeleteResignDialogProps {
     open: boolean;

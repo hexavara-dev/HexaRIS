@@ -1181,60 +1181,25 @@ export default function Index() {
                 dummyEmployees,
             ],
         );
-
-
-    // ========================================================
-    // RENDER
-    // ========================================================
-
     return (
         <AppLayout
             headerTitle="Data Karyawan"
             headerActions={<NotificationBell count={5} />}
         >
-
             <div className="min-h-screen bg-white">
-
-
-                {/* ==================================================
-                    CONTENT
-                ================================================== */}
-
                 <div className="space-y-5 p-4 sm:p-6">
-
-
-                    {/* ==================================================
-                        OVERVIEW
-                    ================================================== */}
-
                     <section className="rounded-2xl border border-[#E5E7EB] bg-[#FAFAFA] p-4">
-
                         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[520px_minmax(0,1fr)]">
-
-
-                            {/* LEFT STATISTICS */}
-
                             <div className="grid grid-cols-2 gap-4">
-
-                                {/* TOTAL */}
-
                                 <div className="rounded-xl border bg-white p-5">
-
                                     <div className="text-[16px] font-semibold text-[#111827]">
                                         Semua Karyawan
                                     </div>
-
                                     <div className="mt-2 text-[34px] font-bold leading-none text-[#111827]">
                                         {totalEmployees}
                                     </div>
-
                                 </div>
-
-
-                                {/* ACTIVE */}
-
                                 <div className="rounded-xl border bg-white p-5">
-
                                     <div className="text-[16px] font-semibold text-[#111827]">
                                         Karyawan Aktif
                                     </div>

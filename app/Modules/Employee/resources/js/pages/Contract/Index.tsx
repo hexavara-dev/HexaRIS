@@ -4,7 +4,9 @@ import ContractSummary from './components/stat-card';
 
 export default function Index() {
     return (
-        <AppLayout>
+        <AppLayout
+            headerTitle="Kontrak Karyawan"
+        >
             <div className="space-y-4 p-6">
                 <ContractSummary />
                 <ContractDataTable />
