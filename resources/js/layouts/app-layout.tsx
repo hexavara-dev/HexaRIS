@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { FloatingAssistantButton } from '@/components/floating-assistant-button';
+import { NotificationBell } from '@/components/notification-bell';
 import { Toaster } from '@/components/toaster';
 import { useFlash } from '@/hooks/use-flash';
 import { usePendingToast } from '@/hooks/use-pending-toast';
@@ -23,7 +24,18 @@ interface AppLayoutProps {
     tabTitle?: string;
     /** Overrides the derived breadcrumb trail entirely. Pass `[]` to hide it. */
     breadcrumbs?: BreadcrumbItem[];
+    /**
+     * Extra controls for the top header bar. Rendered before the notification
+     * bell, which the layout itself puts on every page so the header stays
+     * identical everywhere.
+     */
     headerActions?: ReactNode;
+    /**
+     * Secondary text after the header title/breadcrumbs (e.g. today's date).
+     * Rendered in normal weight so it reads as a subtitle, not as part of the
+     * bold page title.
+     */
+    headerMeta?: ReactNode;
     /**
      * Renders as a plain heading inside the top `<header>` bar, replacing the
      * breadcrumb trail there. Manual per page (e.g. the dashboard) — not
@@ -34,7 +46,10 @@ interface AppLayoutProps {
     headerTitle?: string;
 }
 
-export default function AppLayout({ children, tabTitle, breadcrumbs, headerActions, headerTitle, ...props }: AppLayoutProps) {
+/** Placeholder until unread notifications are backed by real data. */
+const UNREAD_NOTIFICATIONS = 5;
+
+export default function AppLayout({ children, tabTitle, breadcrumbs, headerActions, headerTitle, headerMeta, ...props }: AppLayoutProps) {
     useFlash();
     usePendingToast();
 
@@ -48,10 +63,25 @@ export default function AppLayout({ children, tabTitle, breadcrumbs, headerActio
             tabTitle && index === all.length - 1 ? { ...crumb, title: tabTitle } : crumb,
         );
 
+    // The bell belongs to the shell, not to individual pages: rendering it here
+    // keeps the header identical everywhere. `headerActions` only adds to it.
+    const resolvedHeaderActions = (
+        <>
+            {headerActions}
+            <NotificationBell count={UNREAD_NOTIFICATIONS} />
+        </>
+    );
+
     return (
         <>
             {derivedTabTitle && <Head title={derivedTabTitle} />}
-            <AppLayoutTemplate breadcrumbs={derivedBreadcrumbs} headerActions={headerActions} headerTitle={headerTitle} {...props}>
+            <AppLayoutTemplate
+                breadcrumbs={derivedBreadcrumbs}
+                headerActions={resolvedHeaderActions}
+                headerTitle={headerTitle}
+                headerMeta={headerMeta}
+                {...props}
+            >
                 {children}
             </AppLayoutTemplate>
             {/* Rendered by the layout, not per page, so the assistant follows the user everywhere. */}
