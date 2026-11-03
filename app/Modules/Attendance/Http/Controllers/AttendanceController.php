@@ -16,4 +16,9 @@ class AttendanceController
     {
         return Inertia::render('Attendance::pages/CheckIn/attendance-report');
     }
+
+    public function leave(): Response
+    {
+        return Inertia::render('Attendance::pages/Leave/Index');
+    }
 }
