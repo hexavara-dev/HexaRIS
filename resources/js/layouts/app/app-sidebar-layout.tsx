@@ -11,14 +11,15 @@ interface AppSidebarLayoutProps {
     breadcrumbs?: BreadcrumbItem[];
     headerActions?: ReactNode;
     headerTitle?: string;
+    headerMeta?: ReactNode;
 }
 
-export default function AppSidebarLayout({ children, breadcrumbs = [], headerActions, headerTitle }: AppSidebarLayoutProps) {
+export default function AppSidebarLayout({ children, breadcrumbs = [], headerActions, headerTitle, headerMeta }: AppSidebarLayoutProps) {
     return (
         <AppShell variant="sidebar">
             <AppSidebar />
             <AppContent variant="sidebar">
-                <AppSidebarHeader breadcrumbs={breadcrumbs} actions={headerActions} title={headerTitle} />
+                <AppSidebarHeader breadcrumbs={breadcrumbs} actions={headerActions} title={headerTitle} meta={headerMeta} />
                 {children}
             </AppContent>
         </AppShell>

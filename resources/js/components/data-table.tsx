@@ -83,6 +83,8 @@ interface DataTableViewProps<T extends { id: number | string }> {
     searchValue: string;
     onSearchChange: (value: string) => void;
     filterConfig: FilterConfig[];
+    /** Render the filter controls before the search input in the toolbar. */
+    filtersFirst: boolean;
     visibility: boolean;
     actions?: ReactNode;
     rowActions?: (row: T) => RowAction[];
@@ -102,6 +104,7 @@ function DataTableView<T extends { id: number | string }>({
     searchValue,
     onSearchChange,
     filterConfig,
+    filtersFirst,
     visibility,
     actions,
     rowActions,
@@ -161,51 +164,64 @@ function DataTableView<T extends { id: number | string }>({
             <ChevronsUpDown className="size-3.5 opacity-40" />
         );
 
+    const searchControl = search ? (
+        <div className="relative w-full sm:w-auto">
+            <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
+            <Input
+                value={searchValue}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder={search.placeholder ?? 'Search…'}
+                className="h-11 w-full pl-8 sm:h-9 sm:w-[220px]"
+            />
+        </div>
+    ) : null;
+
+    const filterControls = filterConfig.map((f) =>
+        f.type === 'select' ? (
+            <Select
+                key={f.key}
+                // Radix Select can't hold "" as a value, so the reset option
+                // carries a sentinel that maps back to "no filter".
+                value={filterValues[f.key] || ALL_OPTION}
+                onValueChange={(value) => onFilterChange(f.key, value === ALL_OPTION ? '' : value)}
+            >
+                <SelectTrigger className="h-11 w-full sm:h-9 sm:w-[180px]">
+                    <SelectValue placeholder={f.label} />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value={ALL_OPTION}>Semua</SelectItem>
+                    {f.options?.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        ) : (
+            <Input
+                key={f.key}
+                value={filterValues[f.key] ?? ''}
+                onChange={(e) => onFilterChange(f.key, e.target.value)}
+                placeholder={`Cari ${f.label.toLowerCase()}…`}
+                className="h-11 w-full sm:h-9 sm:w-[220px]"
+            />
+        ),
+    );
+
     return (
         <div className="space-y-3">
             {showToolbar && (
                 <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                    {search && (
-                        <div className="relative w-full sm:w-auto">
-                            <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
-                            <Input
-                                value={searchValue}
-                                onChange={(e) => onSearchChange(e.target.value)}
-                                placeholder={search.placeholder ?? 'Search…'}
-                                className="h-11 w-full pl-8 sm:h-9 sm:w-[220px]"
-                            />
-                        </div>
-                    )}
-                    {filterConfig.map((f) =>
-                        f.type === 'select' ? (
-                            <Select
-                                key={f.key}
-                                // Radix Select can't hold "" as a value, so the reset option
-                                // carries a sentinel that maps back to "no filter".
-                                value={filterValues[f.key] || ALL_OPTION}
-                                onValueChange={(value) => onFilterChange(f.key, value === ALL_OPTION ? '' : value)}
-                            >
-                                <SelectTrigger className="h-11 w-full sm:h-9 sm:w-[180px]">
-                                    <SelectValue placeholder={f.label} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value={ALL_OPTION}>Semua</SelectItem>
-                                    {f.options?.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                            {option.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        ) : (
-                            <Input
-                                key={f.key}
-                                value={filterValues[f.key] ?? ''}
-                                onChange={(e) => onFilterChange(f.key, e.target.value)}
-                                placeholder={`Cari ${f.label.toLowerCase()}…`}
-                                className="h-11 w-full sm:h-9 sm:w-[220px]"
-                            />
-                        ),
+                    {filtersFirst ? (
+                        <>
+                            {filterControls}
+                            {searchControl}
+                        </>
+                    ) : (
+                        <>
+                            {searchControl}
+                            {filterControls}
+                        </>
                     )}
                     <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
                         {visibility && (
@@ -315,6 +331,11 @@ interface BaseProps<T extends { id: number | string }> {
      */
     visibility?: boolean;
     /**
+     * Put the filter controls before the search input. Opt-in for designs
+     * whose primary scope picker (e.g. branch) sits at the toolbar's left edge.
+     */
+    filtersFirst?: boolean;
+    /**
      * Free slot at the toolbar's right edge — a "New …" button, a dialog
      * trigger, an export link. Rendered as given, so the call site owns both
      * the look and the click behaviour.
@@ -358,6 +379,7 @@ function ServerDataTable<T extends { id: number | string }>({
     data,
     variant = 'design-system',
     visibility = false,
+    filtersFirst = false,
     actions,
     rowActions,
     renderMobileRow,
@@ -380,6 +402,7 @@ function ServerDataTable<T extends { id: number | string }>({
             searchValue=""
             onSearchChange={onSearchChange}
             filterConfig={[]}
+            filtersFirst={filtersFirst}
             visibility={visibility}
             actions={actions}
             rowActions={rowActions}
@@ -402,6 +425,7 @@ function ClientDataTable<T extends { id: number | string }>({
     filters: filterConfig = [],
     initialFilters,
     visibility = false,
+    filtersFirst = false,
     actions,
     rowActions,
     renderMobileRow,
@@ -484,6 +508,7 @@ function ClientDataTable<T extends { id: number | string }>({
             searchValue={searchValue}
             onSearchChange={onSearchChange}
             filterConfig={filterConfig}
+            filtersFirst={filtersFirst}
             visibility={visibility}
             actions={actions}
             rowActions={rowActions}

@@ -1,0 +1,3 @@
+<?php
+
+// Attendance API routes
