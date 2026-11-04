@@ -21,4 +21,9 @@ class AttendanceController
     {
         return Inertia::render('Attendance::pages/Leave/Index');
     }
+
+    public function overtime(): Response
+    {
+        return Inertia::render('Attendance::pages/Overtime/Index');
+    }
 }
